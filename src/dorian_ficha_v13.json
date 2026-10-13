@@ -1,0 +1,1213 @@
+{
+  "identity": {
+    "name": "Dorian",
+    "race": "Tiefling (Glasya)",
+    "alignment": "Caótico Neutral",
+    "background": "Criminal / Fugitivo",
+    "classes": [
+      {
+        "name": "Bardo",
+        "subclass": "Elocuencia",
+        "level": 5,
+        "hitDie": "d8"
+      },
+      {
+        "name": "Brujo",
+        "subclass": "Djinni",
+        "level": 1,
+        "hitDie": "d8"
+      }
+    ],
+    "senses": "Visión en Oscuridad (60 pies)",
+    "languages": [
+      "Común",
+      "Infernal",
+      "Jerga de Ladrones"
+    ]
+  },
+  "vitals": {
+    "speed": "30 pies",
+    "maxHp": 48,
+    "currentHp": 48,
+    "tempHp": 23,
+    "hitDiceSpent": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "concentration": {
+    "active": false,
+    "spellName": ""
+  },
+  "deathSaves": {
+    "successes": [
+      false,
+      false,
+      false
+    ],
+    "failures": [
+      false,
+      false,
+      false
+    ]
+  },
+  "statusNotes": "",
+  "attributes": {
+    "FUE": {
+      "score": 8,
+      "profSave": false
+    },
+    "DES": {
+      "score": 14,
+      "profSave": true
+    },
+    "CON": {
+      "score": 14,
+      "profSave": false
+    },
+    "INT": {
+      "score": 10,
+      "profSave": false
+    },
+    "SAB": {
+      "score": 12,
+      "profSave": false
+    },
+    "CAR": {
+      "score": 18,
+      "profSave": true
+    }
+  },
+  "skills": [
+    {
+      "id": "acrobacias",
+      "name": "Acrobacias",
+      "attr": "DES",
+      "profType": "C"
+    },
+    {
+      "id": "arcanos",
+      "name": "Arcanos",
+      "attr": "INT",
+      "profType": "·"
+    },
+    {
+      "id": "atletismo",
+      "name": "Atletismo",
+      "attr": "FUE",
+      "profType": "·"
+    },
+    {
+      "id": "engano",
+      "name": "Engaño",
+      "attr": "CAR",
+      "profType": "P",
+      "note": "Ventaja",
+      "minTen": true
+    },
+    {
+      "id": "historia",
+      "name": "Historia",
+      "attr": "INT",
+      "profType": "·"
+    },
+    {
+      "id": "intimidacion",
+      "name": "Intimidación",
+      "attr": "CAR",
+      "profType": "C"
+    },
+    {
+      "id": "interpretacion",
+      "name": "Interpretación",
+      "attr": "CAR",
+      "profType": "C"
+    },
+    {
+      "id": "investigacion",
+      "name": "Investigación",
+      "attr": "INT",
+      "profType": "C"
+    },
+    {
+      "id": "juego_manos",
+      "name": "Juego de Manos",
+      "attr": "DES",
+      "profType": "C"
+    },
+    {
+      "id": "medicina",
+      "name": "Medicina",
+      "attr": "SAB",
+      "profType": "·"
+    },
+    {
+      "id": "naturaleza",
+      "name": "Naturaleza",
+      "attr": "INT",
+      "profType": "·"
+    },
+    {
+      "id": "percepcion",
+      "name": "Percepción",
+      "attr": "SAB",
+      "profType": "·"
+    },
+    {
+      "id": "perspicacia",
+      "name": "Perspicacia",
+      "attr": "SAB",
+      "profType": "·"
+    },
+    {
+      "id": "persuasion",
+      "name": "Persuasión",
+      "attr": "CAR",
+      "profType": "P",
+      "note": "Ventaja",
+      "minTen": true
+    },
+    {
+      "id": "religion",
+      "name": "Religión",
+      "attr": "INT",
+      "profType": "·"
+    },
+    {
+      "id": "sigilo",
+      "name": "Sigilo",
+      "attr": "DES",
+      "profType": "C"
+    },
+    {
+      "id": "supervivencia",
+      "name": "Supervivencia",
+      "attr": "SAB",
+      "profType": "·"
+    },
+    {
+      "id": "trato_animales",
+      "name": "Trato c. Animales",
+      "attr": "SAB",
+      "profType": "·"
+    }
+  ],
+  "combat": {
+    "resources": [
+      {
+        "id": "insp_bard",
+        "name": "Inspiración Bárdica (1d8)",
+        "usesKey": "CAR",
+        "actionCost": "Acción Adicional",
+        "reset": "Corto/Largo",
+        "color": "text-brand-300",
+        "spent": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "id": "genie_vessel",
+        "name": "Vaso del Genio (6h)",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-blue-300",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "detect_thoughts_feat",
+        "name": "Detectar Pensamientos (Dote)",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-teal-300",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "glasya_minor_illusion",
+        "name": "Glasya: Ilusión Menor",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Truco",
+        "color": "text-purple-300",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "glasya_disguise",
+        "name": "Glasya: Disfrazarme",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-red-300",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "glasya_invis",
+        "name": "Glasya: Invisibilidad",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-rose-300",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "cloak_dim_door",
+        "name": "Capa Charlatán: Puerta Dim.",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-amber-300",
+        "spent": [
+          false
+        ]
+      }
+    ],
+    "traits": [
+      {
+        "name": "Lengua de Plata (Elocuencia 3)",
+        "desc": "En Persuasión o Engaño, cualquier 1 a 9 en el d20 se convierte automáticamente en 10."
+      },
+      {
+        "name": "Palabras Inquietantes (Elocuencia 3)",
+        "desc": "Acción Adicional: gasta 1 dado para restar 1d8 a la próxima salvación del enemigo."
+      },
+      {
+        "name": "Fuente de Inspiración (Bardo 5)",
+        "desc": "Recuperas todos los usos de Inspiración Bárdica en Descanso Corto o Largo."
+      },
+      {
+        "name": "Canción de Descanso (Bardo 2)",
+        "desc": "Aliados y tú curan +1d6 extra al gastar dados de golpe en descanso corto."
+      },
+      {
+        "name": "Vaso del Genio (Brujo 1)",
+        "desc": "Entras a tu vasija durante 6 horas (2x Competencia). CA 15, HP 3."
+      },
+      {
+        "name": "Ira del Genio (Brujo 1)",
+        "desc": "Primer impacto de tu turno suma +3 de daño por Trueno."
+      },
+      {
+        "name": "Dote Telepático",
+        "desc": "Telepatía a 60 pies. Detectar Pensamientos gratis 1/día sin componentes."
+      },
+      {
+        "name": "Resistencia Infernal (Tiefling)",
+        "desc": "Resistencia al fuego. Visión en la oscuridad a 60 pies."
+      }
+    ]
+  },
+  "progression": {
+    "bardo": [
+      {
+        "level": 1,
+        "title": "Nivel 1",
+        "feats": [
+          "Lanzamiento de Conjuros de Bardo (Foco instrumental y rituales)",
+          "Inspiración Bárdica (Dado d6, usos = Carisma)",
+          "Competencia con Armaduras ligeras, Armas simples, Estoque, Ballesta de mano"
+        ]
+      },
+      {
+        "level": 2,
+        "title": "Nivel 2",
+        "feats": [
+          "Polifacético (+1/2 competencia redondeada abajo a cualquier prueba sin competencia, incluida iniciativa)",
+          "Canción de Descanso (+1d6 HP al gastar dados de golpe en descanso corto)"
+        ]
+      },
+      {
+        "level": 3,
+        "title": "Nivel 3",
+        "feats": [
+          "Colegio de la Elocuencia (Tasha 2014)",
+          "Lengua de Plata (Cualquier tirada de 1 a 9 en d20 en Engaño o Persuasión se convierte en 10)",
+          "Palabras Inquietantes (Acción adicional: gasta 1 dado para restar 1d8 a la próxima salvación enemiga)",
+          "Pericia (Doble de competencia en Persuasión y Engaño)"
+        ]
+      },
+      {
+        "level": 4,
+        "title": "Nivel 4",
+        "feats": [
+          "Mejora de Característica / Dote: Dote Telepático (+1 Carisma, telepatía 60', Detectar Pensamientos 1/día gratis)"
+        ]
+      },
+      {
+        "level": 5,
+        "title": "Nivel 5",
+        "feats": [
+          "Inspiración Bárdica mejorada a d8",
+          "Fuente de Inspiración (¡Recuperas todos tus usos de Inspiración en Descanso Corto o Largo!)",
+          "Acceso a Conjuros de Nivel 3"
+        ]
+      },
+      {
+        "level": 6,
+        "title": "Nivel 6",
+        "feats": [
+          "Contracanto (Acción: otorga ventaja a salvaciones contra estar asustado o hechizado a aliados a 30 pies)",
+          "Discurso Infalible (Elocuencia 6): Si una criatura usa tu dado de Inspiración Bárdica y falla la tirada, conserva el dado sin gastarlo"
+        ]
+      },
+      {
+        "level": 7,
+        "title": "Nivel 7",
+        "feats": [
+          "Acceso a Conjuros de Nivel 4 (1 espacio de nivel 4)"
+        ]
+      },
+      {
+        "level": 8,
+        "title": "Nivel 8",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)",
+          "2 espacios de nivel 4"
+        ]
+      },
+      {
+        "level": 9,
+        "title": "Nivel 9",
+        "feats": [
+          "Canción de Descanso mejorada a d8",
+          "Acceso a Conjuros de Nivel 5 (1 espacio)"
+        ]
+      },
+      {
+        "level": 10,
+        "title": "Nivel 10",
+        "feats": [
+          "Inspiración Bárdica mejorada a d10",
+          "Secretos Mágicos (Aprende 2 conjuros de cualquier lista de clase que puedas lanzar)",
+          "Pericia (Doble competencia en 2 habilidades adicionales)",
+          "Truco adicional conocido"
+        ]
+      },
+      {
+        "level": 11,
+        "title": "Nivel 11",
+        "feats": [
+          "Acceso a Conjuros de Nivel 6 (1 espacio de nivel 6)"
+        ]
+      },
+      {
+        "level": 12,
+        "title": "Nivel 12",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 13,
+        "title": "Nivel 13",
+        "feats": [
+          "Canción de Descanso mejorada a d10",
+          "Acceso a Conjuros de Nivel 7 (1 espacio de nivel 7)"
+        ]
+      },
+      {
+        "level": 14,
+        "title": "Nivel 14",
+        "feats": [
+          "Inspiración Contagiosa (Elocuencia 14): Cuando alguien tiene éxito usando tu dado de inspiración, puedes usar tu reacción para inspirar a otro aliado a 60' sin gastar dados (usos = Carisma por descanso largo)",
+          "Secretos Mágicos (2 conjuros adicionales de cualquier clase)"
+        ]
+      },
+      {
+        "level": 15,
+        "title": "Nivel 15",
+        "feats": [
+          "Inspiración Bárdica mejorada a d12",
+          "Acceso a Conjuros de Nivel 8 (1 espacio de nivel 8)"
+        ]
+      },
+      {
+        "level": 16,
+        "title": "Nivel 16",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 17,
+        "title": "Nivel 17",
+        "feats": [
+          "Canción de Descanso mejorada a d12",
+          "Acceso a Conjuros de Nivel 9 (1 espacio de nivel 9)"
+        ]
+      },
+      {
+        "level": 18,
+        "title": "Nivel 18",
+        "feats": [
+          "Secretos Mágicos (2 conjuros adicionales de cualquier clase; total 6 conjuros de cualquier lista)"
+        ]
+      },
+      {
+        "level": 19,
+        "title": "Nivel 19",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 20,
+        "title": "Nivel 20",
+        "feats": [
+          "Inspiración Superior: Cuando tiras iniciativa y no te quedan usos de Inspiración Bárdica, recuperas 1 uso automáticamente"
+        ]
+      }
+    ],
+    "brujo": [
+      {
+        "level": 1,
+        "title": "Nivel 1",
+        "feats": [
+          "Patrón Sobrenatural: El Genio (Djinni)",
+          "Vaso del Genio (Refugio planar y catalizador)",
+          "Ira del Genio (+3 Trueno en el primer impacto del turno)",
+          "Magia de Pacto (1 slot nivel 1 recarga en descanso corto)",
+          "Lista ampliada: Caída de pluma, Ola atronadora"
+        ]
+      },
+      {
+        "level": 2,
+        "title": "Nivel 2",
+        "feats": [
+          "Invocaciones Sobrenaturales (2 invocaciones)",
+          "Espacios de Magia de Pacto: 2 espacios de nivel 1"
+        ]
+      },
+      {
+        "level": 3,
+        "title": "Nivel 3",
+        "feats": [
+          "Pacto Elegido: Cadena, Tomo, Filo o Talismán",
+          "Espacios de Magia de Pacto suben a nivel 2",
+          "Conjuros Djinni: Ráfaga de viento, Fuerza fantasmal"
+        ]
+      },
+      {
+        "level": 4,
+        "title": "Nivel 4",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)",
+          "Versatilidad Sobrenatural (cambio opcional de truco o invocación)"
+        ]
+      },
+      {
+        "level": 5,
+        "title": "Nivel 5",
+        "feats": [
+          "Espacios de Magia de Pacto suben a nivel 3",
+          "3 Invocaciones Sobrenaturales",
+          "Conjuros Djinni: Crear comida y agua, Muro de viento"
+        ]
+      },
+      {
+        "level": 6,
+        "title": "Nivel 6",
+        "feats": [
+          "Regalo Elemental (Djinni): Resistencia pasiva al daño de Trueno",
+          "Volar: Acción adicional para volar 30 pies por 10 min (usos = Bono Competencia por descanso largo)"
+        ]
+      },
+      {
+        "level": 7,
+        "title": "Nivel 7",
+        "feats": [
+          "Espacios de Magia de Pacto suben a nivel 4",
+          "4 Invocaciones Sobrenaturales",
+          "Conjuros Djinni: Forma gaseosa, Asesino fantasmal"
+        ]
+      },
+      {
+        "level": 8,
+        "title": "Nivel 8",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 9,
+        "title": "Nivel 9",
+        "feats": [
+          "Espacios de Magia de Pacto suben a nivel 5 (máximo)",
+          "5 Invocaciones Sobrenaturales",
+          "Conjuros Djinni: Plaga de insectos, Creación"
+        ]
+      },
+      {
+        "level": 10,
+        "title": "Nivel 10",
+        "feats": [
+          "Resguardo del Santuario (Djinni): Puedes llevar hasta 5 aliados a tu Vaso",
+          "Descanso Rápido: Permanecer 10 min en el vaso otorga los beneficios de un Descanso Corto completo"
+        ]
+      },
+      {
+        "level": 11,
+        "title": "Nivel 11",
+        "feats": [
+          "Arcanum Místico (Nivel 6): 1 conjuro de nivel 6 (1/día sin gastar slot)",
+          "3 Espacios de Magia de Pacto (nivel 5)"
+        ]
+      },
+      {
+        "level": 12,
+        "title": "Nivel 12",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)",
+          "6 Invocaciones Sobrenaturales"
+        ]
+      },
+      {
+        "level": 13,
+        "title": "Nivel 13",
+        "feats": [
+          "Arcanum Místico (Nivel 7): 1 conjuro de nivel 7 (1/día sin gastar slot)"
+        ]
+      },
+      {
+        "level": 14,
+        "title": "Nivel 14",
+        "feats": [
+          "Deseo Limitado (Limited Wish): Pides a tu Djinni el efecto de cualquier conjuro de nivel 1-6 de 1 Acción (sin componentes ni coste; recarga en 1d4 descansos largos)"
+        ]
+      },
+      {
+        "level": 15,
+        "title": "Nivel 15",
+        "feats": [
+          "Arcanum Místico (Nivel 8): 1 conjuro de nivel 8 (1/día sin gastar slot)",
+          "7 Invocaciones Sobrenaturales"
+        ]
+      },
+      {
+        "level": 16,
+        "title": "Nivel 16",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 17,
+        "title": "Nivel 17",
+        "feats": [
+          "Arcanum Místico (Nivel 9): 1 conjuro de nivel 9 (1/día sin gastar slot)",
+          "4 Espacios de Magia de Pacto (nivel 5)",
+          "8 Invocaciones Sobrenaturales"
+        ]
+      },
+      {
+        "level": 18,
+        "title": "Nivel 18",
+        "feats": [
+          "8 Invocaciones Sobrenaturales conocidas"
+        ]
+      },
+      {
+        "level": 19,
+        "title": "Nivel 19",
+        "feats": [
+          "Mejora de Característica (ASI o Dote)"
+        ]
+      },
+      {
+        "level": 20,
+        "title": "Nivel 20",
+        "feats": [
+          "Maestro Sobrenatural (Eldritch Master): 1 vez por descanso largo, rezas 1 minuto a tu patrón y recuperas todos tus 4 espacios de Magia de Pacto"
+        ]
+      }
+    ]
+  },
+  "magic": {
+    "slots": [
+      {
+        "id": "pact",
+        "level": "Pacto (Brujo 1)",
+        "max": 1,
+        "reset": "short",
+        "spent": [
+          false
+        ]
+      },
+      {
+        "id": "lvl1",
+        "level": "Nivel 1 (Bardo)",
+        "max": 4,
+        "reset": "long",
+        "spent": [
+          true,
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "id": "lvl2",
+        "level": "Nivel 2 (Bardo)",
+        "max": 3,
+        "reset": "long",
+        "spent": [
+          true,
+          false,
+          true
+        ]
+      },
+      {
+        "id": "lvl3",
+        "level": "Nivel 3 (Bardo)",
+        "max": 2,
+        "reset": "long",
+        "spent": [
+          true,
+          false
+        ]
+      }
+    ],
+    "cantrips": [
+      {
+        "name": "Eldritch Blast",
+        "source": "Brujo (Djinni)",
+        "sourceType": "warlock",
+        "actionType": "action",
+        "range": "120 pies",
+        "duration": "Instantáneo",
+        "components": "V, S",
+        "conc": false,
+        "damage": "2x 1d10 Fuerza",
+        "lore": "Un haz crepitante de energía planar pura surge disparado hacia una criatura a tu alcance.",
+        "desc": "Haz un ataque de conjuro a distancia por cada rayo. Con nivel 5 creas 2 rayos independientes de 1d10 fuerza cada uno."
+      },
+      {
+        "name": "Toque Gélido",
+        "source": "Brujo (Djinni)",
+        "sourceType": "warlock",
+        "actionType": "action",
+        "range": "120 pies",
+        "duration": "1 Asalto",
+        "components": "V, S",
+        "conc": false,
+        "damage": "2d8 Necrótico",
+        "lore": "Invocas una mano espectral teñida de escarcha que atenaza el flujo vital del adversario.",
+        "desc": "Ataque de conjuro a distancia. Impacto: 2d8 necrótico y no puede recuperar HP hasta tu siguiente turno. Si es no-muerto, sufre desventaja en sus ataques contra ti."
+      },
+      {
+        "name": "Burla Hiriente",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "60 pies",
+        "duration": "Instantáneo",
+        "components": "V",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": false,
+        "damage": "2d4 Psíquico",
+        "lore": "Profieres insultos cargados de disonancias mágicas que fracturan la concentración del oponente.",
+        "desc": "El objetivo debe superar una salvación de Sabiduría. Si falla, recibe 2d4 psíquico y desventaja en su próxima tirada de ataque antes del final de su siguiente turno."
+      },
+      {
+        "name": "Mano de Mago",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "30 pies",
+        "duration": "1 Minuto",
+        "components": "V, S",
+        "conc": false,
+        "damage": "—",
+        "desc": "Invocas una mano espectral que manipula objetos, abre puertas sin traba o vierte pociones a distancia (límite 10 libras)."
+      },
+      {
+        "name": "Prestidigitación",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "10 pies",
+        "duration": "Hasta 1 hora",
+        "components": "V, S",
+        "conc": false,
+        "damage": "—",
+        "desc": "Efectos sensoriales menores, encender o apagar antorchas/fogatas, limpiar o ensuciar objetos pequeños."
+      },
+      {
+        "name": "Ilusión Menor",
+        "source": "Tiefling (Glasya)",
+        "sourceType": "glasya",
+        "actionType": "action",
+        "range": "30 pies",
+        "duration": "1 Minuto",
+        "components": "S, M (un vellón)",
+        "useSpellDc": true,
+        "saveStat": "Inteligencia (Investigación)",
+        "conc": false,
+        "damage": "—",
+        "desc": "Creas un sonido o la imagen óptica fija de un objeto dentro de un cubo de 5 pies."
+      }
+    ],
+    "level1": [
+      {
+        "name": "Susurros Discordantes",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "60 pies",
+        "duration": "Instantáneo",
+        "components": "V",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": false,
+        "damage": "3d6 Psíquico",
+        "desc": "Salvación de Sabiduría. Fallo: 3d6 psíquico y gasta de inmediato su reacción en huir de ti tan lejos como pueda. Éxito: mitad de daño.",
+        "upcast": "+1d6 por nivel superior."
+      },
+      {
+        "name": "Ola Atronadora",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "Personal (Cubo 15')",
+        "duration": "Instantáneo",
+        "components": "V, S",
+        "useSpellDc": true,
+        "saveStat": "Constitución",
+        "conc": false,
+        "damage": "2d8 Trueno",
+        "desc": "Cada criatura en un cubo de 15 pies hace salvación de CON. Fallo: 2d8 daño de trueno y empujón de 10 pies. Audible a 300 pies.",
+        "upcast": "+1d8 por nivel superior."
+      },
+      {
+        "name": "Maleficio (Hex)",
+        "source": "Brujo (Djinni)",
+        "sourceType": "warlock",
+        "actionType": "bonus",
+        "range": "90 pies",
+        "duration": "Conc. hasta 1 hora",
+        "components": "V, S, M",
+        "conc": true,
+        "damage": "+1d6 Necrótico",
+        "desc": "Maldices a un objetivo. Recibe 1d6 necrótico extra cada vez que le aciertes un ataque y sufre desventaja en pruebas de una característica elegida.",
+        "upcast": "Con slot 3+: dura 8 horas."
+      },
+      {
+        "name": "Palabra de Sanación",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "bonus",
+        "range": "60 pies",
+        "duration": "Instantáneo",
+        "components": "V",
+        "conc": false,
+        "damage": "1d4 + CAR",
+        "desc": "Una criatura visible recupera 1d4 + Modificador de Carisma puntos de golpe.",
+        "upcast": "+1d4 de curación por nivel superior."
+      },
+      {
+        "name": "Fuego Feérico",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "60 pies (Cubo 20')",
+        "duration": "Conc. hasta 1 min",
+        "components": "V",
+        "useSpellDc": true,
+        "saveStat": "Destreza",
+        "conc": true,
+        "damage": "—",
+        "desc": "Siluetea a los objetivos que fallen salvación de Destreza. Todo ataque contra ellos tiene ventaja y no pueden ser invisibles."
+      },
+      {
+        "name": "Disfrazarme",
+        "source": "Tiefling (Glasya)",
+        "sourceType": "glasya",
+        "actionType": "action",
+        "range": "Personal",
+        "duration": "1 Hora",
+        "components": "V, S",
+        "conc": false,
+        "damage": "—",
+        "desc": "Alteras tu apariencia física y ropa. Quien investigue requiere prueba de Inteligencia contra tu CD de salvación."
+      }
+    ],
+    "level2": [
+      {
+        "name": "Sugerencia",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "30 pies",
+        "duration": "Conc. hasta 8 horas",
+        "components": "V, M",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": true,
+        "damage": "—",
+        "desc": "Sugieres un curso de acción que suene razonable. Si falla la salvación de Sabiduría, obedecerá la orden durante la duración."
+      },
+      {
+        "name": "Sujetar Persona",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "60 pies",
+        "duration": "Conc. hasta 1 min",
+        "components": "V, S, M",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": true,
+        "damage": "—",
+        "desc": "Paraliza a un humanoide que falle salvación de Sabiduría. Cualquier ataque cuerpo a cuerpo contra él a 5 pies es impacto crítico automático.",
+        "upcast": "+1 humanoide objetivo por espacio superior a nivel 2."
+      },
+      {
+        "name": "Imagen Espejo",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "Personal",
+        "duration": "1 Minuto",
+        "components": "V, S",
+        "conc": false,
+        "damage": "—",
+        "desc": "Invocas 3 duplicados ilusorios idénticos. Desvían ataques con tiradas de d20 (6+, 8+, 11+). Cada impacto recibido destruye una copia."
+      },
+      {
+        "name": "Detectar Pensamientos",
+        "source": "Dote Telepático",
+        "sourceType": "telepathic",
+        "actionType": "action",
+        "range": "Personal (30')",
+        "duration": "Conc. hasta 1 min",
+        "components": "V, S, M",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": true,
+        "damage": "—",
+        "desc": "Lees pensamientos superficiales sin tirada. Puedes usar una acción para profundizar forzando una salvación de Sabiduría."
+      },
+      {
+        "name": "Invisibilidad",
+        "source": "Tiefling (Glasya)",
+        "sourceType": "glasya",
+        "actionType": "action",
+        "range": "Toque",
+        "duration": "Conc. hasta 1 hora",
+        "components": "V, S, M",
+        "conc": true,
+        "damage": "—",
+        "desc": "Una criatura voluntaria se vuelve invisible hasta que ataque o lance un conjuro.",
+        "upcast": "+1 criatura adicional por espacio superior a nivel 2."
+      }
+    ],
+    "level3": [
+      {
+        "name": "Patrón Hipnótico",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "120 pies (Cubo 30')",
+        "duration": "Conc. hasta 1 min",
+        "components": "S, M",
+        "useSpellDc": true,
+        "saveStat": "Sabiduría",
+        "conc": true,
+        "damage": "—",
+        "desc": "Criaturas en el área que fallen salvación de Sabiduría quedan HECHIZADAS e INCAPACITADAS con velocidad 0 hasta sufrir daño o ser sacudidas."
+      },
+      {
+        "name": "Disipar Magia",
+        "source": "Bardo",
+        "sourceType": "bard",
+        "actionType": "action",
+        "range": "120 pies",
+        "duration": "Instantáneo",
+        "components": "V, S",
+        "conc": false,
+        "damage": "—",
+        "desc": "Termina automáticamente conjuros de nivel 3 o menor. Para nivel 4+, haz prueba con tu Carisma contra CD 10 + Nivel del hechizo."
+      }
+    ],
+    "level4": [
+      {
+        "name": "Puerta Dimensional",
+        "source": "Capa del Charlatán",
+        "sourceType": "item",
+        "actionType": "action",
+        "range": "500 pies",
+        "duration": "Instantáneo",
+        "components": "V",
+        "conc": false,
+        "damage": "—",
+        "desc": "Te teletransportas hasta 500 pies en cualquier dirección y puedes llevar contigo a un aliado a 5 pies."
+      }
+    ]
+  },
+  "inventory": {
+    "wealth": {
+      "cp": 270,
+      "sp": 350,
+      "ep": 282,
+      "gp": 430
+    },
+    "armors": [
+      {
+        "name": "Cuero Tachonado",
+        "type": "light",
+        "baseAc": 12,
+        "stealthDisadv": false,
+        "equipped": true,
+        "special": "Armadura ligera. Suma toda tu Destreza (+2)."
+      }
+    ],
+    "weapons": [
+      {
+        "name": "Estoque",
+        "attrMode": "finesse",
+        "dice": "1d8",
+        "damageType": "Perforante",
+        "proficient": true,
+        "properties": [
+          "Sutil"
+        ],
+        "special": "Usa Destreza (+2)."
+      },
+      {
+        "name": "Ballesta Ligera",
+        "attrMode": "dex",
+        "dice": "1d8",
+        "damageType": "Perforante",
+        "proficient": true,
+        "properties": [
+          "80/320'",
+          "Dos Manos",
+          "Recarga"
+        ],
+        "special": "Ataque a distancia con DES."
+      },
+      {
+        "name": "Daga",
+        "attrMode": "finesse",
+        "dice": "1d4",
+        "damageType": "Perforante",
+        "proficient": true,
+        "properties": [
+          "Sutil",
+          "Ligera",
+          "20/60'"
+        ],
+        "special": "Apta para dos armas o arrojar."
+      },
+      {
+        "name": "Lanza de Plata",
+        "attrMode": "str",
+        "dice": "1d6",
+        "versatileDice": "1d8",
+        "damageType": "Perforante",
+        "proficient": true,
+        "properties": [
+          "Versátil (1d8)",
+          "20/60'",
+          "Plateada"
+        ],
+        "special": "Daño mágico vs vulnerables a plata."
+      },
+      {
+        "name": "Fuego Alquímico",
+        "attrMode": "dex",
+        "dice": "1d4 continuo",
+        "damageType": "Fuego",
+        "proficient": false,
+        "properties": [
+          "Arrojadizo 20'"
+        ],
+        "special": "1d4 fuego por turno hasta superar CD 10 DES."
+      }
+    ],
+    "consumables": [
+      {
+        "name": "Fuego de alquimista",
+        "qty": "3 botellas"
+      },
+      {
+        "name": "Vial de agua bendita",
+        "qty": "1"
+      },
+      {
+        "name": "Bolsa de rodamientos",
+        "qty": "1"
+      },
+      {
+        "name": "Púas de suelo (Caltrops)",
+        "qty": "10"
+      },
+      {
+        "name": "Pociones de Curación (2d4+2)",
+        "qty": "2"
+      },
+      {
+        "name": "Poción Restauración",
+        "qty": "1"
+      },
+      {
+        "name": "Pergamino: Guardia Cuchillas",
+        "qty": "1"
+      },
+      {
+        "name": "Raciones de viaje",
+        "qty": "12"
+      },
+      {
+        "name": "Vino Red Dragon Smash",
+        "qty": "1"
+      },
+      {
+        "name": "Virotes de ballesta",
+        "qty": "70"
+      },
+      {
+        "name": "Virotes de plata",
+        "qty": "35"
+      }
+    ],
+    "tools": [
+      {
+        "name": "Laúd",
+        "icon": "🎸",
+        "isInstrument": true
+      },
+      {
+        "name": "Bodhran",
+        "icon": "🥁",
+        "isInstrument": true
+      },
+      {
+        "name": "Ocarina (kraken)",
+        "icon": "🎶",
+        "isInstrument": true
+      },
+      {
+        "name": "Kit de disfraz",
+        "icon": "🎭",
+        "isInstrument": false
+      },
+      {
+        "name": "Kit de falsificación",
+        "icon": "📜",
+        "isInstrument": false
+      },
+      {
+        "name": "Capa de gala",
+        "icon": "🧥",
+        "isInstrument": false
+      },
+      {
+        "name": "Ropas finas",
+        "icon": "👔",
+        "isInstrument": false
+      },
+      {
+        "name": "Mochila de artista",
+        "icon": "🎒",
+        "isInstrument": false
+      },
+      {
+        "name": "Esposas de hierro",
+        "icon": "🔗",
+        "isInstrument": false
+      },
+      {
+        "name": "Garfio",
+        "icon": "🪝",
+        "isInstrument": false
+      }
+    ],
+    "story": [
+      {
+        "name": "Moneda de Rostro y Cuervo",
+        "desc": "Moneda misteriosa de trama.",
+        "isSpecial": true,
+        "isMagic": true
+      },
+      {
+        "name": "Capa del Charlatán",
+        "desc": "Puerta dimensional 1 vez al día.",
+        "isSpecial": false,
+        "isMagic": true
+      },
+      {
+        "name": "Dado de Hueso",
+        "desc": "+1d6 a Salvación. Se rompe con 1 natural.",
+        "isSpecial": false,
+        "isMagic": true
+      },
+      {
+        "name": "Anillo Consilium Dubium",
+        "desc": "Ventaja permanente en Persuasión y Engaño.",
+        "isSpecial": false,
+        "isMagic": true
+      },
+      {
+        "name": "Botella del Genio",
+        "desc": "Vaso Djinni (CA 15, HP 3, refugio 6h).",
+        "isSpecial": false,
+        "isMagic": true
+      },
+      {
+        "name": "Anillo de sello",
+        "desc": "Robado al General Garrard.",
+        "isSpecial": true,
+        "isMagic": false
+      },
+      {
+        "name": "Reliquia de San Andral",
+        "desc": "Profanada.",
+        "isSpecial": true,
+        "isMagic": false
+      },
+      {
+        "name": "Gema plateada",
+        "desc": "Procedente de Glede.",
+        "isSpecial": true,
+        "isMagic": false
+      },
+      {
+        "name": "Medallón",
+        "desc": "Forma de Dragón.",
+        "isSpecial": true,
+        "isMagic": false
+      },
+      {
+        "name": "Amuleto Lágrima",
+        "desc": "Ajada.",
+        "isSpecial": false,
+        "isMagic": false
+      },
+      {
+        "name": "Llave sospechosa",
+        "desc": "Antigua.",
+        "isSpecial": false,
+        "isMagic": false
+      }
+    ]
+  }
+}

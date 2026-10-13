@@ -1,0 +1,125 @@
+{
+  "identity": {
+    "name": "",
+    "race": "",
+    "alignment": "",
+    "background": "",
+    "classes": [
+      {
+        "name": "",
+        "subclass": "",
+        "level": 1,
+        "hitDie": "d8"
+      }
+    ],
+    "senses": "",
+    "languages": []
+  },
+  "vitals": {
+    "speed": "30 pies",
+    "maxHp": 10,
+    "currentHp": 10,
+    "tempHp": 0,
+    "hitDiceSpent": [false]
+  },
+  "concentration": {
+    "active": false,
+    "spellName": ""
+  },
+  "deathSaves": {
+    "successes": [false, false, false],
+    "failures": [false, false, false]
+  },
+  "statusNotes": "",
+  "attributes": {
+    "FUE": { "score": 10, "profSave": false },
+    "DES": { "score": 10, "profSave": false },
+    "CON": { "score": 10, "profSave": false },
+    "INT": { "score": 10, "profSave": false },
+    "SAB": { "score": 10, "profSave": false },
+    "CAR": { "score": 10, "profSave": false }
+  },
+  "skills": [
+    { "id": "acrobacias", "name": "Acrobacias", "attr": "DES", "profType": "·" },
+    { "id": "arcanos", "name": "Arcanos", "attr": "INT", "profType": "·" },
+    { "id": "atletismo", "name": "Atletismo", "attr": "FUE", "profType": "·" },
+    { "id": "engano", "name": "Engaño", "attr": "CAR", "profType": "·" },
+    { "id": "historia", "name": "Historia", "attr": "INT", "profType": "·" },
+    { "id": "intimidacion", "name": "Intimidación", "attr": "CAR", "profType": "·" },
+    { "id": "interpretacion", "name": "Interpretación", "attr": "CAR", "profType": "·" },
+    { "id": "investigacion", "name": "Investigación", "attr": "INT", "profType": "·" },
+    { "id": "juego_manos", "name": "Juego de Manos", "attr": "DES", "profType": "·" },
+    { "id": "medicina", "name": "Medicina", "attr": "SAB", "profType": "·" },
+    { "id": "naturaleza", "name": "Naturaleza", "attr": "INT", "profType": "·" },
+    { "id": "percepcion", "name": "Percepción", "attr": "SAB", "profType": "·" },
+    { "id": "perspicacia", "name": "Perspicacia", "attr": "SAB", "profType": "·" },
+    { "id": "persuasion", "name": "Persuasión", "attr": "CAR", "profType": "·" },
+    { "id": "religion", "name": "Religión", "attr": "INT", "profType": "·" },
+    { "id": "sigilo", "name": "Sigilo", "attr": "DES", "profType": "·" },
+    { "id": "supervivencia", "name": "Supervivencia", "attr": "SAB", "profType": "·" },
+    { "id": "trato_animales", "name": "Trato c. Animales", "attr": "SAB", "profType": "·" }
+  ],
+  "combat": {
+    "resources": [
+      {
+        "id": "",
+        "name": "",
+        "uses": 1,
+        "actionCost": "Acción",
+        "reset": "Largo",
+        "color": "text-brand-300",
+        "spent": [false]
+      }
+    ],
+    "traits": [
+      {
+        "name": "",
+        "desc": ""
+      }
+    ]
+  },
+  "progression": {},
+  "magic": {
+    "slots": [
+      { "id": "lvl1", "level": "Nivel 1", "max": 0, "reset": "long", "spent": [] }
+    ],
+    "cantrips": [],
+    "level1": [],
+    "level2": [],
+    "level3": [],
+    "level4": []
+  },
+  "inventory": {
+    "wealth": { "cp": 0, "sp": 0, "ep": 0, "gp": 0 },
+    "armors": [
+      {
+        "name": "",
+        "type": "light",
+        "baseAc": 10,
+        "stealthDisadv": false,
+        "equipped": true,
+        "special": ""
+      }
+    ],
+    "weapons": [
+      {
+        "name": "",
+        "attrMode": "finesse",
+        "dice": "1d6",
+        "damageType": "",
+        "proficient": true,
+        "properties": [],
+        "special": ""
+      }
+    ],
+    "consumables": [
+      { "name": "", "qty": "1" }
+    ],
+    "tools": [
+      { "name": "", "icon": "🎒", "isInstrument": false }
+    ],
+    "story": [
+      { "name": "", "desc": "", "isSpecial": false, "isMagic": false }
+    ]
+  }
+}
