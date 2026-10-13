@@ -418,108 +418,108 @@
                 ]
             }
         ],
-"spells": [
-    {
-        "name": "Eldritch Blast",
-        "source": "Brujo (Djinni)",
-        "sourceType": "warlock"
-    },
-    {
-        "name": "Chill Touch",
-        "source": "Brujo (Djinni)",
-        "sourceType": "warlock"
-    },
-    {
-        "name": "Vicious Mockery",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Mage Hand",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Prestidigitation",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Minor Illusion",
-        "source": "Tiefling (Glasya)",
-        "sourceType": "glasya"
-    },
-    {
-        "name": "Dissonant Whispers",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Thunderwave",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Hex",
-        "source": "Brujo (Djinni)",
-        "sourceType": "warlock"
-    },
-    {
-        "name": "Healing Word",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Faerie Fire",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Disguise Self",
-        "source": "Tiefling (Glasya)",
-        "sourceType": "glasya"
-    },
-    {
-        "name": "Suggestion",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Hold Person",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Mirror Image",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Detect Thoughts",
-        "source": "Dote Telepático",
-        "sourceType": "telepathic"
-    },
-    {
-        "name": "Invisibility",
-        "source": "Tiefling (Glasya)",
-        "sourceType": "glasya"
-    },
-    {
-        "name": "Hypnotic Pattern",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Dispel Magic",
-        "source": "Bardo",
-        "sourceType": "bard"
-    },
-    {
-        "name": "Dimension Door",
-        "source": "Capa del Charlatán",
-        "sourceType": "item"
-    }
-]
+        "spells": [
+            {
+                "name": "Eldritch Blast",
+                "source": "Brujo (Djinni)",
+                "sourceType": "warlock"
+            },
+            {
+                "name": "Chill Touch",
+                "source": "Brujo (Djinni)",
+                "sourceType": "warlock"
+            },
+            {
+                "name": "Vicious Mockery",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Mage Hand",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Prestidigitation",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Minor Illusion",
+                "source": "Tiefling (Glasya)",
+                "sourceType": "glasya"
+            },
+            {
+                "name": "Dissonant Whispers",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Thunderwave",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Hex",
+                "source": "Brujo (Djinni)",
+                "sourceType": "warlock"
+            },
+            {
+                "name": "Healing Word",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Faerie Fire",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Disguise Self",
+                "source": "Tiefling (Glasya)",
+                "sourceType": "glasya"
+            },
+            {
+                "name": "Suggestion",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Hold Person",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Mirror Image",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Detect Thoughts",
+                "source": "Dote Telepático",
+                "sourceType": "telepathic"
+            },
+            {
+                "name": "Invisibility",
+                "source": "Tiefling (Glasya)",
+                "sourceType": "glasya"
+            },
+            {
+                "name": "Hypnotic Pattern",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Dispel Magic",
+                "source": "Bardo",
+                "sourceType": "bard"
+            },
+            {
+                "name": "Dimension Door",
+                "source": "Capa del Charlatán",
+                "sourceType": "item"
+            }
+        ]
     },
     "inventory": {
         "wealth": {
