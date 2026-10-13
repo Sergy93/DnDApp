@@ -1,4 +1,5 @@
-{
+window.SPELL_SOURCES = window.SPELL_SOURCES || [];
+window.SPELL_SOURCES.push({
 	"spell": [
 		{
 			"name": "Blade of Disaster",
@@ -1255,3 +1256,4 @@
 		}
 	]
 }
+);
