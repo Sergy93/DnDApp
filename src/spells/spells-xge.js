@@ -1,5 +1,4 @@
-window.SPELL_SOURCES = window.SPELL_SOURCES || [];
-window.SPELL_SOURCES.push( {
+export const XGE_SPELLS = {
 	"spell": [
 		{
 			"name": "Abi-Dalzim's Horrid Wilting",
@@ -5972,5 +5971,4 @@ window.SPELL_SOURCES.push( {
 			]
 		}
 	]
-}
-);
+};

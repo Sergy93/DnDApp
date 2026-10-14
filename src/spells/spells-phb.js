@@ -1,6 +1,5 @@
-const phbSpells = window.SPELL_SOURCES = window.SPELL_SOURCES || [];
-window.SPELL_SOURCES.push(
-	{
+export const PHB_SPELLS =
+{
 	"spell": [
 		{
 			"name": "Acid Splash",
@@ -24299,5 +24298,4 @@ window.SPELL_SOURCES.push(
 			]
 		}
 	]
-}
-);
+};

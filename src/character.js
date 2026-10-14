@@ -1,4 +1,4 @@
-window.CHARACTER_DATA = {
+export var CHARACTER_DATA = {
     "identity": {
         "name": "Dorian",
         "race": "Tiefling (Glasya)",

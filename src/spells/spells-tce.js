@@ -1,5 +1,4 @@
-window.SPELL_SOURCES = window.SPELL_SOURCES || [];
-window.SPELL_SOURCES.push({
+export const TCE_SPELLS = {
 	"spell": [
 		{
 			"name": "Blade of Disaster",
@@ -1255,5 +1254,4 @@ window.SPELL_SOURCES.push({
 			]
 		}
 	]
-}
-);
+};
