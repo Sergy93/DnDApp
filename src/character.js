@@ -6,13 +6,13 @@ export var CHARACTER_DATA = {
         "background": "Criminal / Fugitivo",
         "classes": [
             {
-                "name": "Bardo",
-                "subclass": "Elocuencia",
+                "name": "bard",
+                "subclass": "eloquence",
                 "level": 5,
                 "hitDie": "d8"
             },
             {
-                "name": "Brujo",
+                "name": "warlock",
                 "subclass": "Djinni",
                 "level": 1,
                 "hitDie": "d8"
@@ -281,27 +281,27 @@ export var CHARACTER_DATA = {
         ],
         "traits": [
             {
-                "name": "Lengua de Plata (Elocuencia 3)",
+                "name": "Lengua de Plata (eloquence 3)",
                 "desc": "En Persuasión o Engaño, cualquier 1 a 9 en el d20 se convierte automáticamente en 10."
             },
             {
-                "name": "Palabras Inquietantes (Elocuencia 3)",
-                "desc": "Acción Adicional: gasta 1 dado para restar 1d8 a la próxima salvación del enemigo."
+                "name": "Palabras Inquietantes (eloquence 3)",
+                "desc": "Acción Adicional: gasta 1 Inspiración Bárdica para restar 1d8 a la próxima salvación del enemigo."
             },
             {
-                "name": "Fuente de Inspiración (Bardo 5)",
+                "name": "Fuente de Inspiración (bard 5)",
                 "desc": "Recuperas todos los usos de Inspiración Bárdica en Descanso Corto o Largo."
             },
             {
-                "name": "Canción de Descanso (Bardo 2)",
+                "name": "Canción de Descanso (bard 2)",
                 "desc": "Aliados y tú curan +1d6 extra al gastar dados de golpe en descanso corto."
             },
             {
-                "name": "Vaso del Genio (Brujo 1)",
+                "name": "Vaso del Genio (warlock 1)",
                 "desc": "Entras a tu vasija durante 6 horas (2x Competencia). CA 15, HP 3."
             },
             {
-                "name": "Ira del Genio (Brujo 1)",
+                "name": "Ira del Genio (warlock 1)",
                 "desc": "Primer impacto de tu turno suma +3 de daño por Trueno."
             },
             {
@@ -315,12 +315,12 @@ export var CHARACTER_DATA = {
         ]
     },
     "progression": {
-        "bardo": [
+        "bard": [
             {
                 "level": 1,
                 "title": "Nivel 1",
                 "feats": [
-                    "Lanzamiento de Conjuros de Bardo",
+                    "Lanzamiento de Conjuros de bard",
                     "Inspiración Bárdica (d6, usos = CAR)",
                     "Competencias: Armaduras ligeras, simples, estoque, ballesta de mano"
                 ]
@@ -337,9 +337,9 @@ export var CHARACTER_DATA = {
                 "level": 3,
                 "title": "Nivel 3",
                 "feats": [
-                    "Colegio de la Elocuencia",
-                    "Lengua de Plata (mínimo 10 en Persuasión y Engaño)",
-                    "Palabras Inquietantes (-1d8 a salvación enemiga)",
+                    "Colegio de la eloquence",
+                    "Lengua de Plata (mínimo 10 en la tirada del dado en Persuasión y Engaño)",
+                    "Palabras Inquietantes (Gasta 1 Inspiración Bárdica para restar 1d8 a la próxima salvación del enemigo)",
                     "Pericia (doble competencia)"
                 ]
             },
@@ -355,12 +355,12 @@ export var CHARACTER_DATA = {
                 "title": "Nivel 5",
                 "feats": [
                     "Inspiración Bárdica mejorada a d8",
-                    "Fuente de Inspiración (recarga en Descanso Corto o Largo)",
+                    "Fuente de Inspiración (recarga Inspiración Bárdica en Descanso Corto o Largo)",
                     "Conjuros de Nivel 3"
                 ]
             }
         ],
-        "brujo": [
+        "warlock": [
             {
                 "level": 1,
                 "title": "Nivel 1",
@@ -377,7 +377,7 @@ export var CHARACTER_DATA = {
         "slots": [
             {
                 "id": "pact",
-                "level": "Pacto (Brujo 1)",
+                "level": "Pacto (warlock 1)",
                 "max": 1,
                 "reset": "short",
                 "spent": [
@@ -386,7 +386,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl1",
-                "level": "Nivel 1 (Bardo)",
+                "level": "Nivel 1 (bard)",
                 "max": 4,
                 "reset": "long",
                 "spent": [
@@ -398,7 +398,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl2",
-                "level": "Nivel 2 (Bardo)",
+                "level": "Nivel 2 (bard)",
                 "max": 3,
                 "reset": "long",
                 "spent": [
@@ -409,7 +409,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl3",
-                "level": "Nivel 3 (Bardo)",
+                "level": "Nivel 3 (bard)",
                 "max": 2,
                 "reset": "long",
                 "spent": [
@@ -421,27 +421,27 @@ export var CHARACTER_DATA = {
         "spells": [
             {
                 "name": "Eldritch Blast",
-                "source": "Brujo (Djinni)",
+                "source": "warlock (Djinni)",
                 "sourceType": "warlock"
             },
             {
                 "name": "Chill Touch",
-                "source": "Brujo (Djinni)",
+                "source": "warlock (Djinni)",
                 "sourceType": "warlock"
             },
             {
                 "name": "Vicious Mockery",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Mage Hand",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Prestidigitation",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
@@ -451,27 +451,27 @@ export var CHARACTER_DATA = {
             },
             {
                 "name": "Dissonant Whispers",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Thunderwave",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Hex",
-                "source": "Brujo (Djinni)",
+                "source": "warlock (Djinni)",
                 "sourceType": "warlock"
             },
             {
                 "name": "Healing Word",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Faerie Fire",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
@@ -481,17 +481,17 @@ export var CHARACTER_DATA = {
             },
             {
                 "name": "Suggestion",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Hold Person",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Mirror Image",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
@@ -506,12 +506,12 @@ export var CHARACTER_DATA = {
             },
             {
                 "name": "Hypnotic Pattern",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {
                 "name": "Dispel Magic",
-                "source": "Bardo",
+                "source": "bard",
                 "sourceType": "bard"
             },
             {

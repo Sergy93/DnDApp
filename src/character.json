@@ -6,13 +6,13 @@
     "background": "Criminal / Fugitivo",
     "classes": [
       {
-        "name": "Bardo",
-        "subclass": "Elocuencia",
+        "name": "Bard",
+        "subclass": "Eloquence",
         "level": 5,
         "hitDie": "d8"
       },
       {
-        "name": "Brujo",
+        "name": "Warlock",
         "subclass": "Djinni",
         "level": 1,
         "hitDie": "d8"
@@ -199,7 +199,7 @@
   "combat": {
     "resources": [
       {
-        "id": "insp_bard",
+        "id": "insp_Bard",
         "name": "Inspiración Bárdica (1d8)",
         "usesKey": "CAR",
         "actionCost": "Acción Adicional",
@@ -281,27 +281,27 @@
     ],
     "traits": [
       {
-        "name": "Lengua de Plata (Elocuencia 3)",
+        "name": "Lengua de Plata (Eloquence 3)",
         "desc": "En Persuasión o Engaño, cualquier 1 a 9 en el d20 se convierte automáticamente en 10."
       },
       {
-        "name": "Palabras Inquietantes (Elocuencia 3)",
+        "name": "Palabras Inquietantes (Eloquence 3)",
         "desc": "Acción Adicional: gasta 1 dado para restar 1d8 a la próxima salvación del enemigo."
       },
       {
-        "name": "Fuente de Inspiración (Bardo 5)",
+        "name": "Fuente de Inspiración (Bard 5)",
         "desc": "Recuperas todos los usos de Inspiración Bárdica en Descanso Corto o Largo."
       },
       {
-        "name": "Canción de Descanso (Bardo 2)",
+        "name": "Canción de Descanso (Bard 2)",
         "desc": "Aliados y tú curan +1d6 extra al gastar dados de golpe en descanso corto."
       },
       {
-        "name": "Vaso del Genio (Brujo 1)",
+        "name": "Vaso del Genio (Warlock 1)",
         "desc": "Entras a tu vasija durante 6 horas (2x Competencia). CA 15, HP 3."
       },
       {
-        "name": "Ira del Genio (Brujo 1)",
+        "name": "Ira del Genio (Warlock 1)",
         "desc": "Primer impacto de tu turno suma +3 de daño por Trueno."
       },
       {
@@ -315,12 +315,12 @@
     ]
   },
   "progression": {
-    "bardo": [
+    "Bard": [
       {
         "level": 1,
         "title": "Nivel 1",
         "feats": [
-          "Lanzamiento de Conjuros de Bardo",
+          "Lanzamiento de Conjuros de Bard",
           "Inspiración Bárdica (d6, usos = CAR)",
           "Competencias: Armaduras ligeras, simples, estoque, ballesta de mano"
         ]
@@ -337,7 +337,7 @@
         "level": 3,
         "title": "Nivel 3",
         "feats": [
-          "Colegio de la Elocuencia",
+          "Colegio de la Eloquence",
           "Lengua de Plata (mínimo 10 en Persuasión y Engaño)",
           "Palabras Inquietantes (-1d8 a salvación enemiga)",
           "Pericia (doble competencia)"
@@ -360,7 +360,7 @@
         ]
       }
     ],
-    "brujo": [
+    "Warlock": [
       {
         "level": 1,
         "title": "Nivel 1",
@@ -377,7 +377,7 @@
     "slots": [
       {
         "id": "pact",
-        "level": "Pacto (Brujo 1)",
+        "level": "Pacto (Warlock 1)",
         "max": 1,
         "reset": "short",
         "spent": [
@@ -386,7 +386,7 @@
       },
       {
         "id": "lvl1",
-        "level": "Nivel 1 (Bardo)",
+        "level": "Nivel 1 (Bard)",
         "max": 4,
         "reset": "long",
         "spent": [
@@ -398,7 +398,7 @@
       },
       {
         "id": "lvl2",
-        "level": "Nivel 2 (Bardo)",
+        "level": "Nivel 2 (Bard)",
         "max": 3,
         "reset": "long",
         "spent": [
@@ -409,7 +409,7 @@
       },
       {
         "id": "lvl3",
-        "level": "Nivel 3 (Bardo)",
+        "level": "Nivel 3 (Bard)",
         "max": 2,
         "reset": "long",
         "spent": [
@@ -421,28 +421,28 @@
     "spells": [
       {
         "name": "Eldritch Blast",
-        "source": "Brujo (Djinni)",
+        "source": "Warlock (Djinni)",
         "sourceType": "warlock"
       },
       {
         "name": "Chill Touch",
-        "source": "Brujo (Djinni)",
+        "source": "Warlock (Djinni)",
         "sourceType": "warlock"
       },
       {
         "name": "Vicious Mockery",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Mage Hand",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Prestidigitation",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Minor Illusion",
@@ -451,28 +451,28 @@
       },
       {
         "name": "Dissonant Whispers",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Thunderwave",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Hex",
-        "source": "Brujo (Djinni)",
+        "source": "Warlock (Djinni)",
         "sourceType": "warlock"
       },
       {
         "name": "Healing Word",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Faerie Fire",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Disguise Self",
@@ -481,18 +481,18 @@
       },
       {
         "name": "Suggestion",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Hold Person",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Mirror Image",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Detect Thoughts",
@@ -506,13 +506,13 @@
       },
       {
         "name": "Hypnotic Pattern",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Dispel Magic",
-        "source": "Bardo",
-        "sourceType": "bard"
+        "source": "Bard",
+        "sourceType": "Bard"
       },
       {
         "name": "Dimension Door",

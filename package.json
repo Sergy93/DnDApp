@@ -12,6 +12,8 @@
   },
   "type": "module",
   "dependencies": {
-    "typescript": "^7.0.2"
+    "github-cli": "^0.0.5",
+    "typescript": "^7.0.2",
+    "xdg-utils": "^0.0.3"
   }
 }

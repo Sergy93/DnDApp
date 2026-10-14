@@ -6,102 +6,12 @@ const SafeFileReader = (typeof window !== 'undefined' && (window.FileReader || F
 const STORAGE_KEY = 'character_dnd_v18';
 
 import { CHARACTER_DATA } from "./character.js";
-import { PHB_SPELLS } from "./spells/spells-phb.js";
-import { TCE_SPELLS } from "./spells/spells-tce.js";
-import { XGE_SPELLS } from "./spells/spells-xge.js";
+import { CLASS_COMPENDIUM } from "./dnd-data/class-compendium.js";
+import { PHB_SPELLS } from "./dnd-data/spells/spells-phb.js";
+import { TCE_SPELLS } from "./dnd-data/spells/spells-tce.js";
+import { XGE_SPELLS } from "./dnd-data/spells/spells-xge.js";
 
 const SPELL_SOURCES = [PHB_SPELLS, TCE_SPELLS, XGE_SPELLS];
-
-// ================= BASE DE DATOS DE PROGRESIÓN (D&D 5e 2014) =================
-const CLASS_COMPENDIUM = {
-    bardo: {
-        name: "Bardo",
-        subclasses: {
-            elocuencia: {
-                name: "Colegio de la Elocuencia",
-                features: {
-                    3: [
-                        "Lengua de Plata (Silver Tongue): En Persuasión o Engaño, cualquier 1-9 en el d20 cuenta como 10.",
-                        "Palabras Inquietantes (Unsettling Words): Como Acción Adicional, resta 1d8 a la próxima salvación del enemigo."
-                    ],
-                    6: [
-                        "Discurso Infalible (Unfailing Inspiration): Si un aliado usa tu dado de Inspiración Bárdica y falla, conserva el dado."
-                    ],
-                    14: [
-                        "Inspiración Contagiosa (Infectious Inspiration): Al tener éxito un aliado con tu inspiración, otorga otro dado a un compañero cercano como reacción (usos = CAR)."
-                    ]
-                }
-            }
-        },
-        baseFeatures: {
-            1: ["Lanzamiento de Conjuros de Bardo", "Inspiración Bárdica (d6, usos = Carisma)", "Competencias marciales iniciales"],
-            2: ["Polifacético (+1/2 competencia a tiradas sin ella)", "Canción de Descanso (+1d6 HP en descanso corto)"],
-            3: ["Elección de Colegio Bárdico", "Pericia (doble competencia en dos habilidades)"],
-            4: ["Mejora de Característica (ASI) o Dote"],
-            5: ["Inspiración Bárdica mejorada a d8", "Fuente de Inspiración (recuperas todos los usos en Descanso Corto o Largo)"],
-            6: ["Contraencantamiento"],
-            7: ["Conjuros de Nivel 4"],
-            8: ["Mejora de Característica (ASI) o Dote"],
-            9: ["Canción de Descanso mejorada a +1d8"],
-            10: ["Inspiración Bárdica mejorada a d10", "Pericia en dos habilidades más", "Secretos Mágicos (2 conjuros de cualquier clase)"],
-            11: ["Conjuros de Nivel 6"],
-            12: ["Mejora de Característica (ASI) o Dote"],
-            13: ["Canción de Descanso mejorada a +1d10"],
-            14: ["Secretos Mágicos (2 conjuros de cualquier clase)"],
-            15: ["Inspiración Bárdica mejorada a d12"],
-            16: ["Mejora de Característica (ASI) o Dote"],
-            17: ["Canción de Descanso mejorada a +1d12", "Conjuros de Nivel 9"],
-            18: ["Secretos Mágicos (2 conjuros de cualquier clase)"],
-            19: ["Mejora de Característica (ASI) o Dote"],
-            20: ["Inspiración Superior (recuperas 1 dado si tiras iniciativa sin ninguno)"]
-        }
-    },
-    brujo: {
-        name: "Brujo",
-        subclasses: {
-            djinni: {
-                name: "El Genio (Djinni)",
-                features: {
-                    1: [
-                        "Vaso del Genio (Genie's Vessel): Refugio planar dentro de tu recipiente (CA 15, HP = tu nivel).",
-                        "Ira del Genio (Genie's Wrath): Sumas daño de Trueno igual a tu competencia al primer impacto de tu turno."
-                    ],
-                    6: [
-                        "Regalo Elemental (Elemental Gift): Resistencia a Trueno y vuelo de 30' durante 10 min (sin concentración)."
-                    ],
-                    10: [
-                        "Santuario del Recipiente: Puedes introducir hasta 5 aliados en el vaso; obtienen un Descanso Corto en solo 10 min."
-                    ],
-                    14: [
-                        "Deseo Limitado (Limited Wish): Duplica cualquier conjuro de nivel 1 a 6 de 1 acción sin componentes (1 uso cada 1d4 descansos largos)."
-                    ]
-                }
-            }
-        },
-        baseFeatures: {
-            1: ["Patrón Sobrenatural", "Magia de Pacto (recarga en descanso corto)"],
-            2: ["Invocaciones Sobrenaturales (2 iniciales)"],
-            3: ["Don del Pacto"],
-            4: ["Mejora de Característica (ASI) o Dote"],
-            5: ["Espacios de Pacto suben a Nivel 3", "Nueva Invocación"],
-            6: ["Rasgo de Patrón Sobrenatural"],
-            7: ["Espacios de Pacto suben a Nivel 4", "Nueva Invocación"],
-            8: ["Mejora de Característica (ASI) o Dote"],
-            9: ["Espacios de Pacto suben a Nivel 5", "Nueva Invocación"],
-            10: ["Rasgo de Patrón Sobrenatural"],
-            11: ["Arcano Místico (Nivel 6)", "3 espacios de pacto"],
-            12: ["Mejora de Característica (ASI) o Dote", "Nueva Invocación"],
-            13: ["Arcano Místico (Nivel 7)"],
-            14: ["Rasgo de Patrón Sobrenatural"],
-            15: ["Arcano Místico (Nivel 8)", "Nueva Invocación"],
-            16: ["Mejora de Característica (ASI) o Dote"],
-            17: ["Arcano Místico (Nivel 9)", "4 espacios de pacto"],
-            18: ["Nueva Invocación"],
-            19: ["Mejora de Característica (ASI) o Dote"],
-            20: ["Maestro del Pacto (recupera todos los espacios tras suplicar 1 min)"]
-        }
-    }
-};
 
 function normalizeKey(str) {
     if (!str) return '';
@@ -112,12 +22,12 @@ function generateProgressionTree(className, subclassName) {
     const normClass = normalizeKey(className);
     const normSub = normalizeKey(subclassName);
 
-    const classKey = Object.keys(CLASS_COMPENDIUM).find(k => normClass.includes(k) || k.includes(normClass));
-    if (!classKey) return [];
-
+    const classKey = Object.keys(CLASS_COMPENDIUM).find(key => normalizeKey(CLASS_COMPENDIUM[key].name) === normClass);
     const classObj = CLASS_COMPENDIUM[classKey];
-    const subKey = Object.keys(classObj.subclasses || {}).find(k => normSub.includes(k) || k.includes(normSub));
-    const subObj = subKey ? classObj.subclasses[subKey] : null;
+    
+    const subKey = Object.keys(classObj.subclasses || {}).find(key => normalizeKey(classObj.subclasses[key].name) === normSub);
+    const subObj = classObj.subclasses[subKey];
+
 
     const levels = [];
     for (let lvl = 1; lvl <= 20; lvl++) {
@@ -131,140 +41,14 @@ function generateProgressionTree(className, subclassName) {
     return levels;
 }
 
-const defaultCharacterData = {
-    identity: {
-        name: "Dorian",
-        race: "Tiefling (Glasya)",
-        alignment: "Caótico Neutral",
-        background: "Criminal / Fugitivo",
-        classes: [
-            { name: "Bardo", subclass: "Elocuencia", level: 5, hitDie: "d8" },
-            { name: "Brujo", subclass: "Djinni", level: 1, hitDie: "d8" }
-        ],
-        senses: "Visión en Oscuridad (60 pies)",
-        languages: ["Común", "Infernal", "Jerga de Ladrones"]
-    },
-    vitals: {
-        speed: "30 pies",
-        maxHp: 48,
-        currentHp: 48,
-        tempHp: 0,
-        hitDiceSpent: [false, false, false, false, false, false]
-    },
-    concentration: { active: false, spellName: "" },
-    deathSaves: { successes: [false, false, false], failures: [false, false, false] },
-    statusNotes: "",
-    attributes: {
-        FUE: { score: 8, profSave: false },
-        DES: { score: 14, profSave: true },
-        CON: { score: 14, profSave: false },
-        INT: { score: 10, profSave: false },
-        SAB: { score: 12, profSave: false },
-        CAR: { score: 18, profSave: true }
-    },
-    skills: [
-        { id: "acrobacias", name: "Acrobacias", attr: "DES", profType: "C" },
-        { id: "arcanos", name: "Arcanos", attr: "INT", profType: "·" },
-        { id: "atletismo", name: "Atletismo", attr: "FUE", profType: "·" },
-        { id: "engano", name: "Engaño", attr: "CAR", profType: "P", note: "Ventaja", minTen: true },
-        { id: "historia", name: "Historia", attr: "INT", profType: "·" },
-        { id: "intimidacion", name: "Intimidación", attr: "CAR", profType: "C" },
-        { id: "interpretacion", name: "Interpretación", attr: "CAR", profType: "C" },
-        { id: "investigacion", name: "Investigación", attr: "INT", profType: "C" },
-        { id: "juego_manos", name: "Juego de Manos", attr: "DES", profType: "C" },
-        { id: "medicina", name: "Medicina", attr: "SAB", profType: "·" },
-        { id: "naturaleza", name: "Naturaleza", attr: "INT", profType: "·" },
-        { id: "percepcion", name: "Percepción", attr: "SAB", profType: "·" },
-        { id: "perspicacia", name: "Perspicacia", attr: "SAB", profType: "·" },
-        { id: "persuasion", name: "Persuasión", attr: "CAR", profType: "P", note: "Ventaja", minTen: true },
-        { id: "religion", name: "Religión", attr: "INT", profType: "·" },
-        { id: "sigilo", name: "Sigilo", attr: "DES", profType: "C" },
-        { id: "supervivencia", name: "Supervivencia", attr: "SAB", profType: "·" },
-        { id: "trato_animales", name: "Trato c. Animales", attr: "SAB", profType: "·" }
-    ],
-    combat: {
-        resources: [
-            { id: "insp_bard", name: "Inspiración Bárdica (1d8)", usesKey: "CAR", actionCost: "Acción Adicional", reset: "Corto/Largo", color: "text-brand-300", spent: [false, false, false, false] },
-            { id: "genie_vessel", name: "Vaso del Genio (6h)", uses: 1, actionCost: "Acción", reset: "Largo", color: "text-blue-300", spent: [false] }
-        ],
-        traits: [
-            { name: "Lengua de Plata (Elocuencia 3)", desc: "En Persuasión o Engaño, cualquier 1 a 9 en el d20 se convierte automáticamente en 10." },
-            { name: "Palabras Inquietantes (Elocuencia 3)", desc: "Acción Adicional: resta 1d8 a la próxima salvación del enemigo." },
-            { name: "Fuente de Inspiración (Bardo 5)", desc: "Recuperas todos los usos de Inspiración Bárdica en Descanso Corto o Largo." },
-            { name: "Canción de Descanso (Bardo 2)", desc: "Aliados y tú curan +1d6 extra al gastar dados de golpe en descanso corto." },
-            { name: "Vaso del Genio (Brujo 1)", desc: "Entras a tu vasija durante 6 horas (2x Competencia). CA 15, HP 3." },
-            { name: "Ira del Genio (Brujo 1)", desc: "Primer impacto de tu turno suma daño por Trueno." },
-            { name: "Dote Telepático", desc: "Telepatía a 60 pies. Detectar Pensamientos 1/día sin componentes." },
-            { name: "Resistencia Infernal (Tiefling)", desc: "Resistencia al fuego. Visión en la oscuridad a 60 pies." }
-        ]
-    },
-    progression: {},
-    magic: {
-        slots: [
-            { id: "pact", level: "Pacto (B1)", max: 1, reset: "short", spent: [false] },
-            { id: "lvl1", level: "Nvl 1", max: 4, reset: "long", spent: [false, false, false, false] },
-            { id: "lvl2", level: "Nvl 2", max: 3, reset: "long", spent: [false, false, false] },
-            { id: "lvl3", level: "Nvl 3", max: 2, reset: "long", spent: [false, false] }
-        ],
-        spells: [
-            { name: "Eldritch Blast", source: "Brujo", sourceType: "warlock" },
-            { name: "Chill Touch", source: "Brujo", sourceType: "warlock" },
-            { name: "Vicious Mockery", source: "Bardo", sourceType: "bard" },
-            { name: "Mage Hand", source: "Bardo", sourceType: "bard" },
-            { name: "Prestidigitation", source: "Bardo", sourceType: "bard" },
-            { name: "Minor Illusion", source: "Glasya", sourceType: "glasya" },
-            { name: "Dissonant Whispers", source: "Bardo", sourceType: "bard" },
-            { name: "Thunderwave", source: "Bardo", sourceType: "bard" },
-            { name: "Hex", source: "Brujo", sourceType: "warlock" },
-            { name: "Healing Word", source: "Bardo", sourceType: "bard" },
-            { name: "Faerie Fire", source: "Bardo", sourceType: "bard" },
-            { name: "Disguise Self", source: "Glasya", sourceType: "glasya" },
-            { name: "Suggestion", source: "Bardo", sourceType: "bard" },
-            { name: "Hold Person", source: "Bardo", sourceType: "bard" },
-            { name: "Mirror Image", source: "Bardo", sourceType: "bard" },
-            { name: "Detect Thoughts", source: "Dote", sourceType: "telepathic" },
-            { name: "Invisibility", source: "Glasya", sourceType: "glasya" },
-            { name: "Hypnotic Pattern", source: "Bardo", sourceType: "bard" },
-            { name: "Dispel Magic", source: "Bardo", sourceType: "bard" },
-            { name: "Dimension Door", source: "Capa", sourceType: "item" }
-        ]
-    },
-    inventory: {
-        wealth: { cp: 270, sp: 350, ep: 282, gp: 430 },
-        armors: [
-            { name: "Cuero Tachonado", type: "light", baseAc: 12, equipped: true, special: "Armadura ligera. Suma toda tu Destreza." }
-        ],
-        weapons: [
-            { name: "Estoque", attrMode: "finesse", dice: "1d8", damageType: "Perforante", proficient: true, properties: ["Sutil"] },
-            { name: "Ballesta Ligera", attrMode: "dex", dice: "1d8", damageType: "Perforante", proficient: true, properties: ["80/320'", "Dos Manos", "Recarga"] },
-            { name: "Daga", attrMode: "finesse", dice: "1d4", damageType: "Perforante", proficient: true, properties: ["Sutil", "Ligera", "20/60'"] }
-        ],
-        consumables: [
-            { name: "Pociones de Curación (2d4+2)", qty: "2" },
-            { name: "Virotes de ballesta", qty: "70" }
-        ],
-        tools: [
-            { name: "Laúd", icon: "🎸", isInstrument: true },
-            { name: "Bodhran", icon: "🥁", isInstrument: true },
-            { name: "Kit de disfraz", icon: "🎭", isInstrument: false }
-        ],
-        story: [
-            { name: "Moneda de Rostro y Cuervo", desc: "Moneda misteriosa de trama.", isSpecial: true, isMagic: true },
-            { name: "Capa del Charlatán", desc: "Puerta dimensional 1 vez al día.", isSpecial: false, isMagic: true }
-        ]
-    }
-};
-
 function sanitizeTracking(d) {
-    if (!d || typeof d !== 'object') d = JSON.parse(JSON.stringify(CHARACTER_DATA || defaultCharacterData));
+    if (!d || typeof d !== 'object') d = JSON.parse(JSON.stringify(CHARACTER_DATA));
 
-    if (!d.identity) d.identity = JSON.parse(JSON.stringify(defaultCharacterData.identity));
     if (!Array.isArray(d.identity.classes) || d.identity.classes.length === 0) {
         d.identity.classes = [{ name: "Personaje", subclass: "", level: 1, hitDie: "d8" }];
     }
 
     const totalHd = d.identity.classes.reduce((a, b) => a + (b.level || 0), 0) || 1;
-    if (!d.vitals) d.vitals = JSON.parse(JSON.stringify(defaultCharacterData.vitals));
     if (!Array.isArray(d.vitals.hitDiceSpent)) d.vitals.hitDiceSpent = [];
     while (d.vitals.hitDiceSpent.length < totalHd) d.vitals.hitDiceSpent.push(false);
     if (d.vitals.hitDiceSpent.length > totalHd) d.vitals.hitDiceSpent = d.vitals.hitDiceSpent.slice(0, totalHd);
@@ -273,10 +57,6 @@ function sanitizeTracking(d) {
         d.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
     }
     if (!d.concentration) d.concentration = { active: false, spellName: "" };
-
-    if (!d.attributes) d.attributes = JSON.parse(JSON.stringify(defaultCharacterData.attributes));
-
-    if (!d.combat) d.combat = JSON.parse(JSON.stringify(defaultCharacterData.combat));
     if (!Array.isArray(d.combat.resources)) d.combat.resources = [];
     d.combat.resources.forEach(r => {
         const uses = r.uses || 1;
@@ -299,7 +79,6 @@ function sanitizeTracking(d) {
         sourceType: sp.sourceType || 'other'
     }));
 
-    if (!d.inventory) d.inventory = JSON.parse(JSON.stringify(defaultCharacterData.inventory));
     if (!d.inventory.wealth) d.inventory.wealth = { cp: 0, sp: 0, ep: 0, gp: 0 };
     ['armors', 'weapons', 'consumables', 'tools', 'story'].forEach(k => {
         if (!Array.isArray(d.inventory[k])) d.inventory[k] = [];
@@ -309,8 +88,7 @@ function sanitizeTracking(d) {
 }
 
 function loadInitialData() {
-    const source = (typeof CHARACTER_DATA !== 'undefined' && CHARACTER_DATA) ? CHARACTER_DATA : defaultCharacterData;
-    const base = JSON.parse(JSON.stringify(source));
+    const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
     let raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return sanitizeTracking(base);
 
@@ -1001,8 +779,7 @@ document.addEventListener('alpine:init', () => {
             const ok = await this.uiConfirm("¿Restaurar la ficha a los datos originales? Se perderán los cambios.", "Restaurar", "⚠️", "Restaurar", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             try { localStorage.removeItem(STORAGE_KEY); } catch (e) { }
-            const source = (typeof CHARACTER_DATA !== 'undefined' && CHARACTER_DATA) ? CHARACTER_DATA : defaultCharacterData;
-            this.data = sanitizeTracking(JSON.parse(JSON.stringify(source)));
+            this.data = sanitizeTracking(JSON.parse(JSON.stringify(CHARACTER_DATA)));
             this.saveState();
             await this.uiAlert("Personaje restaurado.", "Restaurado", "🔄");
         }
