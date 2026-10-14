@@ -70,7 +70,7 @@ function sanitizeTracking(d) {
         const max = slot.max || 1;
         if (!Array.isArray(slot.spent)) slot.spent = [];
         while (slot.spent.length < max) slot.spent.push(false);
-    });
+    });  
 
     if (!Array.isArray(d.magic.spells)) d.magic.spells = [];
     d.magic.spells = d.magic.spells.map(sp => ({
