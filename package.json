@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "build": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
+    "predeploy": "npm run build",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev"
