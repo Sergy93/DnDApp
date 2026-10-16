@@ -3,7 +3,7 @@ const SafeFileReader = (typeof window !== 'undefined' && window.FileReader)
     ? window.FileReader
     : (typeof FileReader !== 'undefined' ? FileReader : null);
 
-const STORAGE_KEY = 'character_dnd_v20';
+const STORAGE_KEY = 'character_dnd_v21';
 
 export const DND_CONDITIONS = [
     {
@@ -98,11 +98,12 @@ export const DND_CONDITIONS = [
     }
 ];
 
-import { CHARACTER_DATA } from "./character.js";
-import { CLASS_COMPENDIUM } from "./dnd-data/class-compendium.js";
-import { PHB_SPELLS } from "./dnd-data/spells/spells-phb.js";
-import { TCE_SPELLS } from "./dnd-data/spells/spells-tce.js";
-import { XGE_SPELLS } from "./dnd-data/spells/spells-xge.js";
+import CHARACTER_DATA from "./character.json";
+import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json";
+import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json";
+import PHB_SPELLS from "./dnd-data/spells/spells-phb.json";
+import TCE_SPELLS from "./dnd-data/spells/spells-tce.json";
+import XGE_SPELLS from "./dnd-data/spells/spells-xge.json";
 
 const SPELL_SOURCES = [PHB_SPELLS, TCE_SPELLS, XGE_SPELLS];
 
@@ -111,39 +112,21 @@ function normalizeKey(str) {
     return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
 }
 
-const CLASS_ALIASES = {
-    bardo: 'bard',
-    brujo: 'warlock',
-    guerrero: 'fighter',
-    picaro: 'rogue',
-    mago: 'wizard',
-    clerigo: 'cleric',
-    paladin: 'paladin',
-    explorador: 'ranger',
-    barbaro: 'barbarian',
-    monje: 'monk',
-    druida: 'druid',
-    hechicero: 'sorcerer'
-};
-
 const SUBCLASS_ALIASES = {
     djinni: 'genie',
     efreeti: 'genie',
     dao: 'genie',
-    marid: 'genie',
-    genio: 'genie',
-    elocuencia: 'eloquence'
+    marid: 'genie'
 };
 
 function findCompendiumClass(className) {
     const normClass = normalizeKey(className);
     if (!normClass) return null;
-    const canonical = CLASS_ALIASES[normClass] || normClass;
 
     const classKey = Object.keys(CLASS_COMPENDIUM).find(key => {
         const normKey = normalizeKey(key);
         const normName = normalizeKey(CLASS_COMPENDIUM[key]?.name);
-        return normKey === canonical || normName === canonical || normKey === normClass || normName === normClass;
+        return normKey === normClass || normName === normClass;
     });
     return classKey ? { key: classKey, obj: CLASS_COMPENDIUM[classKey] } : null;
 }
@@ -215,303 +198,282 @@ function generateProgressionTree(className, subclassName, charProgressionMap = {
 
 function resolveAttributeMod(attributes, attrKey) {
     if (!attributes || !attrKey) return 0;
-    const legacyMap = { FUE: 'STR', DES: 'DEX', CON: 'CON', INT: 'INT', SAB: 'WIS', CAR: 'CHA' };
-    const norm = String(attrKey).toUpperCase();
-    const canonKey = legacyMap[norm] || norm;
-    const raw = attributes[canonKey] || attributes[norm];
+    const canonKey = String(attrKey).toUpperCase();
+    const raw = attributes[canonKey];
     const score = typeof raw?.score === 'number' ? raw.score : (parseInt(raw?.score, 10) || 10);
     return Math.floor((score - 10) / 2);
 }
 
-function migrateCharacterToEnglish(d) {
-    if (!d || typeof d !== 'object') return d;
-    const attrMap = { FUE: 'STR', DES: 'DEX', CON: 'CON', INT: 'INT', SAB: 'WIS', CAR: 'CHA' };
-    if (d.attributes) {
-        const newAttrs = {};
-        for (const [k, v] of Object.entries(d.attributes)) {
-            const mapped = attrMap[k.toUpperCase()] || k.toUpperCase();
-            newAttrs[mapped] = v;
-        }
-        d.attributes = newAttrs;
-    } else {
-        d.attributes = {};
+const MULTICLASS_SPELL_SLOTS = {
+    1:  [2],
+    2:  [3],
+    3:  [4, 2],
+    4:  [4, 3],
+    5:  [4, 3, 2],
+    6:  [4, 3, 3],
+    7:  [4, 3, 3, 1],
+    8:  [4, 3, 3, 2],
+    9:  [4, 3, 3, 3, 1],
+    10: [4, 3, 3, 3, 2],
+    11: [4, 3, 3, 3, 2, 1],
+    12: [4, 3, 3, 3, 2, 1],
+    13: [4, 3, 3, 3, 2, 1, 1],
+    14: [4, 3, 3, 3, 2, 1, 1],
+    15: [4, 3, 3, 3, 2, 1, 1, 1],
+    16: [4, 3, 3, 3, 2, 1, 1, 1],
+    17: [4, 3, 3, 3, 2, 1, 1, 1, 1],
+    18: [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    19: [4, 3, 3, 3, 3, 2, 1, 1, 1],
+    20: [4, 3, 3, 3, 3, 2, 2, 1, 1]
+};
+
+const WARLOCK_PACT_TABLE = {
+    1:  { count: 1, level: 1 },
+    2:  { count: 2, level: 1 },
+    3:  { count: 2, level: 2 },
+    4:  { count: 2, level: 2 },
+    5:  { count: 2, level: 3 },
+    6:  { count: 2, level: 3 },
+    7:  { count: 2, level: 4 },
+    8:  { count: 2, level: 4 },
+    9:  { count: 2, level: 5 },
+    10: { count: 2, level: 5 },
+    11: { count: 3, level: 5 },
+    12: { count: 3, level: 5 },
+    13: { count: 3, level: 5 },
+    14: { count: 3, level: 5 },
+    15: { count: 3, level: 5 },
+    16: { count: 3, level: 5 },
+    17: { count: 4, level: 5 },
+    18: { count: 4, level: 5 },
+    19: { count: 4, level: 5 },
+    20: { count: 4, level: 5 }
+};
+
+function calculateExpectedSlots(classes = []) {
+    const list = [];
+    const warlock = classes.find(c => normalizeKey(c?.name) === 'warlock');
+    if (warlock) {
+        const wLvl = Math.min(20, Math.max(1, parseInt(warlock.level, 10) || 1));
+        const pInfo = WARLOCK_PACT_TABLE[wLvl];
+        list.push({
+            id: 'pact',
+            level: `Pact (Warlock ${wLvl})`,
+            max: pInfo.count,
+            reset: 'short'
+        });
     }
-    ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(k => {
-        if (!d.attributes[k]) d.attributes[k] = { score: 10, profSave: false };
+
+    let casterLvl = 0;
+    const standardCasters = [];
+    classes.forEach(c => {
+        const n = normalizeKey(c?.name || '');
+        const lvl = parseInt(c?.level, 10) || 0;
+        if (['bard', 'cleric', 'druid', 'sorcerer', 'wizard'].includes(n)) {
+            casterLvl += lvl;
+            standardCasters.push({ name: c.name, level: lvl });
+        } else if (['paladin', 'ranger'].includes(n)) {
+            casterLvl += Math.floor(lvl / 2);
+            standardCasters.push({ name: c.name, level: lvl });
+        } else if (n === 'artificer') {
+            casterLvl += Math.ceil(lvl / 2);
+            standardCasters.push({ name: c.name, level: lvl });
+        }
     });
 
-    const skillMap = {
-        acrobacias: { id: 'acrobatics', name: 'Acrobatics', attr: 'DEX' },
-        arcanos: { id: 'arcana', name: 'Arcana', attr: 'INT' },
-        atletismo: { id: 'athletics', name: 'Athletics', attr: 'STR' },
-        engano: { id: 'deception', name: 'Deception', attr: 'CHA' },
-        historia: { id: 'history', name: 'History', attr: 'INT' },
-        intimidacion: { id: 'intimidation', name: 'Intimidation', attr: 'CHA' },
-        interpretacion: { id: 'performance', name: 'Performance', attr: 'CHA' },
-        investigacion: { id: 'investigation', name: 'Investigation', attr: 'INT' },
-        juego_manos: { id: 'sleight_of_hand', name: 'Sleight of Hand', attr: 'DEX' },
-        medicina: { id: 'medicine', name: 'Medicine', attr: 'WIS' },
-        naturaleza: { id: 'nature', name: 'Nature', attr: 'INT' },
-        percepcion: { id: 'perception', name: 'Perception', attr: 'WIS' },
-        perspicacia: { id: 'insight', name: 'Insight', attr: 'WIS' },
-        persuasion: { id: 'persuasion', name: 'Persuasion', attr: 'CHA' },
-        religion: { id: 'religion', name: 'Religion', attr: 'INT' },
-        sigilo: { id: 'stealth', name: 'Stealth', attr: 'DEX' },
-        supervivencia: { id: 'survival', name: 'Survival', attr: 'WIS' },
-        trato_animales: { id: 'animal_handling', name: 'Animal Handling', attr: 'WIS' }
-    };
-
-    if (Array.isArray(d.skills)) {
-        d.skills.forEach(s => {
-            const m = skillMap[s.id];
-            if (m) {
-                s.id = m.id;
-                s.name = m.name;
-                s.attr = m.attr;
-            } else if (attrMap[s.attr]) {
-                s.attr = attrMap[s.attr];
-            }
-        });
-    }
-
-    if (d.combat?.resources) {
-        d.combat.resources.forEach(r => {
-            if (r.usesKey && attrMap[r.usesKey]) {
-                r.usesKey = attrMap[r.usesKey];
-            }
-            if (r.actionCost === 'Acción' || r.actionCost === 'Accion') r.actionCost = 'Action';
-            if (r.actionCost === 'Acción Adicional' || r.actionCost === 'Acción adicional' || r.actionCost === 'Accion Adicional') r.actionCost = 'Bonus Action';
-            if (r.actionCost === 'Reacción' || r.actionCost === 'Reaccion') r.actionCost = 'Reaction';
-            if (r.reset === 'Corto/Largo') r.reset = 'Short/Long';
-            if (r.reset === 'Largo') r.reset = 'Long Rest';
-            if (r.reset === 'Corto') r.reset = 'Short Rest';
-            if (r.reset === 'Truco') r.reset = 'Cantrip';
-            if (r.name && r.name.includes('Inspiración Bárdica')) r.name = 'Bardic Inspiration (1d8)';
-            if (r.name && r.name.includes('Vaso del Genio')) r.name = "Genie's Vessel (6h)";
-            if (r.name && r.name.includes('Detectar Pensamientos')) r.name = 'Detect Thoughts (Feat)';
-            if (r.name && r.name.includes('Ilusión Menor')) r.name = 'Glasya: Minor Illusion';
-            if (r.name && r.name.includes('Disfrazarme')) r.name = 'Glasya: Disguise Self';
-            if (r.name && r.name.includes('Invisibilidad')) r.name = 'Glasya: Invisibility';
-            if (r.name && (r.name.includes('Puerta Dim') || r.name.includes('Charlatán'))) r.name = 'Cloak of the Mountebank: Dimension Door';
-        });
-    }
-
-    if (Array.isArray(d.combat?.traits)) {
-        d.combat.traits.forEach(t => {
-            if (t.name && t.name.includes('Lengua de Plata')) {
-                t.name = 'Silver Tongue (Eloquence 3)';
-                t.desc = 'When you make a Charisma (Persuasion) or Charisma (Deception) check, you can treat a d20 roll of 9 or lower as a 10.';
-            } else if (t.name && t.name.includes('Palabras Inquietantes')) {
-                t.name = 'Unsettling Words (Eloquence 3)';
-                t.desc = "Bonus Action: expend one use of Bardic Inspiration to roll a Bardic Inspiration die and subtract the number rolled from a creature's next saving throw.";
-            } else if (t.name && t.name.includes('Fuente de Inspiración')) {
-                t.name = 'Font of Inspiration (Bard 5)';
-                t.desc = 'You regain all of your expended uses of Bardic Inspiration when you finish a short or long rest.';
-            } else if (t.name && t.name.includes('Canción de Descanso')) {
-                t.name = 'Song of Rest (Bard 2)';
-                t.desc = 'You and allies regain an extra 1d6 hit points when spending Hit Dice during a short rest.';
-            } else if (t.name && t.name.includes('Vaso del Genio')) {
-                t.name = "Genie's Vessel (Warlock 1)";
-                t.desc = 'You can enter your vessel for up to 6 hours (2x proficiency bonus). AC 15, HP 3.';
-            } else if (t.name && t.name.includes('Ira del Genio')) {
-                t.name = "Genie's Wrath (Warlock 1)";
-                t.desc = 'Once during each of your turns when you hit with an attack, you deal extra thunder damage equal to your proficiency bonus (+3).';
-            } else if (t.name && (t.name.includes('Dote Telepático') || t.name.includes('Telepatico'))) {
-                t.name = 'Telepathic Feat';
-                t.desc = 'You can speak telepathically to any creature within 60 feet. You can cast Detect Thoughts once per long rest without components or spell slots.';
-            } else if (t.name && (t.name.includes('Resistencia Infernal') || t.name.includes('Infernal Resistance'))) {
-                t.name = 'Infernal Resistance (Tiefling)';
-                t.desc = 'You have resistance to fire damage and Darkvision up to 60 feet.';
-            }
-        });
-    }
-
-    if (Array.isArray(d.magic?.slots)) {
-        d.magic.slots.forEach(s => {
-            if (typeof s.level === 'string') {
-                s.level = s.level
-                    .replace(/Nivel (\d+)/i, 'Level $1')
-                    .replace(/Pacto/i, 'Pact');
-            }
-        });
-    }
-
-    if (Array.isArray(d.magic?.spells)) {
-        d.magic.spells.forEach(s => {
-            if (s.source === 'Dote Telepático') s.source = 'Telepathic Feat';
-            if (s.source === 'Capa del Charlatán') s.source = 'Cloak of the Mountebank';
-        });
-    }
-
-    if (d.identity) {
-        if (d.identity.alignment === 'Caótico Neutral') d.identity.alignment = 'Chaotic Neutral';
-        if (d.identity.background === 'Criminal / Fugitivo') d.identity.background = 'Criminal / Fugitive';
-        if (typeof d.identity.senses === 'string') {
-            d.identity.senses = d.identity.senses.replace(/Visión en Oscuridad/i, 'Darkvision').replace(/pies/i, 'ft.');
-        }
-        if (Array.isArray(d.identity.languages)) {
-            const langMap = { 'Común': 'Common', 'Infernal': 'Infernal', 'Jerga de Ladrones': "Thieves' Cant" };
-            d.identity.languages = d.identity.languages.map(l => langMap[l] || l);
-        }
-        if (Array.isArray(d.identity.classes)) {
-            d.identity.classes.forEach(c => {
-                if (c.name) c.name = c.name.toLowerCase();
-                if (c.subclass) c.subclass = c.subclass.toLowerCase();
+    if (casterLvl > 0) {
+        const counts = MULTICLASS_SPELL_SLOTS[Math.min(20, casterLvl)] || [];
+        const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+        const classTag = standardCasters.length === 1
+            ? ` (${standardCasters[0].name.charAt(0).toUpperCase() + standardCasters[0].name.slice(1)})`
+            : '';
+        counts.forEach((max, idx) => {
+            list.push({
+                id: `lvl${idx + 1}`,
+                level: `${ordinals[idx]} Level${classTag}`,
+                max: max,
+                reset: 'long'
             });
-        }
-    }
-
-    if (d.vitals && typeof d.vitals.speed === 'string') {
-        d.vitals.speed = d.vitals.speed.replace(/pies/i, 'ft.');
-    }
-
-    if (d.inventory?.armors) {
-        d.inventory.armors.forEach(a => {
-            if (a.name === 'Cuero Tachonado') a.name = 'Studded Leather';
-            if (a.special && a.special.includes('Armadura ligera')) {
-                a.special = 'Light armor. Add your full Dexterity modifier to AC.';
-            }
         });
     }
-
-    if (d.inventory?.weapons) {
-        const dmgTypeMap = { 'Perforante': 'Piercing', 'Cortante': 'Slashing', 'Contundente': 'Bludgeoning', 'Fuego': 'Fire' };
-        const wpnNameMap = {
-            'Estoque': 'Rapier',
-            'Ballesta Ligera': 'Light Crossbow',
-            'Daga': 'Dagger',
-            'Lanza de Plata': 'Silvered Spear',
-            'Fuego Alquímico': "Alchemist's Fire"
-        };
-        d.inventory.weapons.forEach(w => {
-            if (wpnNameMap[w.name]) w.name = wpnNameMap[w.name];
-            if (dmgTypeMap[w.damageType]) w.damageType = dmgTypeMap[w.damageType];
-            if (Array.isArray(w.properties)) {
-                const propMap = { 'Sutil': 'Finesse', 'Ligera': 'Light', 'Dos Manos': 'Two-Handed', 'Recarga': 'Loading', 'Plateada': 'Silvered' };
-                w.properties = w.properties.map(p => propMap[p] || p);
-            }
-        });
-    }
-
-    if (Array.isArray(d.inventory?.consumables)) {
-        const consMap = {
-            'Fuego de alquimista': "Alchemist's Fire",
-            'Vial de agua bendita': 'Holy Water',
-            'Bolsa de rodamientos': 'Ball Bearings (bag of 1,000)',
-            'Púas de suelo (Caltrops)': 'Caltrops (bag of 20)',
-            'Pociones de Curación (2d4+2)': 'Potions of Healing (2d4+2)',
-            'Poción Restauración': 'Potion of Restoration',
-            'Pergamino: Guardia Cuchillas': 'Spell Scroll: Blade Ward',
-            'Raciones de viaje': 'Rations',
-            'Vino Red Dragon Smash': 'Red Dragon Smash Wine',
-            'Virotes de ballesta': 'Crossbow Bolts',
-            'Virotes de plata': 'Silvered Crossbow Bolts'
-        };
-        d.inventory.consumables.forEach(c => {
-            if (consMap[c.name]) c.name = consMap[c.name];
-        });
-    }
-
-    if (Array.isArray(d.inventory?.tools)) {
-        const toolMap = {
-            'Laúd': 'Lute',
-            'Kit de disfraz': 'Disguise Kit',
-            'Kit de falsificación': 'Forgery Kit',
-            'Capa de gala': 'Fine Cloak',
-            'Ropas finas': 'Fine Clothes',
-            'Mochila de artista': "Entertainer's Pack",
-            'Esposas de hierro': 'Iron Manacles',
-            'Garfio': 'Grappling Hook'
-        };
-        const defaultToolDescs = {
-            'Bodhran': 'Celtic-style frame drum & Bard spellcasting focus. Audible rhythm up to 300 ft, ideal for keeping march pace and performance.',
-            'Disguise Kit': 'Cosmetics, hair dyes, and small props. Proficiency adds proficiency bonus to disguise checks (10-30 min setup). Opponents must beat your check with Wisdom (Insight/Perception).',
-            "Entertainer's Pack": 'Adventuring kit: backpack, bedroll, 2 costumes, 5 candles, 5 days of rations, waterskin, and disguise supplies (38 lbs total).',
-            'Fine Cloak': 'Tailored velvet cloak lined with silk. Conceals light weapons or small instruments and grants an air of noble prestige.',
-            'Fine Clothes': 'High-society aristocratic attire. Essential for entering noble courts, formal banquets, and high-stakes social events without suspicion.',
-            'Forgery Kit': 'Fine parchments, specialized inks, quills, sealing wax, and heraldic seals. Proficiency adds proficiency bonus to forge official decrees, letters, and wax crests.',
-            'Grappling Hook': 'Steel triple-prong hook. Fastens to rope for scaling walls, cliffs, or securing anchor points across gaps.',
-            'Iron Manacles': 'Restrains Small or Medium creatures. Escaping requires DC 20 DEX (Acrobatics); breaking requires DC 20 STR (Athletics); picking requires Thieves\' Tools and DC 15 DEX.',
-            'Lute': 'String instrument & Bard spellcasting focus. Enables Song of Rest performance and Charisma (Performance) entertainment during downtime.',
-            'Ocarina (kraken)': 'Handcrafted kraken-motif wind instrument & Bard spellcasting focus. Compact and easily concealed, produces haunting low whistle tones.'
-        };
-        d.inventory.tools.forEach(t => {
-            if (toolMap[t.name]) t.name = toolMap[t.name];
-            if (!t.desc && defaultToolDescs[t.name]) {
-                t.desc = defaultToolDescs[t.name];
-            }
-        });
-    }
-
-    if (Array.isArray(d.inventory?.story)) {
-        const storyMap = {
-            'Moneda de Rostro y Cuervo': { name: 'Face & Raven Coin', desc: 'Mysterious campaign quest coin.' },
-            'Capa del Charlatán': { name: 'Cloak of the Mountebank', desc: 'Dimension Door 1/day with cloud of smoke.' },
-            'Dado de Hueso': { name: 'Bone Die', desc: '+1d6 to a saving throw. Breaks on a natural 1.' },
-            'Anillo Consilium Dubium': { name: 'Ring of Consilium Dubium', desc: 'Permanent advantage on Persuasion and Deception checks.' },
-            'Botella del Genio': { name: "Genie's Urn", desc: 'Djinni vessel (AC 15, HP 3, 6-hour sanctuary).' },
-            'Anillo de sello': { name: 'Signet Ring', desc: 'Stolen from General Garrard.' },
-            'Reliquia de San Andral': { name: "St. Andral's Relic", desc: 'Desecrated.' },
-            'Gema plateada': { name: 'Silvered Gem', desc: 'From Glede.' },
-            'Medallón': { name: 'Dragon Medallion', desc: 'Dragon-shaped medallion.' },
-            'Amuleto Lágrima': { name: 'Teardrop Amulet', desc: 'Worn and faded.' },
-            'Llave sospechosa': { name: 'Suspicious Key', desc: 'Ancient iron key.' }
-        };
-        d.inventory.story.forEach(s => {
-            if (storyMap[s.name]) {
-                s.desc = storyMap[s.name].desc;
-                s.name = storyMap[s.name].name;
-            }
-        });
-    }
-
-    if (d.progression && typeof d.progression === 'object') {
-        const newProg = {};
-        for (const [clsKey, lvlList] of Object.entries(d.progression)) {
-            const canonKey = clsKey.toLowerCase();
-            if (Array.isArray(lvlList)) {
-                lvlList.forEach(lvlObj => {
-                    if (lvlObj.title && lvlObj.title.startsWith('Nivel ')) {
-                        lvlObj.title = lvlObj.title.replace('Nivel ', 'Level ');
-                    }
-                    if (Array.isArray(lvlObj.feats)) {
-                        lvlObj.feats = lvlObj.feats.map(f => {
-                            if (typeof f !== 'string') return f;
-                            return f
-                                .replace(/Lanzamiento de Conjuros de (.*)/i, 'Spellcasting ($1)')
-                                .replace(/Inspiración Bárdica \(d6, usos = CAR\)/i, 'Bardic Inspiration (d6, uses = CHA mod)')
-                                .replace(/Inspiración Bárdica mejorada a d8/i, 'Bardic Inspiration die improves to d8')
-                                .replace(/Competencias: Armaduras ligeras, simples, estoque, ballesta de mano/i, 'Proficiencies: Light armor, simple weapons, hand crossbow, longsword, rapier, shortsword')
-                                .replace(/Polifacético \(\+1\/2 competencia a tiradas sin competencia\)/i, 'Jack of All Trades (+1/2 proficiency bonus rounded down to non-proficient checks)')
-                                .replace(/Canción de Descanso \(\+1d6 HP en descanso corto\)/i, 'Song of Rest (+1d6 HP on short rest)')
-                                .replace(/Colegio de la (.*)/i, 'College of $1')
-                                .replace(/Lengua de Plata \(mínimo 10 en.*?\)/i, 'Silver Tongue (roll 9 or lower on d20 treated as 10 for Persuasion and Deception)')
-                                .replace(/Palabras Inquietantes \(.*?\)/i, "Unsettling Words (expend 1 Bardic Inspiration to subtract 1d8 from target's next saving throw)")
-                                .replace(/Pericia \(doble competencia\)/i, 'Expertise (double proficiency bonus on 2 skills)')
-                                .replace(/Dote Telepático \(.*?\)/i, 'Telepathic Feat (+1 CHA, 60 ft. telepathy, Detect Thoughts 1/day)')
-                                .replace(/Fuente de Inspiración \(.*?\)/i, 'Font of Inspiration (regain Bardic Inspiration on short or long rest)')
-                                .replace(/Conjuros de Nivel 3/i, '3rd Level Spells')
-                                .replace(/Patrón Sobrenatural: El Genio \(Djinni\)/i, 'Otherworldly Patron: The Genie (Djinni)')
-                                .replace(/Vaso del Genio \(.*?\)/i, "Genie's Vessel (planar sanctuary and spellcasting focus)")
-                                .replace(/Ira del Genio \(.*?\)/i, "Genie's Wrath (+proficiency thunder damage on first hit per turn)")
-                                .replace(/Magia de Pacto \(.*?\)/i, 'Pact Magic (1st level spell slot, recharges on short rest)');
-                        });
-                    }
-                });
-                newProg[canonKey] = lvlList;
-            } else {
-                newProg[canonKey] = lvlList;
-            }
-        }
-        d.progression = newProg;
-    }
-
-    return d;
+    return list;
 }
 
-function getResourceMaxUses(res, attributes) {
+function syncCharacterSpellSlots(d) {
+    if (!d || !d.identity || !Array.isArray(d.identity.classes)) return;
+    const expected = calculateExpectedSlots(d.identity.classes);
+    if (!d.magic) d.magic = { slots: [], spells: [] };
+    if (!Array.isArray(d.magic.slots)) d.magic.slots = [];
+
+    const existingMap = new Map();
+    d.magic.slots.forEach(s => {
+        if (s.id) existingMap.set(s.id, s);
+    });
+
+    const newSlots = [];
+    expected.forEach(exp => {
+        const exist = existingMap.get(exp.id);
+        existingMap.delete(exp.id);
+        const max = exp.max;
+        const spent = [];
+        for (let i = 0; i < max; i++) {
+            spent.push(exist && Array.isArray(exist.spent) && exist.spent[i] === true);
+        }
+        newSlots.push({
+            id: exp.id,
+            level: exp.level,
+            max: max,
+            reset: exp.reset,
+            spent: spent
+        });
+    });
+
+    // Retain custom slots that the user manually created
+    existingMap.forEach(customSlot => {
+        if (!String(customSlot.id).startsWith('lvl') && customSlot.id !== 'pact') {
+            newSlots.push(customSlot);
+        }
+    });
+
+    d.magic.slots = newSlots;
+}
+
+function resolveBardicDie(d) {
+    const classes = d?.identity?.classes || [];
+    const bard = classes.find(c => normalizeKey(c?.name) === 'bard');
+    const lvl = bard ? (parseInt(bard.level, 10) || 0) : 0;
+    if (lvl >= 15) return '1d12';
+    if (lvl >= 10) return '1d10';
+    if (lvl >= 5) return '1d8';
+    if (lvl >= 1) return '1d6';
+    return '1d6';
+}
+
+function detectClassFeaturesToSync(d) {
+    const classes = d?.identity?.classes || [];
+    const newResources = [];
+    const newTraits = [];
+    const existingResourceIds = new Set((d.combat?.resources || []).map(r => r.id));
+    const existingTraitNames = new Set((d.combat?.traits || []).map(t => normalizeKey(t.name)));
+
+    classes.forEach(cls => {
+        const found = findCompendiumClass(cls.name);
+        const classKey = found?.key || normalizeKey(cls.name);
+        const subKey = normalizeKey(cls.subclass || '');
+        const currentLvl = parseInt(cls.level, 10) || 1;
+
+        // Eloquence Bard
+        if (classKey === 'bard' && (subKey.includes('eloquence') || subKey.includes('elocuencia'))) {
+            if (currentLvl >= 6 && !existingResourceIds.has('eloquence_universal_speech')) {
+                newResources.push({
+                    id: 'eloquence_universal_speech',
+                    name: 'Universal Speech (Eloquence 6)',
+                    uses: 1,
+                    actionCost: 'Action',
+                    reset: 'Long Rest',
+                    color: 'text-teal-300',
+                    spent: [false]
+                });
+            }
+            if (currentLvl >= 6 && !existingTraitNames.has('unfailinginspiration')) {
+                newTraits.push({
+                    name: 'Unfailing Inspiration (Eloquence 6)',
+                    desc: 'When a creature adds one of your Bardic Inspiration dice to its check, attack, or saving throw and the roll fails, the creature keeps the Bardic Inspiration die.'
+                });
+            }
+            if (currentLvl >= 14 && !existingResourceIds.has('eloquence_infectious_insp')) {
+                newResources.push({
+                    id: 'eloquence_infectious_insp',
+                    name: 'Infectious Inspiration (Eloquence 14)',
+                    usesKey: 'CHA',
+                    actionCost: 'Reaction',
+                    reset: 'Long Rest',
+                    color: 'text-amber-300',
+                    spent: []
+                });
+            }
+        }
+
+        // Glamour Bard
+        if (classKey === 'bard' && subKey.includes('glamour')) {
+            if (currentLvl >= 3 && !existingResourceIds.has('glamour_enthralling_perf')) {
+                newResources.push({
+                    id: 'glamour_enthralling_perf',
+                    name: 'Enthralling Performance (Glamour 3)',
+                    uses: 1,
+                    actionCost: 'Action (1 min)',
+                    reset: 'Short/Long',
+                    color: 'text-pink-300',
+                    spent: [false]
+                });
+            }
+            if (currentLvl >= 6 && !existingResourceIds.has('glamour_mantle_majesty')) {
+                newResources.push({
+                    id: 'glamour_mantle_majesty',
+                    name: 'Mantle of Majesty (Glamour 6)',
+                    uses: 1,
+                    actionCost: 'Bonus Action',
+                    reset: 'Long Rest',
+                    color: 'text-purple-300',
+                    spent: [false]
+                });
+            }
+        }
+
+        // Base Bard Countercharm
+        if (classKey === 'bard' && currentLvl >= 6 && !existingTraitNames.has('countercharm')) {
+            newTraits.push({
+                name: 'Countercharm (Bard 6)',
+                desc: 'Action: perform until the end of your next turn. You and friendly creatures within 30 ft have advantage on saving throws against being frightened or charmed.'
+            });
+        }
+
+        // Warlock Genie
+        if (classKey === 'warlock' && (subKey.includes('genie') || subKey.includes('djinni') || subKey.includes('efreeti') || subKey.includes('dao') || subKey.includes('marid'))) {
+            if (currentLvl >= 6 && !existingResourceIds.has('genie_elemental_gift')) {
+                newResources.push({
+                    id: 'genie_elemental_gift',
+                    name: 'Elemental Gift: Flight 30ft (Genie 6)',
+                    usesKey: 'PB',
+                    actionCost: 'Bonus Action',
+                    reset: 'Long Rest',
+                    color: 'text-sky-300',
+                    spent: []
+                });
+            }
+            if (currentLvl >= 10 && !existingResourceIds.has('genie_sanctuary')) {
+                newResources.push({
+                    id: 'genie_sanctuary',
+                    name: 'Sanctuary Vessel (Genie 10)',
+                    uses: 1,
+                    actionCost: 'Action',
+                    reset: 'Long Rest',
+                    color: 'text-cyan-300',
+                    spent: [false]
+                });
+            }
+            if (currentLvl >= 14 && !existingResourceIds.has('genie_limited_wish')) {
+                newResources.push({
+                    id: 'genie_limited_wish',
+                    name: 'Limited Wish (Genie 14)',
+                    uses: 1,
+                    actionCost: 'Action',
+                    reset: '1d4 Long Rests',
+                    color: 'text-yellow-300',
+                    spent: [false]
+                });
+            }
+        }
+    });
+
+    return { newResources, newTraits };
+}
+
+function getResourceMaxUses(res, attributes, profBonus = 2) {
     if (typeof res?.uses === 'number' && res.uses > 0) return res.uses;
     if (res?.usesKey) {
+        const u = String(res.usesKey).toUpperCase();
+        if (u === 'PB' || u === 'PROF') return Math.max(1, profBonus);
         return Math.max(1, resolveAttributeMod(attributes, res.usesKey));
     }
     if (Array.isArray(res?.spent) && res.spent.length > 0) return res.spent.length;
@@ -530,6 +492,8 @@ function sanitizeTracking(d) {
     }
 
     const totalHd = d.identity.classes.reduce((a, b) => a + (b.level || 0), 0) || 1;
+    const profBonus = Math.floor((totalHd - 1) / 4) + 2;
+
     if (!Array.isArray(d.vitals.hitDiceSpent)) d.vitals.hitDiceSpent = [];
     while (d.vitals.hitDiceSpent.length < totalHd) d.vitals.hitDiceSpent.push(false);
     if (d.vitals.hitDiceSpent.length > totalHd) d.vitals.hitDiceSpent = d.vitals.hitDiceSpent.slice(0, totalHd);
@@ -539,14 +503,19 @@ function sanitizeTracking(d) {
     }
     if (!d.concentration) d.concentration = { active: false, spellName: "" };
     if (!Array.isArray(d.conditions)) d.conditions = [];
+    if (!Array.isArray(d.sessionLog)) d.sessionLog = [];
     if (!Array.isArray(d.combat.resources)) d.combat.resources = [];
     if (!Array.isArray(d.combat.traits)) d.combat.traits = [];
+
     d.combat.resources.forEach(r => {
-        const uses = getResourceMaxUses(r, d.attributes);
+        const uses = getResourceMaxUses(r, d.attributes, profBonus);
         if (!Array.isArray(r.spent)) r.spent = [];
         while (r.spent.length < uses) r.spent.push(false);
         if (r.spent.length > uses) r.spent = r.spent.slice(0, uses);
     });
+
+    // Auto-sync spell slots according to official class tables
+    syncCharacterSpellSlots(d);
 
     if (!d.magic) d.magic = { slots: [], spells: [] };
     if (!Array.isArray(d.magic.slots)) d.magic.slots = [];
@@ -575,18 +544,27 @@ function sanitizeTracking(d) {
 
 function loadInitialData() {
     const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
-    let raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-        raw = localStorage.getItem('character_dnd_v19') || localStorage.getItem('character_dnd_v18') || localStorage.getItem('character_dnd_v17');
+    let raw = null;
+    try {
+        raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+            const legacyKeys = ['character_dnd_v20', 'character_dnd_v19', 'character_dnd_v18', 'character_dnd_data'];
+            for (const k of legacyKeys) {
+                raw = localStorage.getItem(k);
+                if (raw) break;
+            }
+        }
+    } catch (e) {
+        console.warn("[Storage] Could not read localStorage:", e);
     }
-    if (!raw) return migrateCharacterToEnglish(sanitizeTracking(base));
+    if (!raw) return sanitizeTracking(base);
 
     try {
         const loaded = JSON.parse(raw);
-        return migrateCharacterToEnglish(sanitizeTracking(loaded));
+        return sanitizeTracking(loaded);
     } catch (e) {
         console.error("[Storage] Error parsing stored data:", e);
-        return migrateCharacterToEnglish(sanitizeTracking(base));
+        return sanitizeTracking(base);
     }
 }
 
@@ -632,7 +610,7 @@ function resolveGenieDamage(d, profBonus) {
     const traits = d?.combat?.traits || [];
     const genieTrait = traits.find(t => {
         const n = normalizeKey(t.name);
-        return n.includes('iradelgenio') || n.includes('genieswrath');
+        return n.includes('genieswrath');
     });
 
     const classes = d?.identity?.classes || [];
@@ -646,10 +624,10 @@ function resolveGenieDamage(d, profBonus) {
 
     const subNorm = normalizeKey(genieClass?.subclass || genieTrait?.name || genieTrait?.desc || '');
     let dmgType = 'Elemental';
-    if (subNorm.includes('djinni') || subNorm.includes('trueno') || subNorm.includes('thunder')) dmgType = 'Thunder';
-    else if (subNorm.includes('efreeti') || subNorm.includes('fuego') || subNorm.includes('fire')) dmgType = 'Fire';
-    else if (subNorm.includes('dao') || subNorm.includes('contundente') || subNorm.includes('bludgeoning')) dmgType = 'Bludgeoning';
-    else if (subNorm.includes('marid') || subNorm.includes('frio') || subNorm.includes('cold')) dmgType = 'Cold';
+    if (subNorm.includes('djinni') || subNorm.includes('thunder')) dmgType = 'Thunder';
+    else if (subNorm.includes('efreeti') || subNorm.includes('fire')) dmgType = 'Fire';
+    else if (subNorm.includes('dao') || subNorm.includes('bludgeoning')) dmgType = 'Bludgeoning';
+    else if (subNorm.includes('marid') || subNorm.includes('cold')) dmgType = 'Cold';
 
     return `+${profBonus} ${dmgType} damage`;
 }
@@ -711,18 +689,6 @@ function resolveCharacterResistances(d) {
         });
     });
 
-    // 3. Scan racial / identity text
-    const raceText = String(d?.identity?.race || '').toLowerCase();
-    if (raceText.includes('tiefling') && !seen.has('fire')) {
-        seen.add('fire');
-        list.push({
-            id: 'fire',
-            name: 'Fire',
-            icon: '🔥',
-            source: 'Tiefling (Infernal Resistance)'
-        });
-    }
-
     return list;
 }
 
@@ -758,7 +724,7 @@ function resolveSongOfRestDie(d) {
     if (bardLevel >= 9) return '1d8';
     if (bardLevel >= 2) return '1d6';
 
-    if (hasCharacterFeature(d, ['canciondedescanso', 'songofrest'])) {
+    if (hasCharacterFeature(d, ['songofrest'])) {
         return '1d6';
     }
     return null;
@@ -769,21 +735,14 @@ function computeStats(d) {
     const totalLevel = classes.reduce((acc, c) => acc + (c.level || 0), 0) || 1;
     const profBonus = Math.floor((totalLevel - 1) / 4) + 2;
 
-    const hasJackOfAllTrades = hasCharacterFeature(d, ['polifacetico', 'jackofalltrades']);
+    const hasJackOfAllTrades = hasCharacterFeature(d, ['jackofalltrades']);
     const jackOfAllTrades = hasJackOfAllTrades ? Math.floor(profBonus / 2) : 0;
 
     const attrKeys = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-    const legacyMap = { STR: 'FUE', DEX: 'DES', CON: 'CON', INT: 'INT', WIS: 'SAB', CHA: 'CAR' };
 
     const computedAttrs = {};
     attrKeys.forEach(k => {
-        let raw = d?.attributes?.[k];
-        if (!raw) {
-            const legKey = legacyMap[k];
-            if (legKey && d?.attributes?.[legKey]) raw = d.attributes[legKey];
-        }
-        if (!raw) raw = { score: 10, profSave: false };
-
+        let raw = d?.attributes?.[k] || { score: 10, profSave: false };
         const score = typeof raw.score === 'number' ? raw.score : (parseInt(raw.score, 10) || 10);
         const mod = Math.floor((score - 10) / 2);
         const save = mod + (raw.profSave ? profBonus : 0);
@@ -797,17 +756,16 @@ function computeStats(d) {
         };
     });
 
-    const hasSilverTongue = hasCharacterFeature(d, ['lenguadeplata', 'silvertongue']);
+    const hasSilverTongue = hasCharacterFeature(d, ['silvertongue']);
 
     const computedSkills = (d?.skills || []).map(s => {
-        const attrKey = legacyMap[s.attr] ? s.attr : (Object.keys(legacyMap).find(k => legacyMap[k] === s.attr) || s.attr);
-        const attrObj = computedAttrs[s.attr] || computedAttrs[attrKey] || { mod: 0 };
+        const attrObj = computedAttrs[s.attr] || { mod: 0 };
         let bonus = attrObj.mod;
         if (s.profType === 'P') bonus += profBonus * 2;
         else if (s.profType === 'C') bonus += profBonus;
         else bonus += jackOfAllTrades;
 
-        const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception' || s.id === 'engano');
+        const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception');
         const applyMinTen = s.minTen !== undefined ? !!s.minTen : isSilverTongueSkill;
 
         return {
@@ -818,7 +776,7 @@ function computeStats(d) {
         };
     });
 
-    const percSkill = computedSkills.find(s => s.id === 'perception' || s.id === 'percepcion');
+    const percSkill = computedSkills.find(s => s.id === 'perception');
     const passivePerception = 10 + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades));
     const initNum = computedAttrs.DEX.mod + jackOfAllTrades;
     const initDesc = hasJackOfAllTrades
@@ -876,6 +834,7 @@ function computeStats(d) {
     const bardicUses = Math.max(1, computedAttrs.CHA.mod);
     const hitDiceList = classes.map(c => `${c.level} ${resolveClassHitDie(c)}`).join(' + ');
     const songOfRestDie = resolveSongOfRestDie(d);
+    const bardicDie = resolveBardicDie(d);
 
     return {
         totalLevel,
@@ -895,6 +854,7 @@ function computeStats(d) {
         spellSaveDC,
         genieDamage: resolveGenieDamage(d, profBonus),
         songOfRestDie,
+        bardicDie,
         bardicUses,
         hitDiceList,
         hitDiceBreakdown: classes.map(c => `${c.level} ${c.name}`).join(' + '),
@@ -929,8 +889,8 @@ function parse5eToolsSpell(raw) {
     try {
         let actionType = 'action';
         const at = String(raw.actionType || '').toLowerCase();
-        if (at.includes('bonus') || at.includes('adicional')) actionType = 'bonus';
-        else if (at.includes('react') || at.includes('reacc')) actionType = 'reaction';
+        if (at.includes('bonus')) actionType = 'bonus';
+        else if (at.includes('react')) actionType = 'reaction';
         else {
             const timeList = Array.isArray(raw.time) ? raw.time : (raw.time ? [raw.time] : []);
             for (const t of timeList) {
@@ -1175,7 +1135,7 @@ function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttr
 document.addEventListener('alpine:init', () => {
     Alpine.data('characterSheet', () => ({
         data: loadInitialData(),
-        activeTab: 'perfil',
+        activeTab: 'profile',
         currentSpellFilter: 'all',
         compendiumCount: 0,
 
@@ -1208,6 +1168,9 @@ document.addEventListener('alpine:init', () => {
             resolve: null
         },
 
+        // Session Event Log
+        modalLogOpen: false,
+
         // Damage / Heal Manager
         modalHpManagerOpen: false,
         hpManagerMode: 'damage', // 'damage' | 'heal' | 'temp'
@@ -1219,6 +1182,12 @@ document.addEventListener('alpine:init', () => {
         allConditions: DND_CONDITIONS,
         modalConditionsOpen: false,
         conditionDetailItem: null,
+
+        // Background Compendium
+        allBackgrounds: BACKGROUND_COMPENDIUM,
+        modalBackgroundsOpen: false,
+        backgroundSearchQuery: '',
+        backgroundDetailItem: null,
 
         // Modales de Inventario
         modalConsumableOpen: false,
@@ -1270,6 +1239,62 @@ document.addEventListener('alpine:init', () => {
         // Getters Reactivos
         get stats() {
             return computeStats(this.data);
+        },
+
+        get computedCombatResources() {
+            const bardicDie = this.stats.bardicDie || '1d8';
+            return (this.data.combat?.resources || []).map((r, idx) => {
+                let displayName = r.name || 'Resource';
+                let displayReset = r.reset || 'Rest';
+                const norm = normalizeKey(r.name || '');
+
+                if (r.id === 'insp_bard' || norm.includes('bardicinspiration')) {
+                    displayName = `Bardic Inspiration (${bardicDie})`;
+                    const bardClass = (this.data.identity?.classes || []).find(c => normalizeKey(c?.name) === 'bard');
+                    const bardLvl = bardClass ? (parseInt(bardClass.level, 10) || 0) : 0;
+                    if (bardLvl >= 5) {
+                        displayReset = 'Short/Long Rest';
+                    }
+                }
+                return {
+                    ...r,
+                    originalIndex: idx,
+                    displayName,
+                    displayReset
+                };
+            });
+        },
+
+        get computedTraits() {
+            const bardicDie = this.stats.bardicDie || '1d8';
+            const profBonus = this.stats.profBonus || 3;
+            const songOfRestDie = this.stats.songOfRestDie || '1d6';
+
+            return (this.data.combat?.traits || []).map((t, idx) => {
+                let displayName = t.name || '';
+                let displayDesc = t.desc || '';
+                const norm = normalizeKey(t.name || '');
+
+                if (norm.includes('unsettlingwords')) {
+                    displayDesc = displayDesc.replace(/\b1d\d+\b/g, bardicDie);
+                    if (!displayDesc.includes(bardicDie)) {
+                        displayDesc = displayDesc.replace(/(?:bardic inspiration die)/i, `Bardic Inspiration die (${bardicDie})`);
+                    }
+                }
+                if (norm.includes('songofrest')) {
+                    displayDesc = displayDesc.replace(/\b1d\d+\b/g, songOfRestDie);
+                }
+                if (norm.includes('genieswrath') || norm.includes('iradelgenio')) {
+                    displayDesc = displayDesc.replace(/\(\+\d+\)/g, `(+${profBonus})`);
+                }
+
+                return {
+                    ...t,
+                    originalIndex: idx,
+                    displayName,
+                    displayDesc
+                };
+            });
         },
 
         get maxSlotLevel() {
@@ -1340,8 +1365,8 @@ document.addEventListener('alpine:init', () => {
         get filteredSpells() {
             return this.allResolvedSpells.filter(sp => {
                 const act = (sp.actionType || 'action').toLowerCase();
-                const isBonus = act.includes('bonus') || act.includes('adicional');
-                const isReaction = act.includes('react') || act.includes('reacc');
+                const isBonus = act.includes('bonus');
+                const isReaction = act.includes('react');
                 const isAction = !isBonus && !isReaction;
 
                 if (this.currentSpellFilter === 'action') return isAction;
@@ -1382,8 +1407,8 @@ document.addEventListener('alpine:init', () => {
         get actionCantrips() {
             return this.allResolvedSpells.filter(sp => {
                 const act = (sp.actionType || 'action').toLowerCase();
-                const isBonus = act.includes('bonus') || act.includes('adicional');
-                const isReaction = act.includes('react') || act.includes('reacc');
+                const isBonus = act.includes('bonus');
+                const isReaction = act.includes('react');
                 return sp.level === 0 && !isBonus && !isReaction;
             });
         },
@@ -1391,14 +1416,14 @@ document.addEventListener('alpine:init', () => {
         get bonusSpells() {
             return this.allResolvedSpells.filter(sp => {
                 const act = (sp.actionType || '').toLowerCase();
-                return act.includes('bonus') || act.includes('adicional');
+                return act.includes('bonus');
             });
         },
 
         get reactionSpells() {
             return this.allResolvedSpells.filter(sp => {
                 const act = (sp.actionType || '').toLowerCase();
-                return act.includes('react') || act.includes('reacc');
+                return act.includes('react');
             });
         },
 
@@ -1406,7 +1431,7 @@ document.addEventListener('alpine:init', () => {
             const items = [];
             (this.data.combat?.resources || []).forEach(r => {
                 const cost = (r.actionCost || '').toLowerCase();
-                if (cost.includes('adicional') || cost.includes('bonus')) items.push(r.name);
+                if (cost.includes('bonus')) items.push(r.name);
             });
             (this.data.combat?.traits || []).forEach(t => {
                 const desc = (t.desc || '').toLowerCase();
@@ -1439,11 +1464,11 @@ document.addEventListener('alpine:init', () => {
             const list = [];
             (this.data.magic?.slots || []).forEach(s => {
                 const r = (s.reset || '').toLowerCase();
-                if (r.includes('short') || r.includes('corto')) list.push(s.level);
+                if (r.includes('short')) list.push(s.level);
             });
             (this.data.combat?.resources || []).forEach(r => {
                 const res = (r.reset || '').toLowerCase();
-                if (res.includes('short') || res.includes('corto')) list.push(r.name);
+                if (res.includes('short')) list.push(r.name);
             });
             return list;
         },
@@ -1456,6 +1481,19 @@ document.addEventListener('alpine:init', () => {
                 currentLevel: cls.level || 1,
                 tree: generateProgressionTree(cls.name, cls.subclass, this.data.progression)
             }));
+        },
+
+        get filteredBackgrounds() {
+            const q = normalizeKey(this.backgroundSearchQuery || '');
+            const list = Object.entries(this.allBackgrounds || {}).map(([key, bg]) => ({ key, ...bg }));
+            if (!q) return list;
+            return list.filter(bg => {
+                const name = normalizeKey(bg.name);
+                const desc = normalizeKey(bg.desc);
+                const feat = normalizeKey(bg.feature?.name || '');
+                const source = normalizeKey(bg.source || '');
+                return name.includes(q) || desc.includes(q) || feat.includes(q) || source.includes(q);
+            });
         },
 
         // Persistencia
@@ -1526,19 +1564,59 @@ document.addEventListener('alpine:init', () => {
             this.modalDialog.open = false;
         },
 
+        // Session Event Log
+        logEvent(icon, title, text) {
+            if (!Array.isArray(this.data.sessionLog)) this.data.sessionLog = [];
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            this.data.sessionLog.unshift({
+                id: Date.now() + Math.random().toString(36).substring(2, 6),
+                time,
+                icon: icon || '📜',
+                title: title || 'Event',
+                text: text || ''
+            });
+            if (this.data.sessionLog.length > 30) {
+                this.data.sessionLog.length = 30;
+            }
+            this.saveState();
+        },
+
+        async clearSessionLog() {
+            const ok = await this.uiConfirm("Are you sure you want to clear the session history log?", "Clear History", "🗑️", "Clear Log", "bg-red-600 hover:bg-red-500");
+            if (!ok) return;
+            this.data.sessionLog = [];
+            this.saveState();
+        },
+
+        removeLogEntry(id) {
+            if (!Array.isArray(this.data.sessionLog)) return;
+            this.data.sessionLog = this.data.sessionLog.filter(e => e.id !== id);
+            this.saveState();
+        },
+
         // Concentration
         isConcentratingOn(name) {
             return this.data.concentration?.active &&
                 this.data.concentration?.spellName?.toLowerCase() === name?.toLowerCase();
         },
 
-        setConcentration(name) {
+        setConcentration(name, reason = '') {
+            const prevSpell = this.data.concentration?.spellName;
+            const wasActive = !!this.data.concentration?.active;
             this.data.concentration = name ? { active: true, spellName: name } : { active: false, spellName: "" };
             this.saveState();
+
+            if (name && (!wasActive || prevSpell !== name)) {
+                this.logEvent('🧠', 'Concentration Started', `Started concentrating on "${name}".`);
+            } else if (!name && wasActive && prevSpell) {
+                const title = reason ? 'Concentration Broken' : 'Concentration Dropped';
+                const desc = reason ? `Concentration on "${prevSpell}" was broken (${reason}).` : `Stopped concentrating on "${prevSpell}".`;
+                this.logEvent('🧠', title, desc);
+            }
         },
 
-        breakConcentration() {
-            this.setConcentration("");
+        breakConcentration(reason = '') {
+            this.setConcentration("", reason);
         },
 
         requestCastConcentration(spellName) {
@@ -1571,7 +1649,7 @@ document.addEventListener('alpine:init', () => {
                     name: w.name || '',
                     attrMode: w.attrMode || 'finesse',
                     dice: w.dice || '1d8',
-                    damageType: w.damageType || 'Perforante',
+                    damageType: w.damageType || 'Piercing',
                     propsRaw: (w.properties || []).join(', ')
                 };
             } else {
@@ -1579,7 +1657,7 @@ document.addEventListener('alpine:init', () => {
                     name: '',
                     attrMode: 'finesse',
                     dice: '1d8',
-                    damageType: 'Perforante',
+                    damageType: 'Piercing',
                     propsRaw: ''
                 };
             }
@@ -1630,17 +1708,23 @@ document.addEventListener('alpine:init', () => {
 
         toggleCondition(id) {
             if (!Array.isArray(this.data.conditions)) this.data.conditions = [];
+            const condObj = this.allConditions.find(c => c.id === id);
+            const condName = condObj ? condObj.name : id;
+            const condIcon = condObj ? condObj.icon : '✨';
             const idx = this.data.conditions.indexOf(id);
+
             if (idx >= 0) {
                 this.data.conditions.splice(idx, 1);
+                this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
             } else {
                 this.data.conditions.push(id);
+                this.logEvent(condIcon, 'Condition Gained', `Gained "${condName}" condition.`);
                 // If condition incapacitates or makes unconscious, notify and break concentration
                 if (['incapacitated', 'unconscious', 'paralyzed', 'petrified', 'stunned'].includes(id)) {
                     if (this.data.concentration?.active) {
                         const spName = this.data.concentration.spellName;
-                        this.breakConcentration();
-                        this.uiAlert(`The "${id}" condition incapacitates you. Concentration on "${spName}" was broken!`, "Concentration Broken", "🧠");
+                        this.breakConcentration(`incapacitated by ${condName}`);
+                        this.uiAlert(`The "${condName}" condition incapacitates you. Concentration on "${spName}" was broken!`, "Concentration Broken", "🧠");
                     }
                 }
             }
@@ -1649,11 +1733,17 @@ document.addEventListener('alpine:init', () => {
 
         clearCondition(id) {
             if (!Array.isArray(this.data.conditions)) return;
+            const condObj = this.allConditions.find(c => c.id === id);
+            const condName = condObj ? condObj.name : id;
             this.data.conditions = this.data.conditions.filter(c => c !== id);
+            this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
             this.saveState();
         },
 
         clearAllConditions() {
+            if (this.data.conditions && this.data.conditions.length > 0) {
+                this.logEvent('✨', 'Conditions Cleared', `Cleared all active conditions.`);
+            }
             this.data.conditions = [];
             this.saveState();
         },
@@ -1661,6 +1751,37 @@ document.addEventListener('alpine:init', () => {
         showConditionDetail(cond) {
             this.conditionDetailItem = cond;
             this.uiAlert(cond.summary, `${cond.icon} Condition: ${cond.name}`, cond.icon);
+        },
+
+        // ================= BACKGROUND COMPENDIUM =================
+        showCurrentBackgroundDetail() {
+            const currentName = this.data.identity?.background || '';
+            const norm = normalizeKey(currentName);
+            const foundKey = Object.keys(this.allBackgrounds || {}).find(k => {
+                const bg = this.allBackgrounds[k];
+                return normalizeKey(bg.name) === norm || norm.includes(normalizeKey(bg.name)) || normalizeKey(bg.name).includes(norm);
+            });
+            if (foundKey) {
+                this.backgroundDetailItem = this.allBackgrounds[foundKey];
+            } else {
+                this.backgroundDetailItem = Object.values(this.allBackgrounds || {})[0] || null;
+            }
+            this.modalBackgroundsOpen = true;
+        },
+
+        selectBackground(bg) {
+            this.backgroundDetailItem = bg;
+        },
+
+        async applyBackgroundToCharacter(bg) {
+            if (!bg) return;
+            const ok = await this.uiConfirm(`Do you want to set your character's background to "${bg.name}"?`, "Change Background", "📜", "Set Background");
+            if (!ok) return;
+            this.data.identity.background = bg.name;
+            this.logEvent('📜', 'Background Updated', `Changed background to "${bg.name}". Feature: "${bg.feature?.name}".`);
+            this.saveState();
+            this.modalBackgroundsOpen = false;
+            await this.uiAlert(`Character background set to "${bg.name}". Feature: "${bg.feature?.name}".`, "Background Updated", "✨");
         },
 
         // ================= DAMAGE / HEAL MANAGER =================
@@ -1715,15 +1836,24 @@ document.addEventListener('alpine:init', () => {
                 this.data.vitals.currentHp = Math.max(0, prevHp - remainingDamage);
             }
 
+            const curHp = this.data.vitals.currentHp;
+            const maxHp = this.data.vitals.maxHp || 1;
+            const curTemp = this.data.vitals.tempHp || 0;
+            const tempStr = curTemp > 0 ? ` (Temp HP: ${curTemp})` : '';
+
+            this.logEvent('💥', 'Damage Taken', `Took ${amount} damage${note}. Current HP: ${curHp}/${maxHp}${tempStr}.`);
+
             this.saveState();
             this.modalHpManagerOpen = false;
 
             if (this.data.vitals.currentHp === 0) {
                 if (this.data.concentration?.active) {
                     const spellName = this.data.concentration.spellName;
-                    this.breakConcentration();
+                    this.breakConcentration('dropped to 0 HP');
+                    this.logEvent('☠️', 'Fell Unconscious', `Dropped to 0 HP. Death saves required.`);
                     this.uiAlert(`You dropped to 0 HP (Unconscious). Concentration on "${spellName}" was lost immediately.`, "Fell Unconscious!", "☠️");
                 } else {
+                    this.logEvent('☠️', 'Fell Unconscious', `Dropped to 0 HP. Death saves required.`);
                     this.uiAlert("You dropped to 0 HP. You must now make death saving throws on your turns.", "0 Hit Points!", "☠️");
                 }
                 return;
@@ -1755,6 +1885,7 @@ document.addEventListener('alpine:init', () => {
                 this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
             }
 
+            this.logEvent('💚', 'Healing Received', `Restored ${amount} HP. Current HP: ${this.data.vitals.currentHp}/${max}.`);
             this.saveState();
             this.modalHpManagerOpen = false;
         },
@@ -1762,6 +1893,7 @@ document.addEventListener('alpine:init', () => {
         applyTempHp(amount) {
             amount = Math.max(0, parseInt(amount, 10) || 0);
             this.data.vitals.tempHp = amount;
+            this.logEvent('🛡️', 'Temp HP', `Set Temporary HP to ${amount}.`);
             this.saveState();
             this.modalHpManagerOpen = false;
         },
@@ -2073,10 +2205,54 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
+            // 1. Sync Spell Slots according to official class tables
+            syncCharacterSpellSlots(this.data);
+
+            // 2. Detect & auto-add newly unlocked class features
+            const { newResources, newTraits } = detectClassFeaturesToSync(this.data);
+            if (newResources.length > 0) {
+                this.data.combat.resources.push(...newResources);
+            }
+            if (newTraits.length > 0) {
+                this.data.combat.traits.push(...newTraits);
+            }
+
             sanitizeTracking(this.data);
             this.saveState();
             this.modalLevelUpOpen = false;
-            this.uiAlert("Level, attributes, and hit points updated successfully!", "Level Up Complete", "🎉");
+
+            const totalLevel = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
+            const addedNames = [...newResources.map(r => r.name), ...newTraits.map(t => t.name)];
+            let alertMsg = `Advanced to Level ${totalLevel}! HP, Hit Dice, and Spell Slots have been automatically synchronized.`;
+            if (addedNames.length > 0) {
+                alertMsg += `\n\n✨ Unlocked new class features added:\n• ` + addedNames.join('\n• ');
+            }
+            this.logEvent('⭐', 'Level Up', `Reached Level ${totalLevel}. Max HP: ${newMaxHp}.${addedNames.length > 0 ? ` Unlocked: ${addedNames.join(', ')}.` : ''}`);
+            this.uiAlert(alertMsg, "Level Up Complete", "🎉");
+        },
+
+        syncClassFeatures() {
+            syncCharacterSpellSlots(this.data);
+            const { newResources, newTraits } = detectClassFeaturesToSync(this.data);
+            let addedCount = 0;
+            if (newResources.length > 0) {
+                this.data.combat.resources.push(...newResources);
+                addedCount += newResources.length;
+            }
+            if (newTraits.length > 0) {
+                this.data.combat.traits.push(...newTraits);
+                addedCount += newTraits.length;
+            }
+            sanitizeTracking(this.data);
+            this.saveState();
+
+            if (addedCount > 0) {
+                const names = [...newResources.map(r => r.name), ...newTraits.map(t => t.name)].join(', ');
+                this.logEvent('✨', 'Features Synchronized', `Added: ${names}.`);
+                this.uiAlert(`Synchronized ${addedCount} unlocked class features and spell slots:\n• ${names}`, "Features Synchronized", "✨");
+            } else {
+                this.uiAlert("All class features, tactical resources, and spell slots are already up to date with your current levels.", "Already Up to Date", "✅");
+            }
         },
 
         // Rests
@@ -2116,16 +2292,19 @@ document.addEventListener('alpine:init', () => {
 
             (this.data.magic?.slots || []).forEach(slot => {
                 const r = (slot.reset || '').toLowerCase();
-                if (r.includes('short') || r.includes('corto')) slot.spent = slot.spent.map(() => false);
+                if (r.includes('short')) slot.spent = slot.spent.map(() => false);
             });
 
             (this.data.combat?.resources || []).forEach(resource => {
                 const r = (resource.reset || '').toLowerCase();
-                if (r.includes('short') || r.includes('corto')) resource.spent = resource.spent.map(() => false);
+                if (r.includes('short')) resource.spent = resource.spent.map(() => false);
             });
 
             this.saveState();
             this.modalShortRestOpen = false;
+
+            const rechargedList = this.shortRestRecharges.length > 0 ? this.shortRestRecharges.join(', ') : 'None';
+            this.logEvent('⛺', 'Short Rest', `Spent ${count} Hit Dice. Restored ${totalHealed} HP (HP: ${this.data.vitals.currentHp}/${this.data.vitals.maxHp}). Recharged: ${rechargedList}.`);
 
             const rechargedStr = this.shortRestRecharges.length > 0
                 ? `• Recharged resources: ${this.shortRestRecharges.join(', ')}.`
@@ -2146,19 +2325,20 @@ document.addEventListener('alpine:init', () => {
             (this.data.magic?.slots || []).forEach(s => s.spent = s.spent.map(() => false));
             (this.data.combat?.resources || []).forEach(r => r.spent = r.spent.map(() => false));
 
+            this.logEvent('🌙', 'Long Rest', `Full rest. Restored all HP (${this.data.vitals.maxHp}), Hit Dice, Spell Slots, and Class Resources.`);
+
             this.saveState();
             await this.uiAlert("Long Rest completed. Health and resources fully restored.", "Long Rest", "✨");
         },
 
-        // Export / Import compatible with JS module (CORS-free) and JSON
+        // Export / Import compatible with JSON (and legacy JS format)
         exportJSON() {
             const jsonStr = JSON.stringify(this.data, null, 2);
-            const jsContent = `export var CHARACTER_DATA = ${jsonStr};\n`;
-            const blob = new Blob([jsContent], { type: "text/javascript;charset=utf-8" });
+            const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = "character.js";
+            a.download = "character.json";
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -2176,7 +2356,7 @@ document.addEventListener('alpine:init', () => {
                     this.saveState();
                     await this.uiAlert("Character sheet imported and synchronized successfully.", "Character Loaded", "👤");
                 } catch (err) {
-                    await this.uiAlert("Invalid file format. You can import both character.js or a .json file.", "Error", "❌");
+                    await this.uiAlert("Invalid file format. You can import character.json or a legacy character.js file.", "Error", "❌");
                 }
             };
             reader.readAsText(file);

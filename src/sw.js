@@ -1,10 +1,10 @@
-const CACHE_NAME = 'dorian-dnd-cache-v2';
+const CACHE_NAME = 'dorian-dnd-cache-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './bundle.js',
   './app.js',
-  './character.js',
+  './character.json',
   './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'

@@ -1,0 +1,632 @@
+{
+  "acolyte": {
+    "name": "Acolyte",
+    "source": "PHB",
+    "desc": "You have spent your life in the service of a temple to a specific god or pantheon of gods. You act as an intermediary between the realm of the holy and the mortal world, performing sacred rites and offering sacrifices to conduct worshipers into the presence of the divine.",
+    "skillProficiencies": [
+      "Insight",
+      "Religion"
+    ],
+    "toolProficiencies": [],
+    "languages": "Two of your choice",
+    "equipment": [
+      "A holy symbol (a gift from when you entered the priesthood)",
+      "A prayer book or prayer wheel",
+      "5 sticks of incense",
+      "Vestments",
+      "A set of common clothes",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "Shelter of the Faithful",
+      "desc": "As an acolyte, you command the respect of those who share your faith, and you can perform the religious ceremonies of your deity. You and your adventuring companions can expect to receive free healing and care at a temple, shrine, or other established presence of your faith, though you must provide any material components needed for spells. Those who share your religion will support you (but only you) at a modest lifestyle. You might also have ties to a specific temple dedicated to your chosen deity, and you have a residence there."
+    },
+    "suggestedCharacteristics": {
+      "personalityTraits": [
+        "I idolize a particular hero of my faith, and constantly refer to that person's deeds and example.",
+        "I can find common ground between the fiercest enemies, empathizing with them and always working toward peace.",
+        "I see presages in every event and action. The gods are talking to us, we just need to listen.",
+        "Nothing can shake my optimistic attitude."
+      ],
+      "ideals": [
+        "Tradition. The ancient traditions of worship and sacrifice must be preserved and upheld. (Lawful)",
+        "Charity. I always try to help those in need, no matter what the personal cost. (Good)",
+        "Change. We must help bring about the changes the gods are constantly working in the world. (Chaotic)",
+        "Faith. I trust that my deity will guide my actions. (Lawful)"
+      ],
+      "bonds": [
+        "I would die to recover an ancient relic of my faith that was lost long ago.",
+        "I will someday get revenge on the corrupt temple hierarchy who branded me a heretic.",
+        "I owe my life to the priest who took me in when my parents died.",
+        "Everything I do is for the common people."
+      ],
+      "flaws": [
+        "I judge others harshly, and myself even more severely.",
+        "I put too much trust in those who wield power within my temple's hierarchy.",
+        "My piety sometimes leads me to blindly trust those that profess faith in my god.",
+        "I am inflexible in my thinking."
+      ]
+    }
+  },
+  "charlatan": {
+    "name": "Charlatan",
+    "source": "PHB",
+    "desc": "You have always had a way with people. You know what makes them tick, you can tease out what they want from a few minutes of conversation, and with a few leading questions you can read them like a book. It's a useful talent, and one of the ways you put it to use is conning people out of their money.",
+    "skillProficiencies": [
+      "Deception",
+      "Sleight of Hand"
+    ],
+    "toolProficiencies": [
+      "Disguise kit",
+      "Forgery kit"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A set of fine clothes",
+      "A disguise kit",
+      "Tools of the con of your choice (ten stoppered bottles filled with colored liquid, a set of weighted dice, a deck of marked cards, or a signet ring of an imaginary duke)",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "False Identity",
+      "desc": "You have created a second identity that includes documentation, established acquaintances, and disguises that allow you to assume that persona. Additionally, you can forge documents including official papers and personal letters, as long as you have seen an example of the kind of document or the handwriting you are trying to copy."
+    },
+    "suggestedCharacteristics": {
+      "personalityTraits": [
+        "I fall in and out of love easily, and am always pursuing someone.",
+        "I have a joke for every occasion, especially occasions where humor is inappropriate.",
+        "Flattery is my preferred trick for getting what I want.",
+        "I'm a born gambler who can't resist taking a risk for a potential payoff."
+      ],
+      "ideals": [
+        "Independence. I am a free spirit — no one tells me what to do. (Chaotic)",
+        "Fairness. I never target people who can't afford to lose a few coins. (Lawful)",
+        "Charity. I distribute the money I acquire to the people who really need it. (Good)",
+        "Creativity. I never run the same con twice. (Chaotic)"
+      ],
+      "bonds": [
+        "I fleeced the wrong person and must work to ensure that this individual never crosses my path or the paths of those I care about.",
+        "I owe everything to my mentor — a horrible person who's probably rotting in jail somewhere.",
+        "I come from a noble family, and one day I'll reclaim my lands and title from those who stole them from me."
+      ],
+      "flaws": [
+        "I can't resist a pretty face.",
+        "I'm always in debt. I spend my ill-gotten gains on decadent luxuries faster than I bring them in.",
+        "I'm convinced that no one could ever fool me the way I fool others."
+      ]
+    }
+  },
+  "criminal": {
+    "name": "Criminal",
+    "source": "PHB",
+    "desc": "You are an experienced criminal with a history of breaking the law. You have spent plenty of time among other criminals and still have contacts within the criminal underworld. You're far closer than most people to the world of murder, theft, and violence that pervades the underbelly of civilization.",
+    "skillProficiencies": [
+      "Deception",
+      "Stealth"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set",
+      "Thieves' tools"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A crowbar",
+      "A set of dark common clothes including a hood",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "Criminal Contact",
+      "desc": "You have a reliable and trustworthy contact who acts as your liaison to a network of other criminals. You know how to get messages to and from your contact, even over great distances; specifically, you know the local messengers, corrupt caravan masters, and seedy sailors who can deliver messages for you."
+    },
+    "suggestedCharacteristics": {
+      "personalityTraits": [
+        "I always have a plan for what to do when things go wrong.",
+        "I am always calm, no matter what the situation. I never raise my voice or let my emotions control me.",
+        "The first thing I do in a new place is note the locations of everything valuable — or where such things could be hidden.",
+        "I would rather make a new friend than a new enemy."
+      ],
+      "ideals": [
+        "Honor. I don't steal from others in the trade. (Lawful)",
+        "Freedom. Chains are meant to be broken, as are those who would forge them. (Chaotic)",
+        "Charity. I steal from the wealthy so that I can help people in need. (Good)",
+        "Greed. I will do whatever it takes to become wealthy. (Evil)"
+      ],
+      "bonds": [
+        "I'm trying to pay off an old debt I owe to a generous benefactor.",
+        "My ill-gotten gains go to support my family.",
+        "Something important was taken from me, and I aim to steal it back.",
+        "I will become the greatest thief that ever lived."
+      ],
+      "flaws": [
+        "When I see something valuable, I can't think about anything but how to steal it.",
+        "When faced with a choice between money and my friends, I usually choose the money.",
+        "If there's a plan, I'll forget it. If there isn't a plan, I'll make a bad one.",
+        "I have a 'tell' that reveals when I'm lying."
+      ]
+    }
+  },
+  "spy": {
+    "name": "Spy (Criminal Variant)",
+    "source": "PHB",
+    "desc": "Although your capabilities are not much different from those of a burglar or smuggler, you learned and practiced them in a very different context: as an espionage agent on behalf of a crown, a noble house, a guild, or an organization.",
+    "skillProficiencies": [
+      "Deception",
+      "Stealth"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set",
+      "Thieves' tools"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A crowbar",
+      "A set of dark common clothes including a hood",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "Spy Contact",
+      "desc": "You have a reliable and trustworthy contact who acts as your liaison to a network of other espionage agents or handlers. You know how to get messages to and from your handler across great distances through hidden dead drops, trusted couriers, and coded phrases."
+    }
+  },
+  "entertainer": {
+    "name": "Entertainer",
+    "source": "PHB",
+    "desc": "You thrive in front of an audience. You know how to entrance them, entertain them, and even inspire them. Your poetics can stir the hearts of those who hear you, awakening grief or joy, laughter or tears.",
+    "skillProficiencies": [
+      "Acrobatics",
+      "Performance"
+    ],
+    "toolProficiencies": [
+      "Disguise kit",
+      "One musical instrument of your choice"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A musical instrument (one of your choice)",
+      "The favor of an admirer (love letter, lock of hair, or trinket)",
+      "A costume",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "By Popular Demand",
+      "desc": "You can always find a place to perform, usually in an inn or tavern but possibly with a circus, at a theater, or even in a noble's court. At such a place, you receive free lodging and food of a modest or comfortable standard (depending on the quality of the establishment), as long as you perform each night. In addition, your performance makes you something of a local figure."
+    }
+  },
+  "gladiator": {
+    "name": "Gladiator (Entertainer Variant)",
+    "source": "PHB",
+    "desc": "A gladiator is as much an entertainer as any minstrel or circus performer, trained to make the art of combat into spectacle the crowds love.",
+    "skillProficiencies": [
+      "Acrobatics",
+      "Performance"
+    ],
+    "toolProficiencies": [
+      "Disguise kit",
+      "One unusual weapon (such as a trident or net)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "An inexpensive but unusual weapon",
+      "The favor of an admirer",
+      "A costume",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "By Popular Demand",
+      "desc": "You can always find a place to fight and perform, in an arena, pit-fighting den, or gladiatorial ring. At such a place, you receive free lodging and food of a modest or comfortable standard, as long as you perform or fight each night."
+    }
+  },
+  "folk-hero": {
+    "name": "Folk Hero",
+    "source": "PHB",
+    "desc": "You come from a humble social rank, but you are destined for so much more. Already the people of your home village regard you as their champion, and your destiny calls you to stand against the tyrants and monsters that threaten the common folk everywhere.",
+    "skillProficiencies": [
+      "Animal Handling",
+      "Survival"
+    ],
+    "toolProficiencies": [
+      "One type of artisan's tools",
+      "Vehicles (land)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A set of artisan's tools (one of your choice)",
+      "An iron pot",
+      "A set of common clothes",
+      "A shovel",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Rustic Hospitality",
+      "desc": "Since you come from the ranks of the common folk, you fit in among them with ease. You can find a place to hide, rest, or recuperate among other commoners, unless you have shown yourself to be a danger to them. They will shield you from the law or anyone else searching for you, though they will not risk their lives for you."
+    }
+  },
+  "guild-artisan": {
+    "name": "Guild Artisan",
+    "source": "PHB",
+    "desc": "You are a member of an artisan's guild, skilled in a particular field and closely associated with other artisans. You are a well-established part of the mercantile world, freed by talent and wealth from the constraints of a feudal social order.",
+    "skillProficiencies": [
+      "Insight",
+      "Persuasion"
+    ],
+    "toolProficiencies": [
+      "One type of artisan's tools of your choice"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A set of artisan's tools (one of your choice)",
+      "A letter of introduction from your guild",
+      "A set of traveler's clothes",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "Guild Membership",
+      "desc": "As an established and respected member of a guild, you can rely on certain benefits that membership provides. Your fellow guild members will provide you with lodging and food if necessary, and pay for your funeral if needed. In most cities and towns, a guildhall offers a central place to meet other members of your profession."
+    }
+  },
+  "guild-merchant": {
+    "name": "Guild Merchant (Guild Artisan Variant)",
+    "source": "PHB",
+    "desc": "Instead of an artisan's craft, you belong to a guild of traders, caravan masters, or shopkeepers. You don't craft items yourself; you earn your living by buying and selling the raw materials and finished goods of others.",
+    "skillProficiencies": [
+      "Insight",
+      "Persuasion"
+    ],
+    "toolProficiencies": [
+      "Navigator's tools or an additional language"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A mule and a cart",
+      "A letter of introduction from your guild",
+      "A set of traveler's clothes",
+      "A pouch containing 15 gp"
+    ],
+    "feature": {
+      "name": "Guild Membership",
+      "desc": "As an established and respected member of a mercantile guild, you enjoy safe caravan routes, guild shipping connections, and access to guildhalls throughout major trade cities."
+    }
+  },
+  "hermit": {
+    "name": "Hermit",
+    "source": "PHB",
+    "desc": "You lived in seclusion — either in a sheltered community such as a monastery, or entirely alone — for a formative part of your life. In your time apart from the clamor of society, you found quiet, solitude, and perhaps some of the answers you were looking for.",
+    "skillProficiencies": [
+      "Medicine",
+      "Religion"
+    ],
+    "toolProficiencies": [
+      "Herbalism kit"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A scroll case stuffed full of notes from your studies or prayers",
+      "A winter blanket",
+      "A set of common clothes",
+      "An herbalism kit",
+      "5 gp"
+    ],
+    "feature": {
+      "name": "Discovery",
+      "desc": "The quiet seclusion of your extended hermitage gave you access to a unique and powerful discovery. The exact nature of this revelation depends on the nature of your seclusion. It might be a great truth about the cosmos, the deities, the powerful beings of the outer planes, or the forces of nature."
+    }
+  },
+  "noble": {
+    "name": "Noble",
+    "source": "PHB",
+    "desc": "You understand wealth, power, and privilege. You carry a noble title, and your family owns land, collects taxes, and wields significant political influence. You might be a pampered aristocrat, a disinherited scion, or a ruler with duties.",
+    "skillProficiencies": [
+      "History",
+      "Persuasion"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A set of fine clothes",
+      "A signet ring",
+      "A scroll of pedigree",
+      "A purse containing 25 gp"
+    ],
+    "feature": {
+      "name": "Position of Privilege",
+      "desc": "Thanks to your noble birth, people are inclined to think the best of you. You are welcome in high society, and people assume you have the right to be wherever you are. The common folk make every effort to accommodate you and avoid your displeasure, and other people of high birth treat you as a member of the same social sphere."
+    }
+  },
+  "knight": {
+    "name": "Knight (Noble Variant)",
+    "source": "PHB",
+    "desc": "A knighthood is among the lowest noble titles in most societies, but it can be a path to higher status. If your character is a knight, you are sworn to an order or lord and attended by loyal retainers.",
+    "skillProficiencies": [
+      "History",
+      "Persuasion"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A set of fine clothes",
+      "A signet ring",
+      "A scroll of pedigree",
+      "A purse containing 25 gp"
+    ],
+    "feature": {
+      "name": "Retainers",
+      "desc": "You have the service of three retainers loyal to your family. One of these retainers is a noble companion (a herald, squire, or page), and the other two are commoners who can perform routine tasks like caring for horses, cooking, and running errands. Your retainers do not fight for you and will avoid obviously deadly danger."
+    }
+  },
+  "outlander": {
+    "name": "Outlander",
+    "source": "PHB",
+    "desc": "You grew up in the wilds, far from civilization and the comforts of town and technology. You've witnessed the migration of herds larger than forests, survived weather more extreme than any city-dweller can comprehend, and enjoyed the solitude of being the only thinking creature for miles.",
+    "skillProficiencies": [
+      "Athletics",
+      "Survival"
+    ],
+    "toolProficiencies": [
+      "One musical instrument of your choice"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "A staff",
+      "A hunting trap",
+      "A trophy from an animal you killed",
+      "A set of traveler's clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Wanderer",
+      "desc": "You have an excellent memory for maps and geography, and you can always recall the general layout of terrain, settlements, and other features around you. In addition, you can find fresh water and food for yourself and up to five other people each day, provided the land offers berries, small game, water, etc."
+    }
+  },
+  "sage": {
+    "name": "Sage",
+    "source": "PHB",
+    "desc": "You spent years learning the lore of the multiverse. You scoured manuscripts, studied scrolls, and listened to the greatest experts on the subjects that interest you. Your efforts have made you a master in your fields of study.",
+    "skillProficiencies": [
+      "Arcana",
+      "History"
+    ],
+    "toolProficiencies": [],
+    "languages": "Two of your choice",
+    "equipment": [
+      "A bottle of black ink",
+      "A quill",
+      "A small knife",
+      "A letter from a dead colleague posing a question you have not yet been able to answer",
+      "A set of common clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Researcher",
+      "desc": "When you attempt to learn or recall a piece of lore, if you do not know that information, you often know where and from whom you can obtain it. Usually, this information comes from a library, scriptorium, university, or a sage or other learned person or creature."
+    }
+  },
+  "sailor": {
+    "name": "Sailor",
+    "source": "PHB",
+    "desc": "You sailed on a seagoing vessel for years. In that time, you faced down mighty storms, monsters of the deep, and those who wanted to sink your craft to the bottomless depths. Your first love is the distant line of the horizon, but you have adapted to living on land.",
+    "skillProficiencies": [
+      "Athletics",
+      "Perception"
+    ],
+    "toolProficiencies": [
+      "Navigator's tools",
+      "Vehicles (water)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A belaying pin (club)",
+      "50 feet of silk rope",
+      "A lucky charm such as a rabbit foot or a small stone with a hole in the center",
+      "A set of common clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Ship's Passage",
+      "desc": "When you need to, you can secure free passage on a sailing ship for yourself and your adventuring companions. You might sail on the ship you served on, or another ship you have good relations with. Because you're calling in a favor, you can't be certain of a schedule or destination that will suit your needs perfectly."
+    }
+  },
+  "pirate": {
+    "name": "Pirate (Sailor Variant)",
+    "source": "PHB",
+    "desc": "You spent your youth under the sway of a dread pirate, a ruthless cutthroat who taught you how to survive in a world of sharks and savages. You've indulged in larceny on the high seas and sent more than one deserving soul to a briny grave.",
+    "skillProficiencies": [
+      "Athletics",
+      "Perception"
+    ],
+    "toolProficiencies": [
+      "Navigator's tools",
+      "Vehicles (water)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A belaying pin (club)",
+      "50 feet of silk rope",
+      "A lucky charm",
+      "A set of common clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Bad Reputation",
+      "desc": "No matter where you go, people are afraid of you due to your reputation. When you are in a civilized settlement, you can get away with minor criminal offenses, such as refusing to pay for food at a tavern or breaking down doors at a local shop, since most people will not report your activity to the authorities."
+    }
+  },
+  "soldier": {
+    "name": "Soldier",
+    "source": "PHB",
+    "desc": "War has been your life for as long as you can remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company.",
+    "skillProficiencies": [
+      "Athletics",
+      "Intimidation"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set",
+      "Vehicles (land)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "An insignia of rank",
+      "A trophy taken from a fallen enemy (a dagger, broken blade, or piece of a banner)",
+      "A set of bone dice or deck of cards",
+      "A set of common clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Military Rank",
+      "desc": "You have a military rank from your career as a soldier. Soldiers loyal to your former military organization still recognize your authority and influence, and they defer to you if they are of a lower rank. You can invoke your rank to exert influence over other soldiers and requisition simple equipment or horses for temporary use."
+    }
+  },
+  "urchin": {
+    "name": "Urchin",
+    "source": "PHB",
+    "desc": "You grew up on the streets alone, orphaned, and poor. You had no one to watch over you or to provide for you, so you learned to provide for yourself. You fought fiercely for food and kept a constant watch out for other desperate souls who might steal from you.",
+    "skillProficiencies": [
+      "Sleight of Hand",
+      "Stealth"
+    ],
+    "toolProficiencies": [
+      "Disguise kit",
+      "Thieves' tools"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A small knife",
+      "A map of the city you grew up in",
+      "A pet mouse",
+      "A token to remember your parents by",
+      "A set of common clothes",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "City Secrets",
+      "desc": "You know the secret patterns and flow to cities and can find passages through the urban sprawl that others would miss. When you are not in combat, you (and companions you lead) can travel between any two locations in the city twice as fast as your speed would normally allow."
+    }
+  },
+  "custom-background": {
+    "name": "Custom Background",
+    "source": "TCE / PHB",
+    "desc": "Official modular rules from Tasha's Cauldron of Everything and Player's Handbook Chapter 4. You can customize any existing background or build a brand new one from scratch to match your character's unique backstory.",
+    "skillProficiencies": [
+      "Any two skills of your choice"
+    ],
+    "toolProficiencies": [
+      "Any combination of two tool proficiencies or languages of your choice"
+    ],
+    "languages": "Chosen via tool/language allocation",
+    "equipment": [
+      "A package of equipment worth up to 50 gp, or items appropriate to your customized concept"
+    ],
+    "feature": {
+      "name": "Custom Feature",
+      "desc": "Choose any existing background feature (e.g. Criminal Contact, Shelter of the Faithful, Researcher), or work with your Dungeon Master to design a feature tailored to your specific history."
+    }
+  },
+  "xge-life-generator": {
+    "name": "This Is Your Life (Background Generator)",
+    "source": "XGE",
+    "desc": "Xanathar's Guide to Everything Chapter 1 expansion system for generating rich backstories. Provides structured rolling tables for Origins (parents, birthplace, siblings, family lifestyle, childhood home), Life Decisions (why you chose your class and background), and Life Events (adventures, boons, tragedies, rivalries, love, and supernatural encounters).",
+    "skillProficiencies": [
+      "Retains chosen background skills"
+    ],
+    "toolProficiencies": [],
+    "languages": "Varies by background tables",
+    "equipment": [
+      "Determined by base background and life event roll outcomes (trinkets, family heirlooms, letters)"
+    ],
+    "feature": {
+      "name": "Life Event Milestones",
+      "desc": "Characters generate 1d10 life events (or more based on starting age) detailing pivotal moments such as discovering a mysterious magical secret, creating an enduring alliance with an NPC faction, or gaining a lifelong enemy."
+    }
+  },
+  "haunted-one": {
+    "name": "Haunted One",
+    "source": "CoS / VRGR",
+    "desc": "You are haunted by something so terrible that you dare not speak of it. You've tried to bury it and run away from it, to no avail. Whatever this thing is, it won't leave you alone. It appears in your dreams and follows you everywhere you travel.",
+    "skillProficiencies": [
+      "Choose two from: Arcana, Investigation, Religion, Survival"
+    ],
+    "toolProficiencies": [],
+    "languages": "One exotic language (Abyssal, Celestial, Deep Speech, Draconic, Infernal, Primordial, Sylvan, or Undercommon)",
+    "equipment": [
+      "A monster hunter's pack",
+      "A gothic trinket of special significance",
+      "A set of common clothes",
+      "A pouch containing 1 sp"
+    ],
+    "feature": {
+      "name": "Heart of Darkness",
+      "desc": "Those who look into your eyes can see that you have faced unimaginable horror and that you are no stranger to darkness. Commoners and common folk extend you every courtesy and do their utmost to help you. Unless you have shown yourself to be a danger to them, they will even take up arms to fight alongside you."
+    }
+  },
+  "far-traveler": {
+    "name": "Far Traveler",
+    "source": "SCAG",
+    "desc": "You are from a distant place, one so remote that few of the common folk in the North know of it. To the people of this land, you are a curiosity, bringing strange customs, alien philosophies, and fascinating tales of distant realms.",
+    "skillProficiencies": [
+      "Insight",
+      "Perception"
+    ],
+    "toolProficiencies": [
+      "One musical instrument or gaming set of your choice"
+    ],
+    "languages": "One of your choice",
+    "equipment": [
+      "One set of traveler's clothes",
+      "Any one musical instrument or gaming set with which you are proficient",
+      "Poorly wrought maps from your homeland showing the path to Faerun",
+      "A small piece of jewelry worth 10 gp",
+      "A pouch containing 5 gp"
+    ],
+    "feature": {
+      "name": "All Eyes on You",
+      "desc": "Your accent, mannerisms, figures of speech, and perhaps even your appearance all mark you as foreign. Curious onlookers glance your way, and you can leverage this curiosity to gain access to persons of power and scholars intrigued by your distant origins."
+    }
+  },
+  "mercenary-veteran": {
+    "name": "Mercenary Veteran",
+    "source": "SCAG",
+    "desc": "As a sellsword who was once part of a free company, you know the harsh reality of war for coin. You have fought under banners across different kingdoms, knowing camaraderie and betrayal in equal measure.",
+    "skillProficiencies": [
+      "Athletics",
+      "Persuasion"
+    ],
+    "toolProficiencies": [
+      "One type of gaming set",
+      "Vehicles (land)"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A uniform of your company (traveler's clothes in quality)",
+      "An insignia of your rank",
+      "A gaming set of your choice",
+      "A pouch containing 10 gp"
+    ],
+    "feature": {
+      "name": "Mercenary Life",
+      "desc": "You know the mercenary companies and their reputations. You can find tavern work, secure guard gigs, and easily gain entrance to mercenary compounds and outposts."
+    }
+  },
+  "urban-bounty-hunter": {
+    "name": "Urban Bounty Hunter",
+    "source": "SCAG",
+    "desc": "Before becoming an adventurer, your life was spent tracking down criminals and fugitives for coin within sprawling city metropolises. You know every alleyway, informant, and thief's den.",
+    "skillProficiencies": [
+      "Choose two from: Deception, Insight, Persuasion, Stealth"
+    ],
+    "toolProficiencies": [
+      "Choose two from: one gaming set, one musical instrument, thieves' tools"
+    ],
+    "languages": "None",
+    "equipment": [
+      "A set of clothes appropriate to your duties",
+      "A pouch containing 20 gp"
+    ],
+    "feature": {
+      "name": "Ear to the Ground",
+      "desc": "You are in frequent contact with people in the segment of society that was your hunting ground. You know the local contacts, fence operators, and guards who can supply news of quarry and city rumors."
+    }
+  }
+}

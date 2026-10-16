@@ -3,7 +3,7 @@
     "name": "Dorian",
     "race": "Tiefling (Glasya)",
     "alignment": "Chaotic Neutral",
-    "background": "Criminal / Fugitive",
+    "background": "Charlatan",
     "classes": [
       {
         "name": "bard",
@@ -21,8 +21,7 @@
     "senses": "Darkvision (60 ft.)",
     "languages": [
       "Common",
-      "Infernal",
-      "Thieves' Cant"
+      "Infernal"
     ]
   },
   "vitals": {
@@ -56,6 +55,7 @@
     ]
   },
   "conditions": [],
+  "sessionLog": [],
   "statusNotes": "",
   "attributes": {
     "STR": {

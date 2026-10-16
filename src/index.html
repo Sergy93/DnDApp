@@ -190,8 +190,15 @@
                         x-text="data.identity?.name || 'Character'"></h1>
                     <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5" x-text="stats.classesSummary"></p>
                     <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
-                        <span class="bg-dark-900 border border-gray-700 px-2 py-0.5 rounded text-gray-300" x-text="data.identity?.alignment || ''"></span>
-                        <span class="bg-dark-900 border border-gray-700 px-2 py-0.5 rounded text-gray-300" x-text="data.identity?.background || ''"></span>
+                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
+                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
+                        <button type="button" @click="showCurrentBackgroundDetail()"
+                            class="bg-dark-900 hover:bg-dark-800 border border-brand-500/50 hover:border-brand-400 px-2.5 py-1 rounded-lg text-brand-300 hover:text-white transition flex items-center gap-1 font-semibold"
+                            title="Click to view background details">
+                            <span>📜</span>
+                            <span x-text="data.identity?.background || 'Background'"></span>
+                        </button>
+                        <span class="bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold" x-text="`Level ${stats.totalLevel}`"></span>
                     </div>
                 </div>
 
@@ -220,20 +227,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
-
-            <div class="flex flex-wrap justify-between items-center gap-2 mt-4 pt-3 border-t border-gray-800 text-xs text-gray-400">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <label class="px-3 py-1 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-200 font-semibold cursor-pointer transition flex items-center gap-1.5">
-                        <span>📂</span> Import Character (.js / .json)
-                        <input type="file" accept=".js,.json,application/json,text/javascript" class="hidden" @change="importJSON($event)">
-                    </label>
-                    <button @click="exportJSON()"
-                        class="px-3 py-1 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-200 font-semibold transition">💾 Export Character (character.js)</button>
-                    <button @click="resetDefaults()"
-                        class="px-3 py-1 bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 rounded-lg text-red-300 transition">⚠️ Reset Defaults</button>
-                </div>
-                <div class="text-xs text-gray-400 font-medium" x-text="`${data.identity?.race || ''} • Level ${stats.totalLevel}`"></div>
             </div>
         </header>
 
@@ -308,6 +301,17 @@
                             class="bg-brand-600 text-white rounded-full px-1.5 py-0.2 text-[10px] font-black"
                             x-text="activeConditionsList.length"></span>
                     </button>
+
+                    <!-- Session Event Log Button -->
+                    <button @click="modalLogOpen = true"
+                        class="px-2.5 py-1 bg-dark-950 hover:bg-dark-800 border border-gray-700 hover:border-brand-500 text-gray-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow"
+                        title="Session Event Log (damage taken, healing, rests, concentration)">
+                        <span>📜</span>
+                        <span>Log</span>
+                        <span x-show="data.sessionLog && data.sessionLog.length > 0"
+                            class="bg-dark-800 border border-gray-600 text-gray-300 rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold"
+                            x-text="data.sessionLog.length"></span>
+                    </button>
                 </div>
             </div>
 
@@ -321,24 +325,24 @@
 
         <!-- NAVIGATION -->
         <nav class="flex flex-wrap bg-dark-950 border-b border-gray-800 sticky top-0 z-30 shrink-0 text-sm md:text-base font-bold">
-            <button @click="activeTab = 'perfil'"
+            <button @click="activeTab = 'profile'"
                 class="tab-btn flex-1 py-3 border-b-2 transition"
-                :class="activeTab === 'perfil' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📊 Profile</button>
-            <button @click="activeTab = 'combate'"
+                :class="activeTab === 'profile' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📊 Profile</button>
+            <button @click="activeTab = 'combat'"
                 class="tab-btn flex-1 py-3 border-b-2 transition"
-                :class="activeTab === 'combate' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">⚔️ Combat & Magic</button>
-            <button @click="activeTab = 'bolsa'"
+                :class="activeTab === 'combat' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">⚔️ Combat & Magic</button>
+            <button @click="activeTab = 'inventory'"
                 class="tab-btn flex-1 py-3 border-b-2 transition"
-                :class="activeTab === 'bolsa' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">🎒 Inventory</button>
-            <button @click="activeTab = 'progresion'"
+                :class="activeTab === 'inventory' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">🎒 Inventory</button>
+            <button @click="activeTab = 'progression'"
                 class="tab-btn flex-1 py-3 border-b-2 transition"
-                :class="activeTab === 'progresion' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📜 Classes</button>
+                :class="activeTab === 'progression' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📜 Classes</button>
         </nav>
 
         <main class="flex-grow p-3 md:p-5 overflow-y-auto">
 
             <!-- TAB: PROFILE -->
-            <section x-show="activeTab === 'perfil'" class="tab-view">
+            <section x-show="activeTab === 'profile'" class="tab-view">
                 <div class="bg-dark-800 border-2 border-brand-500/40 rounded-2xl p-4 md:p-6 mb-6 shadow-lg relative">
                     <div class="absolute -top-3.5 left-5 bg-brand-900 px-3.5 py-1 text-xs font-black text-brand-200 border border-brand-500/50 rounded-md tracking-wider">
                         CURRENT STATUS
@@ -467,7 +471,7 @@
             </section>
 
             <!-- TAB: COMBAT & MAGIC -->
-            <section x-show="activeTab === 'combate'" class="tab-view">
+            <section x-show="activeTab === 'combat'" class="tab-view">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
 
                     <!-- LEFT COLUMN: PHYSICAL COMBAT & RESOURCES -->
@@ -519,19 +523,26 @@
 
                         <!-- TACTICAL RESOURCES -->
                         <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
-                            <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider border-b border-gray-700 pb-2.5 mb-3 flex items-center gap-2">
-                                <span>🔄</span> Tactical Resources
-                            </h3>
+                            <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                                <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                    <span>🔄</span> Tactical Resources
+                                </h3>
+                                <button type="button" @click="syncClassFeatures()"
+                                    class="text-xs px-2.5 py-1 bg-dark-900 hover:bg-dark-950 border border-brand-500/50 hover:border-brand-400 text-brand-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shadow"
+                                    title="Auto-scan class levels and synchronize unlocked abilities & spell slots">
+                                    <span>⚡</span> Sync Features
+                                </button>
+                            </div>
                             <div class="space-y-3">
-                                <template x-for="(res, rIdx) in data.combat.resources" :key="res.id || rIdx">
+                                <template x-for="res in computedCombatResources" :key="res.id || res.originalIndex">
                                     <div class="bg-dark-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between gap-3">
                                         <div>
-                                            <strong class="text-sm sm:text-base font-bold" :class="res.color || 'text-white'" x-text="res.name"></strong>
-                                            <div class="text-xs sm:text-sm text-gray-400 mt-0.5" x-text="`${res.actionCost || 'Action'} • ${res.reset || 'Rest'}`"></div>
+                                            <strong class="text-sm sm:text-base font-bold" :class="res.color || 'text-white'" x-text="res.displayName || res.name"></strong>
+                                            <div class="text-xs sm:text-sm text-gray-400 mt-0.5" x-text="`${res.actionCost || 'Action'} • ${res.displayReset || res.reset || 'Rest'}`"></div>
                                         </div>
                                         <div class="flex gap-2 shrink-0">
-                                            <template x-for="(spent, bIdx) in res.spent" :key="bIdx">
-                                                <input type="checkbox" class="cb-custom" x-model="res.spent[bIdx]" @change="saveState()">
+                                            <template x-for="(spent, bIdx) in data.combat.resources[res.originalIndex].spent" :key="bIdx">
+                                                <input type="checkbox" class="cb-custom" x-model="data.combat.resources[res.originalIndex].spent[bIdx]" @change="saveState()">
                                             </template>
                                         </div>
                                     </div>
@@ -541,17 +552,20 @@
 
                         <!-- PASIVAS Y RASGOS DE LA FICHA -->
                         <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
-                            <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider border-b border-gray-700 pb-2.5 mb-3 flex items-center gap-2">
-                                <span>📜</span> Features & Traits
-                            </h3>
+                            <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                                <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                                    <span>📜</span> Features & Traits
+                                </h3>
+                                <span class="text-xs text-gray-400 font-mono" x-text="`${computedTraits.length} traits`"></span>
+                            </div>
                             <div class="space-y-3">
-                                <template x-for="(trait, tIdx) in data.combat.traits" :key="tIdx">
+                                <template x-for="trait in computedTraits" :key="trait.name || trait.originalIndex">
                                     <div class="bg-dark-900/90 border border-gray-800 p-3 sm:p-3.5 rounded-xl">
-                                        <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.name"></strong>
-                                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed" x-text="trait.desc"></p>
+                                        <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.displayName || trait.name"></strong>
+                                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed" x-text="trait.displayDesc || trait.desc"></p>
                                     </div>
                                 </template>
-                                <div x-show="!data.combat.traits || data.combat.traits.length === 0" class="text-gray-500 italic text-sm">
+                                <div x-show="!computedTraits || computedTraits.length === 0" class="text-gray-500 italic text-sm">
                                     No features or traits configured.
                                 </div>
                             </div>
@@ -673,17 +687,24 @@
                             </div>
 
                             <!-- Spell Slots -->
-                            <div class="flex flex-wrap gap-2.5 items-center mb-3 p-2 bg-dark-950 rounded-lg border border-gray-800">
-                                <template x-for="(slot, sIdx) in data.magic.slots" :key="slot.id || sIdx">
-                                    <div class="flex items-center gap-2 bg-dark-900 px-2.5 py-1.5 rounded-lg border border-gray-800 text-xs">
-                                        <span class="font-bold text-gray-300" x-text="`${slot.level}:`"></span>
-                                        <div class="flex gap-1">
-                                            <template x-for="(spent, bIdx) in slot.spent" :key="bIdx">
-                                                <input type="checkbox" class="cb-custom w-4 h-4" x-model="slot.spent[bIdx]" @change="saveState()">
-                                            </template>
+                            <div class="flex flex-wrap gap-2.5 items-center justify-between mb-3 p-2 bg-dark-950 rounded-lg border border-gray-800">
+                                <div class="flex flex-wrap gap-2.5 items-center">
+                                    <template x-for="(slot, sIdx) in data.magic.slots" :key="slot.id || sIdx">
+                                        <div class="flex items-center gap-2 bg-dark-900 px-2.5 py-1.5 rounded-lg border border-gray-800 text-xs">
+                                            <span class="font-bold text-gray-300" x-text="`${slot.level}:`"></span>
+                                            <div class="flex gap-1">
+                                                <template x-for="(spent, bIdx) in slot.spent" :key="bIdx">
+                                                    <input type="checkbox" class="cb-custom w-4 h-4" x-model="slot.spent[bIdx]" @change="saveState()">
+                                                </template>
+                                            </div>
                                         </div>
-                                    </div>
-                                </template>
+                                    </template>
+                                </div>
+                                <button type="button" @click="syncClassFeatures()"
+                                    class="text-[11px] px-2.5 py-1 bg-dark-900 hover:bg-dark-850 border border-gray-700 hover:border-brand-500 text-gray-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shrink-0"
+                                    title="Auto-refresh spell slots and features according to class levels">
+                                    <span>🔄</span> Sync Slots
+                                </button>
                             </div>
 
                             <!-- Lista de Hechizos Filtrados -->
@@ -823,7 +844,7 @@
             </section>
 
             <!-- TAB: INVENTORY / EQUIPMENT -->
-            <section x-show="activeTab === 'bolsa'" class="tab-view">
+            <section x-show="activeTab === 'inventory'" class="tab-view">
                 <div class="bg-dark-900 border border-gray-700 rounded-xl p-4 mb-6 shadow">
                     <div class="flex justify-around items-center text-center flex-wrap gap-3">
                         <div class="flex flex-col items-center">
@@ -979,7 +1000,7 @@
             </section>
 
             <!-- TAB: CLASSES & PROGRESSION -->
-            <section x-show="activeTab === 'progresion'" class="tab-view">
+            <section x-show="activeTab === 'progression'" class="tab-view">
                 <div class="flex flex-wrap justify-between items-center gap-3 mb-5 p-4 bg-dark-900 border border-gray-800 rounded-xl">
                     <div>
                         <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
@@ -987,10 +1008,16 @@
                         </h3>
                         <span class="text-xs sm:text-sm text-gray-300">Review unlocked features and class milestones.</span>
                     </div>
-                    <button @click="openLevelUpModal()"
-                        class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs sm:text-sm font-black text-black shadow transition flex items-center gap-1.5 active:scale-95">
-                        <span>⭐</span> Level Up / Edit Sheet
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button @click="modalBackgroundsOpen = true; if (!backgroundDetailItem) backgroundDetailItem = allBackgrounds['criminal'] || Object.values(allBackgrounds)[0];"
+                            class="px-3.5 py-2.5 bg-dark-800 hover:bg-dark-700 border border-brand-500/50 text-brand-300 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow active:scale-95">
+                            <span>📚</span> Backgrounds
+                        </button>
+                        <button @click="openLevelUpModal()"
+                            class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs sm:text-sm font-black text-black shadow transition flex items-center gap-1.5 active:scale-95">
+                            <span>⭐</span> Level Up / Edit Sheet
+                        </button>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1029,6 +1056,29 @@
             </section>
 
         </main>
+
+        <!-- FOOTER: SECONDARY ACTIONS -->
+        <footer class="bg-dark-950 border-t border-gray-800 px-4 py-3 shrink-0 text-xs text-gray-400 mt-auto">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <label class="px-3 py-1.5 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white font-semibold cursor-pointer transition flex items-center gap-1.5 shadow">
+                        <span>📂</span> Import Character (.json / .js)
+                        <input type="file" accept=".json,.js,application/json,text/javascript" class="hidden" @change="importJSON($event)">
+                    </label>
+                    <button @click="exportJSON()"
+                        class="px-3 py-1.5 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white font-semibold transition flex items-center gap-1.5 shadow">
+                        <span>💾</span> Export Character (character.json)
+                    </button>
+                    <button @click="resetDefaults()"
+                        class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 rounded-lg text-red-300 hover:text-red-200 transition flex items-center gap-1.5">
+                        <span>⚠️</span> Reset Defaults
+                    </button>
+                </div>
+                <div class="text-gray-500 text-[11px] font-mono">
+                    D&D 5e Interactive Character Sheet
+                </div>
+            </div>
+        </footer>
     </div>
 
     <!-- GENERIC MODAL -->
@@ -1332,6 +1382,171 @@
             <div class="flex justify-end pt-3 border-t border-gray-800 shrink-0 mt-3">
                 <button type="button" @click="modalConditionsOpen = false"
                     class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SESSION EVENT LOG -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        x-show="modalLogOpen">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-xl w-full max-h-[85vh] p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3 shrink-0">
+                <div class="flex items-center gap-2">
+                    <h3 class="text-base font-bold text-white flex items-center gap-1.5">
+                        <span>📜</span> Session Event History
+                    </h3>
+                    <span x-show="data.sessionLog && data.sessionLog.length > 0"
+                        class="bg-brand-600/30 border border-brand-500/50 text-brand-300 rounded-full px-2 py-0.5 text-xs font-mono font-bold"
+                        x-text="`${data.sessionLog.length} events`"></span>
+                </div>
+                <button @click="modalLogOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <div class="flex justify-between items-center mb-3 text-xs shrink-0">
+                <span class="text-gray-400">Key events during gameplay (damage, healing, rests, concentration & statuses):</span>
+                <button type="button" @click="clearSessionLog()"
+                    x-show="data.sessionLog && data.sessionLog.length > 0"
+                    class="text-red-400 hover:text-red-300 font-bold underline flex items-center gap-1">
+                    <span>🗑️</span> Clear Log
+                </button>
+            </div>
+
+            <!-- Event List -->
+            <div class="overflow-y-auto space-y-2 flex-1 pr-1">
+                <template x-if="!data.sessionLog || data.sessionLog.length === 0">
+                    <div class="text-center py-10 px-4 border border-dashed border-gray-800 rounded-xl bg-dark-950/50">
+                        <span class="text-3xl block mb-2">📜</span>
+                        <p class="text-gray-400 text-sm font-semibold">No events recorded in this session yet.</p>
+                        <p class="text-gray-500 text-xs mt-1">Events such as damage received, healing, rests, concentration, and conditions will appear here automatically.</p>
+                    </div>
+                </template>
+
+                <template x-for="event in (data.sessionLog || [])" :key="event.id">
+                    <div class="p-3 rounded-xl border border-gray-800/80 bg-dark-950/80 flex items-start gap-3 transition hover:border-gray-700 group">
+                        <span class="text-xl mt-0.5 shrink-0" x-text="event.icon"></span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-center gap-2">
+                                <span class="font-bold text-white text-xs md:text-sm" x-text="event.title"></span>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <span class="font-mono text-[11px] text-gray-500" x-text="event.time"></span>
+                                    <button type="button" @click="removeLogEntry(event.id)"
+                                        class="text-gray-500 hover:text-red-400 hover:bg-dark-800 p-0.5 rounded font-bold text-xs transition"
+                                        title="Delete this entry">✕</button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-300 mt-0.5 break-words leading-relaxed" x-text="event.text"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="flex justify-end pt-3 border-t border-gray-800 shrink-0 mt-3">
+                <button type="button" @click="modalLogOpen = false"
+                    class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: BACKGROUND COMPENDIUM -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4"
+        x-show="modalBackgroundsOpen">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-4xl w-full max-h-[90vh] p-4 md:p-6 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4 shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl">📜</span>
+                    <div>
+                        <h3 class="text-base md:text-lg font-bold text-white">5e Background Compendium</h3>
+                        <span class="text-xs text-gray-400">Official backgrounds from PHB, TCE, and XGE</span>
+                    </div>
+                </div>
+                <button @click="modalBackgroundsOpen = false" class="text-gray-400 hover:text-white text-2xl font-bold p-1 leading-none">&times;</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mb-4 shrink-0">
+                <input type="text" x-model="backgroundSearchQuery" placeholder="Search background by name, skill, feature, or source (e.g. Criminal, Insight, PHB)..."
+                    class="w-full bg-dark-950 border border-gray-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-brand-500 transition shadow-inner">
+            </div>
+
+            <!-- Main Content Area: Split List & Detail -->
+            <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-hidden">
+                <!-- Background List -->
+                <div class="md:col-span-5 overflow-y-auto space-y-1.5 pr-1 max-h-[280px] md:max-h-full border-b md:border-b-0 md:border-r border-gray-800 pb-3 md:pb-0 md:pr-3">
+                    <template x-for="bg in filteredBackgrounds" :key="bg.key">
+                        <button type="button" @click="selectBackground(bg)"
+                            class="w-full text-left p-2.5 sm:p-3 rounded-xl border transition flex items-center justify-between gap-2"
+                            :class="(backgroundDetailItem && backgroundDetailItem.name === bg.name) ? 'bg-brand-950/60 border-brand-500 shadow-md' : 'bg-dark-950/70 border-gray-800/80 hover:border-gray-700'">
+                            <div class="min-w-0">
+                                <strong class="text-xs sm:text-sm block truncate" :class="(backgroundDetailItem && backgroundDetailItem.name === bg.name) ? 'text-white font-bold' : 'text-gray-200'" x-text="bg.name"></strong>
+                                <span class="text-[11px] text-gray-400 truncate block mt-0.5" x-text="bg.feature?.name || ''"></span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full border border-gray-700 bg-dark-900 text-gray-300 font-bold" x-text="bg.source"></span>
+                                <span x-show="data.identity?.background && data.identity.background.toLowerCase().includes(bg.name.toLowerCase())"
+                                    class="text-[10px] font-black bg-brand-600 text-white px-1.5 py-0.2 rounded-full uppercase">Active</span>
+                            </div>
+                        </button>
+                    </template>
+                    <div x-show="filteredBackgrounds.length === 0" class="text-gray-500 text-xs text-center py-6">No matching backgrounds found.</div>
+                </div>
+
+                <!-- Background Detail Panel -->
+                <div class="md:col-span-7 overflow-y-auto pr-1 flex flex-col justify-between">
+                    <template x-if="backgroundDetailItem">
+                        <div class="space-y-3">
+                            <div class="border-b border-gray-800 pb-2.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <h4 class="text-base sm:text-lg font-black text-brand-300" x-text="backgroundDetailItem.name"></h4>
+                                    <span class="text-xs font-mono px-2.5 py-0.5 rounded-full border border-brand-500/50 bg-brand-950/50 text-brand-200 font-bold" x-text="`Source: ${backgroundDetailItem.source}`"></span>
+                                </div>
+                                <p class="text-xs text-gray-300 mt-1 leading-relaxed" x-text="backgroundDetailItem.desc"></p>
+                            </div>
+
+                            <!-- Skills & Proficiencies -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🎯 Skill Proficiencies:</span>
+                                    <span class="text-white font-medium" x-text="(backgroundDetailItem.skillProficiencies || []).join(', ') || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🛠️ Tool Proficiencies:</span>
+                                    <span class="text-white font-medium" x-text="(backgroundDetailItem.toolProficiencies || []).join(', ') || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🗣️ Languages:</span>
+                                    <span class="text-white font-medium" x-text="backgroundDetailItem.languages || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🎒 Equipment:</span>
+                                    <span class="text-gray-300 text-[11px] leading-tight block" x-text="(backgroundDetailItem.equipment || []).join(' • ') || 'Standard'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Background Feature -->
+                            <template x-if="backgroundDetailItem.feature">
+                                <div class="bg-amber-950/30 border border-amber-600/50 rounded-xl p-3 text-xs">
+                                    <span class="font-bold text-amber-300 text-sm block mb-1" x-text="`✨ Feature: ${backgroundDetailItem.feature.name}`"></span>
+                                    <p class="text-amber-100/90 leading-relaxed" x-text="backgroundDetailItem.feature.desc"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="!backgroundDetailItem">
+                        <div class="text-gray-500 text-sm text-center py-12">Select a background from the list to view its details.</div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Footer / Action Buttons -->
+            <div class="flex justify-between items-center pt-3 border-t border-gray-800 shrink-0 mt-3">
+                <button type="button" x-show="backgroundDetailItem" @click="applyBackgroundToCharacter(backgroundDetailItem)"
+                    class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition shadow">
+                    Set as Character Background
+                </button>
+                <div x-show="!backgroundDetailItem"></div>
+                <button type="button" @click="modalBackgroundsOpen = false"
+                    class="px-5 py-2 bg-dark-800 hover:bg-dark-700 text-gray-200 rounded-lg text-xs font-bold transition">Close</button>
             </div>
         </div>
     </div>
