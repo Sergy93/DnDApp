@@ -2,8 +2,8 @@ export var CHARACTER_DATA = {
     "identity": {
         "name": "Dorian",
         "race": "Tiefling (Glasya)",
-        "alignment": "Caótico Neutral",
-        "background": "Criminal / Fugitivo",
+        "alignment": "Chaotic Neutral",
+        "background": "Criminal / Fugitive",
         "classes": [
             {
                 "name": "bard",
@@ -18,15 +18,15 @@ export var CHARACTER_DATA = {
                 "hitDie": "d8"
             }
         ],
-        "senses": "Visión en Oscuridad (60 pies)",
+        "senses": "Darkvision (60 ft.)",
         "languages": [
-            "Común",
+            "Common",
             "Infernal",
-            "Jerga de Ladrones"
+            "Thieves' Cant"
         ]
     },
     "vitals": {
-        "speed": "30 pies",
+        "speed": "30 ft.",
         "maxHp": 48,
         "currentHp": 48,
         "tempHp": 0,
@@ -55,13 +55,14 @@ export var CHARACTER_DATA = {
             false
         ]
     },
+    "conditions": [],
     "statusNotes": "",
     "attributes": {
-        "FUE": {
+        "STR": {
             "score": 8,
             "profSave": false
         },
-        "DES": {
+        "DEX": {
             "score": 14,
             "profSave": true
         },
@@ -73,126 +74,126 @@ export var CHARACTER_DATA = {
             "score": 10,
             "profSave": false
         },
-        "SAB": {
+        "WIS": {
             "score": 12,
             "profSave": false
         },
-        "CAR": {
+        "CHA": {
             "score": 18,
             "profSave": true
         }
     },
     "skills": [
         {
-            "id": "acrobacias",
-            "name": "Acrobacias",
-            "attr": "DES",
+            "id": "acrobatics",
+            "name": "Acrobatics",
+            "attr": "DEX",
             "profType": "C"
         },
         {
-            "id": "arcanos",
-            "name": "Arcanos",
+            "id": "animal_handling",
+            "name": "Animal Handling",
+            "attr": "WIS",
+            "profType": "·"
+        },
+        {
+            "id": "arcana",
+            "name": "Arcana",
             "attr": "INT",
             "profType": "·"
         },
         {
-            "id": "atletismo",
-            "name": "Atletismo",
-            "attr": "FUE",
+            "id": "athletics",
+            "name": "Athletics",
+            "attr": "STR",
             "profType": "·"
         },
         {
-            "id": "engano",
-            "name": "Engaño",
-            "attr": "CAR",
+            "id": "deception",
+            "name": "Deception",
+            "attr": "CHA",
             "profType": "P",
-            "note": "Ventaja",
+            "note": "Advantage",
             "minTen": true
         },
         {
-            "id": "historia",
-            "name": "Historia",
+            "id": "history",
+            "name": "History",
             "attr": "INT",
             "profType": "·"
         },
         {
-            "id": "intimidacion",
-            "name": "Intimidación",
-            "attr": "CAR",
+            "id": "insight",
+            "name": "Insight",
+            "attr": "WIS",
+            "profType": "·"
+        },
+        {
+            "id": "intimidation",
+            "name": "Intimidation",
+            "attr": "CHA",
             "profType": "C"
         },
         {
-            "id": "interpretacion",
-            "name": "Interpretación",
-            "attr": "CAR",
-            "profType": "C"
-        },
-        {
-            "id": "investigacion",
-            "name": "Investigación",
+            "id": "investigation",
+            "name": "Investigation",
             "attr": "INT",
             "profType": "C"
         },
         {
-            "id": "juego_manos",
-            "name": "Juego de Manos",
-            "attr": "DES",
-            "profType": "C"
-        },
-        {
-            "id": "medicina",
-            "name": "Medicina",
-            "attr": "SAB",
+            "id": "medicine",
+            "name": "Medicine",
+            "attr": "WIS",
             "profType": "·"
         },
         {
-            "id": "naturaleza",
-            "name": "Naturaleza",
+            "id": "nature",
+            "name": "Nature",
             "attr": "INT",
             "profType": "·"
         },
         {
-            "id": "percepcion",
-            "name": "Percepción",
-            "attr": "SAB",
+            "id": "perception",
+            "name": "Perception",
+            "attr": "WIS",
             "profType": "·"
         },
         {
-            "id": "perspicacia",
-            "name": "Perspicacia",
-            "attr": "SAB",
-            "profType": "·"
+            "id": "performance",
+            "name": "Performance",
+            "attr": "CHA",
+            "profType": "C"
         },
         {
             "id": "persuasion",
-            "name": "Persuasión",
-            "attr": "CAR",
+            "name": "Persuasion",
+            "attr": "CHA",
             "profType": "P",
-            "note": "Ventaja",
+            "note": "Advantage",
             "minTen": true
         },
         {
             "id": "religion",
-            "name": "Religión",
+            "name": "Religion",
             "attr": "INT",
             "profType": "·"
         },
         {
-            "id": "sigilo",
-            "name": "Sigilo",
-            "attr": "DES",
+            "id": "sleight_of_hand",
+            "name": "Sleight of Hand",
+            "attr": "DEX",
             "profType": "C"
         },
         {
-            "id": "supervivencia",
-            "name": "Supervivencia",
-            "attr": "SAB",
-            "profType": "·"
+            "id": "stealth",
+            "name": "Stealth",
+            "attr": "DEX",
+            "profType": "C"
         },
         {
-            "id": "trato_animales",
-            "name": "Trato c. Animales",
-            "attr": "SAB",
+            "id": "survival",
+            "name": "Survival",
+            "attr": "WIS",
             "profType": "·"
         }
     ],
@@ -200,10 +201,10 @@ export var CHARACTER_DATA = {
         "resources": [
             {
                 "id": "insp_bard",
-                "name": "Inspiración Bárdica (1d8)",
-                "usesKey": "CAR",
-                "actionCost": "Acción Adicional",
-                "reset": "Corto/Largo",
+                "name": "Bardic Inspiration (1d8)",
+                "usesKey": "CHA",
+                "actionCost": "Bonus Action",
+                "reset": "Short/Long",
                 "color": "text-brand-300",
                 "spent": [
                     false,
@@ -214,10 +215,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "genie_vessel",
-                "name": "Vaso del Genio (6h)",
+                "name": "Genie's Vessel (6h)",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Largo",
+                "actionCost": "Action",
+                "reset": "Long Rest",
                 "color": "text-blue-300",
                 "spent": [
                     false
@@ -225,10 +226,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "detect_thoughts_feat",
-                "name": "Detectar Pensamientos (Dote)",
+                "name": "Detect Thoughts (Feat)",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Largo",
+                "actionCost": "Action",
+                "reset": "Long Rest",
                 "color": "text-teal-300",
                 "spent": [
                     false
@@ -236,10 +237,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "glasya_minor_illusion",
-                "name": "Glasya: Ilusión Menor",
+                "name": "Glasya: Minor Illusion",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Truco",
+                "actionCost": "Action",
+                "reset": "Cantrip",
                 "color": "text-purple-300",
                 "spent": [
                     false
@@ -247,10 +248,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "glasya_disguise",
-                "name": "Glasya: Disfrazarme",
+                "name": "Glasya: Disguise Self",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Largo",
+                "actionCost": "Action",
+                "reset": "Long Rest",
                 "color": "text-red-300",
                 "spent": [
                     false
@@ -258,10 +259,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "glasya_invis",
-                "name": "Glasya: Invisibilidad",
+                "name": "Glasya: Invisibility",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Largo",
+                "actionCost": "Action",
+                "reset": "Long Rest",
                 "color": "text-rose-300",
                 "spent": [
                     false
@@ -269,10 +270,10 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "cloak_dim_door",
-                "name": "Capa Charlatán: Puerta Dim.",
+                "name": "Cloak of the Mountebank: Dimension Door",
                 "uses": 1,
-                "actionCost": "Acción",
-                "reset": "Largo",
+                "actionCost": "Action",
+                "reset": "Long Rest",
                 "color": "text-amber-300",
                 "spent": [
                     false
@@ -281,36 +282,36 @@ export var CHARACTER_DATA = {
         ],
         "traits": [
             {
-                "name": "Lengua de Plata (eloquence 3)",
-                "desc": "En Persuasión o Engaño, cualquier 1 a 9 en el d20 se convierte automáticamente en 10."
+                "name": "Silver Tongue (Eloquence 3)",
+                "desc": "When you make a Charisma (Persuasion) or Charisma (Deception) check, you can treat a d20 roll of 9 or lower as a 10."
             },
             {
-                "name": "Palabras Inquietantes (eloquence 3)",
-                "desc": "Acción Adicional: gasta 1 Inspiración Bárdica para restar 1d8 a la próxima salvación del enemigo."
+                "name": "Unsettling Words (Eloquence 3)",
+                "desc": "Bonus Action: expend one use of Bardic Inspiration to roll a Bardic Inspiration die and subtract the number rolled from a creature's next saving throw."
             },
             {
-                "name": "Fuente de Inspiración (bard 5)",
-                "desc": "Recuperas todos los usos de Inspiración Bárdica en Descanso Corto o Largo."
+                "name": "Font of Inspiration (Bard 5)",
+                "desc": "You regain all of your expended uses of Bardic Inspiration when you finish a short or long rest."
             },
             {
-                "name": "Canción de Descanso (bard 2)",
-                "desc": "Aliados y tú curan +1d6 extra al gastar dados de golpe en descanso corto."
+                "name": "Song of Rest (Bard 2)",
+                "desc": "You and allies regain an extra 1d6 hit points when spending Hit Dice during a short rest."
             },
             {
-                "name": "Vaso del Genio (warlock 1)",
-                "desc": "Entras a tu vasija durante 6 horas (2x Competencia). CA 15, HP 3."
+                "name": "Genie's Vessel (Warlock 1)",
+                "desc": "You can enter your vessel for up to 6 hours (2x proficiency bonus). AC 15, HP 3."
             },
             {
-                "name": "Ira del Genio (warlock 1)",
-                "desc": "Primer impacto de tu turno suma +3 de daño por Trueno."
+                "name": "Genie's Wrath (Warlock 1)",
+                "desc": "Once during each of your turns when you hit with an attack, you deal extra thunder damage equal to your proficiency bonus (+3)."
             },
             {
-                "name": "Dote Telepático",
-                "desc": "Telepatía a 60 pies. Detectar Pensamientos gratis 1/día sin componentes."
+                "name": "Telepathic Feat",
+                "desc": "You can speak telepathically to any creature within 60 feet. You can cast Detect Thoughts once per long rest without components or spell slots."
             },
             {
-                "name": "Resistencia Infernal (Tiefling)",
-                "desc": "Resistencia al fuego. Visión en la oscuridad a 60 pies."
+                "name": "Infernal Resistance (Tiefling)",
+                "desc": "You have resistance to fire damage and Darkvision up to 60 feet."
             }
         ]
     },
@@ -318,57 +319,57 @@ export var CHARACTER_DATA = {
         "bard": [
             {
                 "level": 1,
-                "title": "Nivel 1",
+                "title": "Level 1",
                 "feats": [
-                    "Lanzamiento de Conjuros de bard",
-                    "Inspiración Bárdica (d6, usos = CAR)",
-                    "Competencias: Armaduras ligeras, simples, estoque, ballesta de mano"
+                    "Spellcasting (Bard)",
+                    "Bardic Inspiration (d6, uses = CHA mod)",
+                    "Proficiencies: Light armor, simple weapons, hand crossbow, longsword, rapier, shortsword"
                 ]
             },
             {
                 "level": 2,
-                "title": "Nivel 2",
+                "title": "Level 2",
                 "feats": [
-                    "Polifacético (+1/2 competencia a tiradas sin competencia)",
-                    "Canción de Descanso (+1d6 HP en descanso corto)"
+                    "Jack of All Trades (+1/2 proficiency bonus rounded down to non-proficient checks)",
+                    "Song of Rest (+1d6 HP on short rest)"
                 ]
             },
             {
                 "level": 3,
-                "title": "Nivel 3",
+                "title": "Level 3",
                 "feats": [
-                    "Colegio de la eloquence",
-                    "Lengua de Plata (mínimo 10 en la tirada del dado en Persuasión y Engaño)",
-                    "Palabras Inquietantes (Gasta 1 Inspiración Bárdica para restar 1d8 a la próxima salvación del enemigo)",
-                    "Pericia (doble competencia)"
+                    "College of Eloquence",
+                    "Silver Tongue (roll 9 or lower on d20 treated as 10 for Persuasion and Deception)",
+                    "Unsettling Words (expend 1 Bardic Inspiration to subtract 1d8 from target's next saving throw)",
+                    "Expertise (double proficiency bonus on 2 skills)"
                 ]
             },
             {
                 "level": 4,
-                "title": "Nivel 4",
+                "title": "Level 4",
                 "feats": [
-                    "Dote Telepático (+1 CAR, telepatía 60', Detectar Pensamientos 1/día)"
+                    "Telepathic Feat (+1 CHA, 60 ft. telepathy, Detect Thoughts 1/day)"
                 ]
             },
             {
                 "level": 5,
-                "title": "Nivel 5",
+                "title": "Level 5",
                 "feats": [
-                    "Inspiración Bárdica mejorada a d8",
-                    "Fuente de Inspiración (recarga Inspiración Bárdica en Descanso Corto o Largo)",
-                    "Conjuros de Nivel 3"
+                    "Bardic Inspiration die improves to d8",
+                    "Font of Inspiration (regain Bardic Inspiration on short or long rest)",
+                    "3rd Level Spells"
                 ]
             }
         ],
         "warlock": [
             {
                 "level": 1,
-                "title": "Nivel 1",
+                "title": "Level 1",
                 "feats": [
-                    "Patrón Sobrenatural: El Genio (Djinni)",
-                    "Vaso del Genio (refugio planar y catalizador)",
-                    "Ira del Genio (+3 Trueno en el primer impacto del turno)",
-                    "Magia de Pacto (1 slot nivel 1 recarga en descanso corto)"
+                    "Otherworldly Patron: The Genie (Djinni)",
+                    "Genie's Vessel (planar sanctuary and spellcasting focus)",
+                    "Genie's Wrath (+proficiency thunder damage on first hit per turn)",
+                    "Pact Magic (1st level spell slot, recharges on short rest)"
                 ]
             }
         ]
@@ -377,7 +378,7 @@ export var CHARACTER_DATA = {
         "slots": [
             {
                 "id": "pact",
-                "level": "Pacto (warlock 1)",
+                "level": "Pact (Warlock 1)",
                 "max": 1,
                 "reset": "short",
                 "spent": [
@@ -386,7 +387,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl1",
-                "level": "Nivel 1 (bard)",
+                "level": "1st Level (Bard)",
                 "max": 4,
                 "reset": "long",
                 "spent": [
@@ -398,7 +399,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl2",
-                "level": "Nivel 2 (bard)",
+                "level": "2nd Level (Bard)",
                 "max": 3,
                 "reset": "long",
                 "spent": [
@@ -409,7 +410,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "id": "lvl3",
-                "level": "Nivel 3 (bard)",
+                "level": "3rd Level (Bard)",
                 "max": 2,
                 "reset": "long",
                 "spent": [
@@ -496,7 +497,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "name": "Detect Thoughts",
-                "source": "Dote Telepático",
+                "source": "Telepathic Feat",
                 "sourceType": "telepathic"
             },
             {
@@ -516,7 +517,7 @@ export var CHARACTER_DATA = {
             },
             {
                 "name": "Dimension Door",
-                "source": "Capa del Charlatán",
+                "source": "Cloak of the Mountebank",
                 "sourceType": "item"
             }
         ]
@@ -530,243 +531,253 @@ export var CHARACTER_DATA = {
         },
         "armors": [
             {
-                "name": "Cuero Tachonado",
+                "name": "Studded Leather",
                 "type": "light",
                 "baseAc": 12,
                 "stealthDisadv": false,
                 "equipped": true,
-                "special": "Armadura ligera. Suma toda tu Destreza."
+                "special": "Light armor. Add your full Dexterity modifier to AC."
             }
         ],
         "weapons": [
             {
-                "name": "Estoque",
+                "name": "Rapier",
                 "attrMode": "finesse",
                 "dice": "1d8",
-                "damageType": "Perforante",
+                "damageType": "Piercing",
                 "proficient": true,
                 "properties": [
-                    "Sutil"
+                    "Finesse"
                 ],
-                "special": "Usa Destreza o Fuerza (la más alta)."
+                "special": "Uses Dexterity or Strength (whichever is higher)."
             },
             {
-                "name": "Ballesta Ligera",
+                "name": "Light Crossbow",
                 "attrMode": "dex",
                 "dice": "1d8",
-                "damageType": "Perforante",
+                "damageType": "Piercing",
                 "proficient": true,
                 "properties": [
-                    "80/320'",
-                    "Dos Manos",
-                    "Recarga"
+                    "Ammunition (80/320)",
+                    "Two-Handed",
+                    "Loading"
                 ],
-                "special": "Ataque a distancia con DES."
+                "special": "Ranged attack with DEX."
             },
             {
-                "name": "Daga",
+                "name": "Dagger",
                 "attrMode": "finesse",
                 "dice": "1d4",
-                "damageType": "Perforante",
+                "damageType": "Piercing",
                 "proficient": true,
                 "properties": [
-                    "Sutil",
-                    "Ligera",
-                    "20/60'"
+                    "Finesse",
+                    "Light",
+                    "Thrown (20/60)"
                 ],
-                "special": "Apta para dos armas o arrojar."
+                "special": "Suitable for two-weapon fighting or throwing."
             },
             {
-                "name": "Lanza de Plata",
+                "name": "Silvered Spear",
                 "attrMode": "str",
                 "dice": "1d6",
                 "versatileDice": "1d8",
-                "damageType": "Perforante",
+                "damageType": "Piercing",
                 "proficient": true,
                 "properties": [
-                    "Versátil (1d8)",
-                    "20/60'",
-                    "Plateada"
+                    "Versatile (1d8)",
+                    "Thrown (20/60)",
+                    "Silvered"
                 ],
-                "special": "Daño mágico vs vulnerables a plata."
+                "special": "Bypasses silver-vulnerable damage resistance."
             },
             {
-                "name": "Fuego Alquímico",
+                "name": "Alchemist's Fire",
                 "attrMode": "dex",
-                "dice": "1d4 continuo",
-                "damageType": "Fuego",
+                "dice": "1d4 ongoing",
+                "damageType": "Fire",
                 "proficient": false,
                 "properties": [
-                    "Arrojadizo 20'"
+                    "Thrown (20 ft.)"
                 ],
-                "special": "1d4 fuego por turno hasta superar CD 10 DES."
+                "special": "1d4 fire damage at the start of each turn until DC 10 DEX check to extinguish."
             }
         ],
         "consumables": [
             {
-                "name": "Fuego de alquimista",
-                "qty": "3 botellas"
+                "name": "Alchemist's Fire",
+                "qty": "3 flasks"
             },
             {
-                "name": "Vial de agua bendita",
+                "name": "Holy Water",
+                "qty": "1 flask"
+            },
+            {
+                "name": "Ball Bearings (bag of 1,000)",
                 "qty": "1"
             },
             {
-                "name": "Bolsa de rodamientos",
-                "qty": "1"
-            },
-            {
-                "name": "Púas de suelo (Caltrops)",
+                "name": "Caltrops (bag of 20)",
                 "qty": "10"
             },
             {
-                "name": "Pociones de Curación (2d4+2)",
+                "name": "Potions of Healing (2d4+2)",
                 "qty": "2"
             },
             {
-                "name": "Poción Restauración",
+                "name": "Potion of Restoration",
                 "qty": "1"
             },
             {
-                "name": "Pergamino: Guardia Cuchillas",
+                "name": "Spell Scroll: Blade Ward",
                 "qty": "1"
             },
             {
-                "name": "Raciones de viaje",
-                "qty": "12"
+                "name": "Rations",
+                "qty": "12 days"
             },
             {
-                "name": "Vino Red Dragon Smash",
-                "qty": "1"
+                "name": "Red Dragon Smash Wine",
+                "qty": "1 bottle"
             },
             {
-                "name": "Virotes de ballesta",
+                "name": "Crossbow Bolts",
                 "qty": "70"
             },
             {
-                "name": "Virotes de plata",
+                "name": "Silvered Crossbow Bolts",
                 "qty": "35"
             }
         ],
         "tools": [
             {
-                "name": "Laúd",
-                "icon": "🎸",
-                "isInstrument": true
-            },
-            {
                 "name": "Bodhran",
                 "icon": "🥁",
-                "isInstrument": true
+                "isInstrument": true,
+                "desc": "Celtic-style frame drum & Bard spellcasting focus. Audible rhythm up to 300 ft, ideal for keeping march pace and performance."
+            },
+            {
+                "name": "Disguise Kit",
+                "icon": "🎭",
+                "isInstrument": false,
+                "desc": "Cosmetics, hair dyes, and small props. Proficiency adds proficiency bonus to disguise checks (10-30 min setup). Opponents must beat your check with Wisdom (Insight/Perception)."
+            },
+            {
+                "name": "Entertainer's Pack",
+                "icon": "🎒",
+                "isInstrument": false,
+                "desc": "Adventuring kit: backpack, bedroll, 2 costumes, 5 candles, 5 days of rations, waterskin, and disguise supplies (38 lbs total)."
+            },
+            {
+                "name": "Fine Cloak",
+                "icon": "🧥",
+                "isInstrument": false,
+                "desc": "Tailored velvet cloak lined with silk. Conceals light weapons or small instruments and grants an air of noble prestige."
+            },
+            {
+                "name": "Fine Clothes",
+                "icon": "👔",
+                "isInstrument": false,
+                "desc": "High-society aristocratic attire. Essential for entering noble courts, formal banquets, and high-stakes social events without suspicion."
+            },
+            {
+                "name": "Forgery Kit",
+                "icon": "📜",
+                "isInstrument": false,
+                "desc": "Fine parchments, specialized inks, quills, sealing wax, and heraldic seals. Proficiency adds proficiency bonus to forge official decrees, letters, and wax crests."
+            },
+            {
+                "name": "Grappling Hook",
+                "icon": "🪝",
+                "isInstrument": false,
+                "desc": "Steel triple-prong hook. Fastens to rope for scaling walls, cliffs, or securing anchor points across gaps."
+            },
+            {
+                "name": "Iron Manacles",
+                "icon": "🔗",
+                "isInstrument": false,
+                "desc": "Restrains Small or Medium creatures. Escaping requires DC 20 DEX (Acrobatics); breaking requires DC 20 STR (Athletics); picking requires Thieves' Tools and DC 15 DEX."
+            },
+            {
+                "name": "Lute",
+                "icon": "🎸",
+                "isInstrument": true,
+                "desc": "String instrument & Bard spellcasting focus. Enables Song of Rest performance and Charisma (Performance) entertainment during downtime."
             },
             {
                 "name": "Ocarina (kraken)",
                 "icon": "🎶",
-                "isInstrument": true
-            },
-            {
-                "name": "Kit de disfraz",
-                "icon": "🎭",
-                "isInstrument": false
-            },
-            {
-                "name": "Kit de falsificación",
-                "icon": "📜",
-                "isInstrument": false
-            },
-            {
-                "name": "Capa de gala",
-                "icon": "🧥",
-                "isInstrument": false
-            },
-            {
-                "name": "Ropas finas",
-                "icon": "👔",
-                "isInstrument": false
-            },
-            {
-                "name": "Mochila de artista",
-                "icon": "🎒",
-                "isInstrument": false
-            },
-            {
-                "name": "Esposas de hierro",
-                "icon": "🔗",
-                "isInstrument": false
-            },
-            {
-                "name": "Garfio",
-                "icon": "🪝",
-                "isInstrument": false
+                "isInstrument": true,
+                "desc": "Handcrafted kraken-motif wind instrument & Bard spellcasting focus. Compact and easily concealed, produces haunting low whistle tones."
             }
         ],
         "story": [
             {
-                "name": "Moneda de Rostro y Cuervo",
-                "desc": "Moneda misteriosa de trama.",
-                "isSpecial": true,
-                "isMagic": true
-            },
-            {
-                "name": "Capa del Charlatán",
-                "desc": "Puerta dimensional 1 vez al día.",
+                "name": "Bone Die",
+                "desc": "+1d6 to a saving throw. Breaks on a natural 1.",
                 "isSpecial": false,
                 "isMagic": true
             },
             {
-                "name": "Dado de Hueso",
-                "desc": "+1d6 a Salvación. Se rompe con 1 natural.",
+                "name": "Cloak of the Mountebank",
+                "desc": "Dimension Door 1/day with cloud of smoke.",
                 "isSpecial": false,
                 "isMagic": true
             },
             {
-                "name": "Anillo Consilium Dubium",
-                "desc": "Ventaja permanente en Persuasión y Engaño.",
+                "name": "Dragon Medallion",
+                "desc": "Dragon-shaped medallion.",
+                "isSpecial": true,
+                "isMagic": false
+            },
+            {
+                "name": "Face & Raven Coin",
+                "desc": "Mysterious campaign quest coin.",
+                "isSpecial": true,
+                "isMagic": true
+            },
+            {
+                "name": "Genie's Urn",
+                "desc": "Djinni vessel (AC 15, HP 3, 6-hour sanctuary).",
                 "isSpecial": false,
                 "isMagic": true
             },
             {
-                "name": "Botella del Genio",
-                "desc": "Vaso Djinni (CA 15, HP 3, refugio 6h).",
+                "name": "Ring of Consilium Dubium",
+                "desc": "Permanent advantage on Persuasion and Deception checks.",
                 "isSpecial": false,
                 "isMagic": true
             },
             {
-                "name": "Anillo de sello",
-                "desc": "Robado al General Garrard.",
+                "name": "Signet Ring",
+                "desc": "Stolen from General Garrard.",
                 "isSpecial": true,
                 "isMagic": false
             },
             {
-                "name": "Reliquia de San Andral",
-                "desc": "Profanada.",
+                "name": "Silvered Gem",
+                "desc": "From Glede.",
                 "isSpecial": true,
                 "isMagic": false
             },
             {
-                "name": "Gema plateada",
-                "desc": "Procedente de Glede.",
+                "name": "St. Andral's Relic",
+                "desc": "Desecrated.",
                 "isSpecial": true,
                 "isMagic": false
             },
             {
-                "name": "Medallón",
-                "desc": "Forma de Dragón.",
-                "isSpecial": true,
-                "isMagic": false
-            },
-            {
-                "name": "Amuleto Lágrima",
-                "desc": "Ajada.",
+                "name": "Suspicious Key",
+                "desc": "Ancient iron key.",
                 "isSpecial": false,
                 "isMagic": false
             },
             {
-                "name": "Llave sospechosa",
-                "desc": "Antigua.",
+                "name": "Teardrop Amulet",
+                "desc": "Worn and faded.",
                 "isSpecial": false,
                 "isMagic": false
             }
         ]
     }
-}
+};

@@ -1,0 +1,19 @@
+{
+  "name": "D&D 5e Character Sheet - Dorian",
+  "short_name": "Dorian D&D",
+  "description": "Interactive offline D&D 5e Character Sheet & Spellbook for tablet and mobile table play",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#030712",
+  "theme_color": "#9333ea",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23111827'/><text y='.9em' font-size='80' x='10'>🎲</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

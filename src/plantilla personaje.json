@@ -16,7 +16,7 @@
     "languages": []
   },
   "vitals": {
-    "speed": "30 pies",
+    "speed": "30 ft.",
     "maxHp": 10,
     "currentHp": 10,
     "tempHp": 0,
@@ -32,32 +32,32 @@
   },
   "statusNotes": "",
   "attributes": {
-    "FUE": { "score": 10, "profSave": false },
-    "DES": { "score": 10, "profSave": false },
+    "STR": { "score": 10, "profSave": false },
+    "DEX": { "score": 10, "profSave": false },
     "CON": { "score": 10, "profSave": false },
     "INT": { "score": 10, "profSave": false },
-    "SAB": { "score": 10, "profSave": false },
-    "CAR": { "score": 10, "profSave": false }
+    "WIS": { "score": 10, "profSave": false },
+    "CHA": { "score": 10, "profSave": false }
   },
   "skills": [
-    { "id": "acrobacias", "name": "Acrobacias", "attr": "DES", "profType": "·" },
-    { "id": "arcanos", "name": "Arcanos", "attr": "INT", "profType": "·" },
-    { "id": "atletismo", "name": "Atletismo", "attr": "FUE", "profType": "·" },
-    { "id": "engano", "name": "Engaño", "attr": "CAR", "profType": "·" },
-    { "id": "historia", "name": "Historia", "attr": "INT", "profType": "·" },
-    { "id": "intimidacion", "name": "Intimidación", "attr": "CAR", "profType": "·" },
-    { "id": "interpretacion", "name": "Interpretación", "attr": "CAR", "profType": "·" },
-    { "id": "investigacion", "name": "Investigación", "attr": "INT", "profType": "·" },
-    { "id": "juego_manos", "name": "Juego de Manos", "attr": "DES", "profType": "·" },
-    { "id": "medicina", "name": "Medicina", "attr": "SAB", "profType": "·" },
-    { "id": "naturaleza", "name": "Naturaleza", "attr": "INT", "profType": "·" },
-    { "id": "percepcion", "name": "Percepción", "attr": "SAB", "profType": "·" },
-    { "id": "perspicacia", "name": "Perspicacia", "attr": "SAB", "profType": "·" },
-    { "id": "persuasion", "name": "Persuasión", "attr": "CAR", "profType": "·" },
-    { "id": "religion", "name": "Religión", "attr": "INT", "profType": "·" },
-    { "id": "sigilo", "name": "Sigilo", "attr": "DES", "profType": "·" },
-    { "id": "supervivencia", "name": "Supervivencia", "attr": "SAB", "profType": "·" },
-    { "id": "trato_animales", "name": "Trato c. Animales", "attr": "SAB", "profType": "·" }
+    { "id": "acrobatics", "name": "Acrobatics", "attr": "DEX", "profType": "·" },
+    { "id": "animal_handling", "name": "Animal Handling", "attr": "WIS", "profType": "·" },
+    { "id": "arcana", "name": "Arcana", "attr": "INT", "profType": "·" },
+    { "id": "athletics", "name": "Athletics", "attr": "STR", "profType": "·" },
+    { "id": "deception", "name": "Deception", "attr": "CHA", "profType": "·" },
+    { "id": "history", "name": "History", "attr": "INT", "profType": "·" },
+    { "id": "insight", "name": "Insight", "attr": "WIS", "profType": "·" },
+    { "id": "intimidation", "name": "Intimidation", "attr": "CHA", "profType": "·" },
+    { "id": "investigation", "name": "Investigation", "attr": "INT", "profType": "·" },
+    { "id": "medicine", "name": "Medicine", "attr": "WIS", "profType": "·" },
+    { "id": "nature", "name": "Nature", "attr": "INT", "profType": "·" },
+    { "id": "perception", "name": "Perception", "attr": "WIS", "profType": "·" },
+    { "id": "performance", "name": "Performance", "attr": "CHA", "profType": "·" },
+    { "id": "persuasion", "name": "Persuasion", "attr": "CHA", "profType": "·" },
+    { "id": "religion", "name": "Religion", "attr": "INT", "profType": "·" },
+    { "id": "sleight_of_hand", "name": "Sleight of Hand", "attr": "DEX", "profType": "·" },
+    { "id": "stealth", "name": "Stealth", "attr": "DEX", "profType": "·" },
+    { "id": "survival", "name": "Survival", "attr": "WIS", "profType": "·" }
   ],
   "combat": {
     "resources": [
@@ -65,8 +65,8 @@
         "id": "",
         "name": "",
         "uses": 1,
-        "actionCost": "Acción",
-        "reset": "Largo",
+        "actionCost": "Action",
+        "reset": "Long Rest",
         "color": "text-brand-300",
         "spent": [false]
       }
@@ -81,13 +81,9 @@
   "progression": {},
   "magic": {
     "slots": [
-      { "id": "lvl1", "level": "Nivel 1", "max": 0, "reset": "long", "spent": [] }
+      { "id": "lvl1", "level": "Level 1", "max": 0, "reset": "long", "spent": [] }
     ],
-    "cantrips": [],
-    "level1": [],
-    "level2": [],
-    "level3": [],
-    "level4": []
+    "spells": []
   },
   "inventory": {
     "wealth": { "cp": 0, "sp": 0, "ep": 0, "gp": 0 },
