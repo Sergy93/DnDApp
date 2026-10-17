@@ -904,6 +904,7 @@ function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttr
         damage,
         higherLevelScale,
         slotScaling,
+        isFavorite: !!charSpell.favorite,
         desc: finalDesc
     };
 }
@@ -1105,12 +1106,37 @@ document.addEventListener('alpine:init', () => {
             return (this.data.magic?.spells || []).map(sp => resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod));
         },
 
+        get favoriteSpells() {
+            const list = this.allResolvedSpells.filter(sp => sp.isFavorite);
+            return this.sortSpellsByCategory(list);
+        },
+
+        sortSpellsByCategory(spellsList) {
+            const getCategoryRank = (sp) => {
+                const hasDamage = sp.damage && sp.damage !== '—';
+                if (hasDamage) return 1;    // 1: Daño
+                if (sp.isHealing) return 2;  // 2: Curar
+                return 3;                   // 3: Utilidad
+            };
+
+            return [...spellsList].sort((a, b) => {
+                const rankA = getCategoryRank(a);
+                const rankB = getCategoryRank(b);
+                if (rankA !== rankB) return rankA - rankB;
+                return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+            });
+        },
+
         get combatSpells() {
-            return this.allResolvedSpells.filter(sp => {
+            const favs = this.favoriteSpells;
+            if (favs.length > 0) return favs;
+            // Fallback if the user hasn't starred any spell yet: show damage & heal spells
+            const fallback = this.allResolvedSpells.filter(sp => {
                 const hasDamage = sp.damage && sp.damage !== '—';
                 const isCombatAction = sp.actionType === 'action' || sp.actionType === 'bonus' || sp.actionType === 'reaction';
                 return (hasDamage && isCombatAction) || sp.isHealing;
             });
+            return this.sortSpellsByCategory(fallback);
         },
 
         get offensiveSpells() {
@@ -1993,6 +2019,22 @@ document.addEventListener('alpine:init', () => {
 
             this.data.magic.spells = (this.data.magic.spells || []).filter(s => normalizeKey(s.name) !== normalizeKey(spellName));
             this.saveState();
+        },
+
+        toggleSpellFavorite(spellName) {
+            if (!spellName) return;
+            const norm = normalizeKey(spellName);
+            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
+            if (!sp) return;
+            sp.favorite = !sp.favorite;
+            this.saveState();
+        },
+
+        isSpellFavorite(spellName) {
+            if (!spellName) return false;
+            const norm = normalizeKey(spellName);
+            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
+            return !!sp?.favorite;
         },
 
         // ================= SUBIDA DE NIVEL Y ATRIBUTOS =================
