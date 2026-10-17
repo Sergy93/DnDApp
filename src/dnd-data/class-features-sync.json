@@ -1,0 +1,112 @@
+[
+  {
+    "classKey": "bard",
+    "subKey": "eloquence",
+    "minLevel": 6,
+    "resource": {
+      "id": "eloquence_universal_speech",
+      "name": "Universal Speech (Eloquence 6)",
+      "uses": 1,
+      "actionCost": "Action",
+      "reset": "Long Rest",
+      "color": "text-teal-300",
+      "spent": [false]
+    },
+    "trait": {
+      "name": "Unfailing Inspiration (Eloquence 6)",
+      "desc": "When a creature adds one of your Bardic Inspiration dice to its check, attack, or saving throw and the roll fails, the creature keeps the Bardic Inspiration die."
+    }
+  },
+  {
+    "classKey": "bard",
+    "subKey": "eloquence",
+    "minLevel": 14,
+    "resource": {
+      "id": "eloquence_infectious_insp",
+      "name": "Infectious Inspiration (Eloquence 14)",
+      "usesKey": "CHA",
+      "actionCost": "Reaction",
+      "reset": "Long Rest",
+      "color": "text-amber-300",
+      "spent": []
+    }
+  },
+  {
+    "classKey": "bard",
+    "subKey": "glamour",
+    "minLevel": 3,
+    "resource": {
+      "id": "glamour_enthralling_perf",
+      "name": "Enthralling Performance (Glamour 3)",
+      "uses": 1,
+      "actionCost": "Action (1 min)",
+      "reset": "Short/Long",
+      "color": "text-pink-300",
+      "spent": [false]
+    }
+  },
+  {
+    "classKey": "bard",
+    "subKey": "glamour",
+    "minLevel": 6,
+    "resource": {
+      "id": "glamour_mantle_majesty",
+      "name": "Mantle of Majesty (Glamour 6)",
+      "uses": 1,
+      "actionCost": "Bonus Action",
+      "reset": "Long Rest",
+      "color": "text-purple-300",
+      "spent": [false]
+    }
+  },
+  {
+    "classKey": "bard",
+    "minLevel": 6,
+    "trait": {
+      "name": "Countercharm (Bard 6)",
+      "desc": "Action: perform until the end of your next turn. You and friendly creatures within 30 ft have advantage on saving throws against being frightened or charmed."
+    }
+  },
+  {
+    "classKey": "warlock",
+    "subKey": "genie",
+    "minLevel": 6,
+    "resource": {
+      "id": "genie_elemental_gift",
+      "name": "Elemental Gift: Flight 30ft (Genie 6)",
+      "usesKey": "PB",
+      "actionCost": "Bonus Action",
+      "reset": "Long Rest",
+      "color": "text-sky-300",
+      "spent": []
+    }
+  },
+  {
+    "classKey": "warlock",
+    "subKey": "genie",
+    "minLevel": 10,
+    "resource": {
+      "id": "genie_sanctuary",
+      "name": "Sanctuary Vessel (Genie 10)",
+      "uses": 1,
+      "actionCost": "Action",
+      "reset": "Long Rest",
+      "color": "text-cyan-300",
+      "spent": [false]
+    }
+  },
+  {
+    "classKey": "warlock",
+    "subKey": "genie",
+    "minLevel": 14,
+    "resource": {
+      "id": "genie_limited_wish",
+      "name": "Limited Wish (Genie 14)",
+      "uses": 1,
+      "actionCost": "Action",
+      "reset": "1d4 Long Rests",
+      "color": "text-yellow-300",
+      "spent": [false]
+    }
+  }
+]

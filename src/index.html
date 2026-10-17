@@ -235,18 +235,22 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
 
                 <!-- HP / Health Widget -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                     <div class="flex items-center gap-2 bg-dark-950 px-3 py-1.5 rounded-xl border border-gray-800 shadow-inner">
                         <span class="text-xs md:text-sm font-bold text-gray-400">❤️ HP</span>
                         <div class="flex items-baseline gap-1">
                             <input type="number" x-model.number="data.vitals.currentHp" @input="saveState()"
-                                class="num-input text-xl md:text-2xl font-black w-12 text-red-400 p-0" title="Current HP">
+                                class="num-input text-xl md:text-2xl font-black w-12 text-red-400 p-0 text-center" title="Current HP">
                             <span class="text-gray-400 text-xs md:text-sm font-bold">/ <span x-text="data.vitals.maxHp"></span></span>
                         </div>
-                        <template x-if="data.vitals.tempHp > 0">
-                            <span class="bg-blue-950/80 border border-blue-500/50 text-blue-300 font-black text-xs px-2 py-0.5 rounded-full"
-                                x-text="`+${data.vitals.tempHp} temp`"></span>
-                        </template>
+                        <div class="w-px h-5 bg-gray-800 mx-1"></div>
+                        <div class="flex items-center gap-1" title="Temporary HP">
+                            <span class="text-xs text-blue-400 font-bold">🛡️</span>
+                            <input type="number" min="0" x-model.number="data.vitals.tempHp" @input="saveState()"
+                                class="num-input text-xs md:text-sm font-black w-11 text-blue-300 bg-dark-900 border border-blue-500/30 rounded px-1 py-0.5 text-center"
+                                placeholder="0" title="Temporary HP">
+                            <span class="text-[10px] text-gray-500 uppercase font-bold">temp</span>
+                        </div>
                     </div>
 
                     <button @click="openHpManager('damage')"
@@ -343,31 +347,16 @@
 
             <!-- TAB: PROFILE -->
             <section x-show="activeTab === 'profile'" class="tab-view">
+                <!-- CURRENT STATUS -->
                 <div class="bg-dark-800 border-2 border-brand-500/40 rounded-2xl p-4 md:p-6 mb-6 shadow-lg relative">
                     <div class="absolute -top-3.5 left-5 bg-brand-900 px-3.5 py-1 text-xs font-black text-brand-200 border border-brand-500/50 rounded-md tracking-wider">
                         CURRENT STATUS
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start mt-2">
-                        <div class="flex flex-col items-center bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
-                            <span class="text-xs font-bold text-gray-300 uppercase mb-2">❤️ HP / Temp HP</span>
-                            <div class="flex items-center gap-2">
-                                <input type="number" x-model.number="data.vitals.currentHp" @input="saveState()"
-                                    class="num-input text-4xl text-red-400 w-20 bg-dark-950 rounded-lg p-1" title="Current HP">
-                                <span class="text-gray-400 font-black text-2xl">/ <span x-text="data.vitals.maxHp"></span></span>
-                                <div class="w-px h-8 bg-gray-700 mx-1"></div>
-                                <input type="number" x-model.number="data.vitals.tempHp" @input="saveState()"
-                                    class="num-input text-2xl text-blue-400 w-16 bg-dark-950 rounded-lg p-1" title="Temporary HP" placeholder="0">
-                            </div>
-                            <button @click="openHpManager('damage')"
-                                class="mt-2.5 px-3 py-1 bg-red-950/60 hover:bg-red-900 border border-red-500/50 rounded-lg text-xs font-bold text-red-200 transition flex items-center gap-1.5 shadow">
-                                <span>⚡</span> Damage / Heal
-                            </button>
-                        </div>
-
-                        <div class="flex flex-col items-center bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-2">
+                        <div class="flex flex-col items-center justify-between bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
                             <span class="text-xs font-bold text-gray-300 uppercase mb-2">🎲 Hit Dice Spent</span>
-                            <div class="flex flex-wrap justify-center gap-2">
+                            <div class="flex flex-wrap justify-center gap-2 my-auto">
                                 <template x-for="(spent, i) in data.vitals.hitDiceSpent" :key="i">
                                     <input type="checkbox" class="cb-custom" x-model="data.vitals.hitDiceSpent[i]" @change="saveState()">
                                 </template>
@@ -375,9 +364,9 @@
                             <span class="text-xs text-gray-300 mt-2 font-semibold" x-text="stats.hitDiceBreakdown"></span>
                         </div>
 
-                        <div class="flex flex-col items-center bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
+                        <div class="flex flex-col items-center justify-between bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
                             <span class="text-xs font-bold text-gray-300 uppercase mb-2">☠️ Death Saves</span>
-                            <div class="flex gap-5">
+                            <div class="flex gap-5 my-auto">
                                 <div class="flex flex-col items-center gap-1">
                                     <span class="text-xs text-green-400 font-black">SUCCESS</span>
                                     <div class="flex gap-1.5">
@@ -395,12 +384,42 @@
                                     </div>
                                 </div>
                             </div>
+                            <span class="text-xs text-gray-400 mt-2">Cleared on short/long rest</span>
                         </div>
 
                         <div class="flex flex-col items-center h-full">
                             <textarea x-model="data.statusNotes" @input="saveState()" class="status-box"
                                 placeholder="Combat notes, conditions, buffs, active effects..."></textarea>
                         </div>
+                    </div>
+                </div>
+
+                <!-- TACTICAL & CLASS RESOURCES (GENERAL USE) -->
+                <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow mb-6">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                            <span>🔄</span> Resources & Class Features
+                        </h3>
+                        <button type="button" @click="syncClassFeatures()"
+                            class="text-xs px-2.5 py-1 bg-dark-900 hover:bg-dark-950 border border-brand-500/50 hover:border-brand-400 text-brand-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shadow"
+                            title="Auto-scan class levels and synchronize unlocked abilities & spell slots">
+                            <span>⚡</span> Sync Features
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="res in computedCombatResources" :key="res.id || res.originalIndex">
+                            <div class="bg-dark-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between gap-3 shadow-inner">
+                                <div class="min-w-0 flex-1">
+                                    <strong class="text-sm font-bold truncate block" :class="res.color || 'text-white'" x-text="res.displayName || res.name"></strong>
+                                    <div class="text-xs text-gray-400 mt-0.5 truncate" x-text="`${res.actionCost || 'Action'} • ${res.displayReset || res.reset || 'Rest'}`"></div>
+                                </div>
+                                <div class="flex gap-2 shrink-0">
+                                    <template x-for="(spent, bIdx) in data.combat.resources[res.originalIndex].spent" :key="bIdx">
+                                        <input type="checkbox" class="cb-custom" x-model="data.combat.resources[res.originalIndex].spent[bIdx]" @change="saveState()">
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
 
@@ -468,13 +487,80 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- FEATURES & TRAITS (ROLEPLAY & EXPLORATION PASSIVES) -->
+                <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow mt-6">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                            <span>📜</span> Features & Traits
+                        </h3>
+                        <span class="text-xs text-gray-400 font-mono" x-text="`${computedTraits.length} traits`"></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <template x-for="trait in computedTraits" :key="trait.name || trait.originalIndex">
+                            <div class="bg-dark-900/90 border border-gray-800 p-3.5 rounded-xl shadow-inner">
+                                <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.displayName || trait.name"></strong>
+                                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed" x-text="trait.displayDesc || trait.desc"></p>
+                            </div>
+                        </template>
+                        <div x-show="!computedTraits || computedTraits.length === 0" class="text-gray-500 italic text-sm py-4 col-span-2 text-center">
+                            No features or traits configured.
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- TAB: COMBAT & MAGIC -->
-            <section x-show="activeTab === 'combat'" class="tab-view">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+            <section x-show="activeTab === 'combat'" class="tab-view space-y-5">
 
-                    <!-- LEFT COLUMN: PHYSICAL COMBAT & RESOURCES -->
+                <!-- TOP COMBAT BANNER: SPELL SLOTS & QUICK STATS -->
+                <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 shadow">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700/80 pb-3 mb-3">
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <span class="text-xs sm:text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🔮</span> Spell Slots & Focus
+                            </span>
+                            <div class="flex items-center gap-3 text-xs sm:text-sm">
+                                <div>DC: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellSaveDC"></strong></div>
+                                <div class="text-gray-600">•</div>
+                                <div>Atk: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellAtkStr"></strong></div>
+                                <template x-if="stats.genieDamage">
+                                    <div class="flex items-center gap-1 bg-brand-950/70 border border-brand-500/40 px-2 py-0.5 rounded text-xs text-brand-200">
+                                        <span>🌩️</span> <strong x-text="stats.genieDamage"></strong>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <button type="button" @click="syncClassFeatures()"
+                            class="text-xs px-2.5 py-1 bg-dark-900 hover:bg-dark-950 border border-gray-700 hover:border-brand-500 text-gray-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shadow"
+                            title="Auto-refresh spell slots according to class progression">
+                            <span>🔄</span> Sync Slots
+                        </button>
+                    </div>
+
+                    <!-- Spell Slot Trackers -->
+                    <div class="flex flex-wrap gap-2.5 items-center">
+                        <template x-for="(slot, sIdx) in data.magic.slots" :key="slot.id || sIdx">
+                            <div class="flex items-center gap-2 bg-dark-950 px-3 py-1.5 rounded-lg border border-gray-800 text-xs shadow-inner">
+                                <span class="font-bold text-gray-200" x-text="slot.level"></span>
+                                <div class="flex gap-1.5 items-center">
+                                    <template x-for="(spent, bIdx) in slot.spent" :key="bIdx">
+                                        <input type="checkbox" class="cb-custom w-4 h-4" x-model="slot.spent[bIdx]" @change="saveState()" :title="`Use slot ${bIdx + 1}`">
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="!data.magic.slots || data.magic.slots.length === 0" class="text-xs text-gray-500 italic">
+                            No spell slots configured. Click "Sync Slots".
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN COMBAT GRID (2 EQUAL BALANCED COLUMNS) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+
+                    <!-- LEFT COLUMN: PHYSICAL COMBAT & COMBAT ACTIONS -->
                     <div class="space-y-5">
 
                         <!-- TABLE 1: WEAPONS & ATTACKS -->
@@ -521,58 +607,58 @@
                             </div>
                         </div>
 
-                        <!-- TACTICAL RESOURCES -->
+                        <!-- STANDARD COMBAT ACTIONS & QUICK RULES -->
                         <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
-                            <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
-                                <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                    <span>🔄</span> Tactical Resources
-                                </h3>
-                                <button type="button" @click="syncClassFeatures()"
-                                    class="text-xs px-2.5 py-1 bg-dark-900 hover:bg-dark-950 border border-brand-500/50 hover:border-brand-400 text-brand-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shadow"
-                                    title="Auto-scan class levels and synchronize unlocked abilities & spell slots">
-                                    <span>⚡</span> Sync Features
-                                </button>
-                            </div>
-                            <div class="space-y-3">
-                                <template x-for="res in computedCombatResources" :key="res.id || res.originalIndex">
-                                    <div class="bg-dark-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between gap-3">
-                                        <div>
-                                            <strong class="text-sm sm:text-base font-bold" :class="res.color || 'text-white'" x-text="res.displayName || res.name"></strong>
-                                            <div class="text-xs sm:text-sm text-gray-400 mt-0.5" x-text="`${res.actionCost || 'Action'} • ${res.displayReset || res.reset || 'Rest'}`"></div>
-                                        </div>
-                                        <div class="flex gap-2 shrink-0">
-                                            <template x-for="(spent, bIdx) in data.combat.resources[res.originalIndex].spent" :key="bIdx">
-                                                <input type="checkbox" class="cb-custom" x-model="data.combat.resources[res.originalIndex].spent[bIdx]" @change="saveState()">
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
+                            <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2 border-b border-gray-700 pb-2.5 mb-3">
+                                <span>⚡</span> Standard Combat Actions
+                            </h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">🏃 Dash</strong>
+                                    <span class="text-gray-400">Double movement speed for this turn.</span>
+                                </div>
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">💨 Disengage</strong>
+                                    <span class="text-gray-400">Movement provokes no opportunity attacks.</span>
+                                </div>
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">🛡️ Dodge</strong>
+                                    <span class="text-gray-400">Attacks against you have disadvantage; DEX saves advantage.</span>
+                                </div>
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">🤝 Help</strong>
+                                    <span class="text-gray-400">Give ally advantage on next check or attack.</span>
+                                </div>
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">👁️ Hide</strong>
+                                    <span class="text-gray-400">Make Dexterity (Stealth) check vs Passive Perception.</span>
+                                </div>
+                                <div class="bg-dark-900 border border-gray-800 p-2.5 rounded-lg">
+                                    <strong class="text-blue-300 block font-bold mb-0.5">🎒 Ready / Use</strong>
+                                    <span class="text-gray-400">Ready an action on trigger or interact with an item.</span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- PASIVAS Y RASGOS DE LA FICHA -->
-                        <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
-                            <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
-                                <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                                    <span>📜</span> Features & Traits
-                                </h3>
-                                <span class="text-xs text-gray-400 font-mono" x-text="`${computedTraits.length} traits`"></span>
-                            </div>
-                            <div class="space-y-3">
-                                <template x-for="trait in computedTraits" :key="trait.name || trait.originalIndex">
-                                    <div class="bg-dark-900/90 border border-gray-800 p-3 sm:p-3.5 rounded-xl">
-                                        <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.displayName || trait.name"></strong>
-                                        <p class="text-sm sm:text-base text-gray-200 leading-relaxed" x-text="trait.displayDesc || trait.desc"></p>
+                        <!-- ACTIVE CONCENTRATION STATUS (IF ANY) -->
+                        <div x-show="data.concentration && data.concentration.active" class="bg-amber-950/40 border border-amber-500/60 rounded-xl p-4 shadow">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">🧠</span>
+                                    <div>
+                                        <div class="text-xs text-amber-400 font-bold uppercase tracking-wider">Active Concentration</div>
+                                        <div class="text-base font-black text-white" x-text="data.concentration.spellName"></div>
                                     </div>
-                                </template>
-                                <div x-show="!computedTraits || computedTraits.length === 0" class="text-gray-500 italic text-sm">
-                                    No features or traits configured.
                                 </div>
+                                <button type="button" @click="breakConcentration()"
+                                    class="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-500/60 text-red-200 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                                    <span>✕</span> Drop Conc
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- RIGHT COLUMN: MAGIC, DAMAGING SPELLS & SPELLBOOK -->
+                    <!-- RIGHT COLUMN: COMBAT SPELLS & FOLDABLE FULL SPELLBOOK -->
                     <div class="space-y-5">
 
                         <!-- TABLE 2: COMBAT SPELLS (DAMAGE & HEAL) -->
@@ -581,9 +667,10 @@
                                 <h3 class="text-base sm:text-lg font-bold text-brand-300 uppercase tracking-wider flex items-center gap-2">
                                     <span>⚡</span> Combat Spells (Damage & Heal)
                                 </h3>
-                                <div class="text-xs sm:text-sm text-gray-400">
-                                    DC: <strong class="text-brand-300" x-text="stats.spellSaveDC"></strong> &bull; Atk: <strong class="text-brand-300" x-text="stats.spellAtkStr"></strong>
-                                </div>
+                                <button @click="openAddSpellModal()"
+                                    class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow flex items-center gap-1 transition">
+                                    <span>➕</span> Add Spell
+                                </button>
                             </div>
                             <div class="overflow-x-auto rounded-lg border border-gray-700">
                                 <table class="w-full text-left text-xs sm:text-sm bg-dark-900">
@@ -643,107 +730,89 @@
                                                 </td>
                                             </tr>
                                         </template>
+                                        <tr x-show="combatSpells.length === 0">
+                                            <td colspan="4" class="p-3 text-center text-gray-500 text-xs sm:text-sm">No combat spells recorded.</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <div x-show="stats.genieDamage" class="mt-2.5 bg-brand-950/30 border border-brand-500/30 p-2.5 rounded-lg flex items-center justify-between text-xs sm:text-sm">
-                                <span class="text-brand-200">🌩️ <strong>Genie's Wrath:</strong></span>
-                                <span class="font-bold text-white" x-text="stats.genieDamage"></span>
-                            </div>
                         </div>
 
-                        <!-- ESPACIOS + GRIMORIO COMPLETO -->
+                        <!-- FOLDABLE FULL SPELLBOOK & UTILITY SPELLS -->
                         <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow flex flex-col">
-                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-700 pb-3 mb-3">
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-1.5">
-                                        <span>📖</span> Full Spellbook
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-700 pb-3 mb-3 cursor-pointer select-none"
+                                @click="showFullSpellbook = !showFullSpellbook">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm transition-transform duration-200" :class="showFullSpellbook ? 'rotate-90' : ''">▶</span>
+                                    <h3 class="text-base font-bold text-gray-100 uppercase tracking-wider flex items-center gap-1.5">
+                                        <span>📖</span> Full Spellbook & Utility
                                     </h3>
-                                    <span class="text-xs px-2 py-0.5 rounded font-bold border"
-                                        :class="compendiumCount > 0 ? 'bg-green-950/60 border-green-500/50 text-green-300' : 'bg-amber-950/60 border-amber-500/50 text-amber-300'"
-                                        x-text="compendiumCount > 0 ? `📖 ${compendiumCount} ready` : '⚠️ spells/*.js not detected'"></span>
-                                    <button @click="openAddSpellModal()"
-                                        class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow flex items-center gap-1 transition">
-                                        <span>➕</span> Add Spell
-                                    </button>
+                                    <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-dark-900 border border-gray-700 text-gray-300"
+                                        x-text="`${(data.magic?.spells || []).length} spells`"></span>
                                 </div>
-                                <div class="flex items-center gap-1.5">
-                                    <button @click="currentSpellFilter = 'all'"
-                                        class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
-                                        :class="currentSpellFilter === 'all' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">All</button>
-                                    <button @click="currentSpellFilter = 'action'"
-                                        class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
-                                        :class="currentSpellFilter === 'action' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Action</button>
-                                    <button @click="currentSpellFilter = 'bonus'"
-                                        class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
-                                        :class="currentSpellFilter === 'bonus' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Bonus</button>
-                                    <button @click="currentSpellFilter = 'reaction'"
-                                        class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
-                                        :class="currentSpellFilter === 'reaction' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Reaction</button>
-                                    <button @click="currentSpellFilter = 'conc'"
-                                        class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
-                                        :class="currentSpellFilter === 'conc' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">🧠 Conc</button>
-                                </div>
+                                <span class="text-xs text-brand-300 hover:underline font-semibold"
+                                    x-text="showFullSpellbook ? 'Hide Spells' : 'Show All Spells'"></span>
                             </div>
 
-                            <!-- Spell Slots -->
-                            <div class="flex flex-wrap gap-2.5 items-center justify-between mb-3 p-2 bg-dark-950 rounded-lg border border-gray-800">
-                                <div class="flex flex-wrap gap-2.5 items-center">
-                                    <template x-for="(slot, sIdx) in data.magic.slots" :key="slot.id || sIdx">
-                                        <div class="flex items-center gap-2 bg-dark-900 px-2.5 py-1.5 rounded-lg border border-gray-800 text-xs">
-                                            <span class="font-bold text-gray-300" x-text="`${slot.level}:`"></span>
-                                            <div class="flex gap-1">
-                                                <template x-for="(spent, bIdx) in slot.spent" :key="bIdx">
-                                                    <input type="checkbox" class="cb-custom w-4 h-4" x-model="slot.spent[bIdx]" @change="saveState()">
-                                                </template>
+                            <!-- Expandable Full Spellbook Body -->
+                            <div x-show="showFullSpellbook" x-collapse class="space-y-3">
+                                <!-- Filter Pills -->
+                                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 pb-2 border-b border-gray-800">
+                                    <span class="text-xs text-gray-400">Filter by action:</span>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <button @click="currentSpellFilter = 'all'"
+                                            class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
+                                            :class="currentSpellFilter === 'all' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">All</button>
+                                        <button @click="currentSpellFilter = 'action'"
+                                            class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
+                                            :class="currentSpellFilter === 'action' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Action</button>
+                                        <button @click="currentSpellFilter = 'bonus'"
+                                            class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
+                                            :class="currentSpellFilter === 'bonus' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Bonus</button>
+                                        <button @click="currentSpellFilter = 'reaction'"
+                                            class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
+                                            :class="currentSpellFilter === 'reaction' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">Reaction</button>
+                                        <button @click="currentSpellFilter = 'conc'"
+                                            class="spell-filter-btn px-2.5 py-1 text-xs rounded border font-bold transition"
+                                            :class="currentSpellFilter === 'conc' ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-900 text-gray-300 border-gray-800 hover:text-white'">🧠 Conc</button>
+                                    </div>
+                                </div>
+
+                                <!-- Filtered Spells List -->
+                                <div class="overflow-y-auto max-h-[500px] pr-1 space-y-2">
+                                    <template x-for="spell in filteredSpells" :key="spell.name">
+                                        <div class="flex items-center justify-between gap-2.5 p-2.5 bg-dark-900 border rounded-xl hover:border-brand-500/40 transition text-xs sm:text-sm"
+                                            :class="isConcentratingOn(spell.name) ? 'border-amber-500/80 bg-amber-950/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'border-gray-800'">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span class="font-black px-1.5 py-0.5 rounded bg-dark-950 text-gray-200 border border-gray-700 text-[10px] shrink-0"
+                                                    x-text="spell.level === 0 ? 'C' : `L${spell.level}`"></span>
+                                                <div class="truncate">
+                                                    <span class="font-bold text-white" x-text="spell.name"></span>
+                                                    <span class="text-xs font-semibold ml-1.5"
+                                                        :class="spell.actionType === 'bonus' ? 'text-brand-300' : (spell.actionType === 'reaction' ? 'text-amber-300' : 'text-blue-300')"
+                                                        x-text="spell.actionType === 'bonus' ? 'Bonus' : (spell.actionType === 'reaction' ? 'Reaction' : 'Action')"></span>
+                                                    <span class="text-xs text-gray-400 ml-1" x-text="`• ${spell.range}`"></span>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex items-center gap-1.5 shrink-0">
+                                                <span x-show="spell.damage && spell.damage !== '—'"
+                                                    class="text-xs bg-brand-950/60 text-brand-200 border border-brand-500/50 px-1.5 py-0.5 rounded font-black cursor-pointer hover:bg-brand-900/60"
+                                                    @click="openSpellDetail(spell)"
+                                                    x-text="`💥 ${spell.damage}`"></span>
+                                                <button x-show="spell.conc" @click="requestCastConcentration(spell.name)"
+                                                    class="px-2 py-0.5 rounded text-xs font-bold border transition"
+                                                    :class="isConcentratingOn(spell.name) ? 'bg-amber-500 text-black border-amber-400' : 'bg-dark-950 text-gray-300 border-gray-700 hover:border-amber-400'"
+                                                    x-text="isConcentratingOn(spell.name) ? '🧠 Active' : '🧠 Conc'"></button>
+                                                <button @click="openSpellDetail(spell)"
+                                                    class="px-2 py-0.5 rounded bg-dark-950 hover:bg-dark-850 text-gray-300 border border-gray-700 text-xs" title="View details">👁️</button>
+                                                <button @click="removeSpell(spell.name)"
+                                                    class="px-2 py-0.5 rounded bg-dark-950 hover:bg-red-950 text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-500/50 text-xs transition" title="Delete spell">🗑️</button>
                                             </div>
                                         </div>
                                     </template>
+                                    <div x-show="filteredSpells.length === 0" class="text-center py-6 text-gray-500 text-sm">No spells match this filter.</div>
                                 </div>
-                                <button type="button" @click="syncClassFeatures()"
-                                    class="text-[11px] px-2.5 py-1 bg-dark-900 hover:bg-dark-850 border border-gray-700 hover:border-brand-500 text-gray-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shrink-0"
-                                    title="Auto-refresh spell slots and features according to class levels">
-                                    <span>🔄</span> Sync Slots
-                                </button>
-                            </div>
-
-                            <!-- Lista de Hechizos Filtrados -->
-                            <div class="overflow-y-auto max-h-[620px] pr-1 space-y-2">
-                                <template x-for="spell in filteredSpells" :key="spell.name">
-                                    <div class="flex items-center justify-between gap-2.5 p-2.5 md:p-3 bg-dark-900 border rounded-xl hover:border-brand-500/40 transition text-sm"
-                                        :class="isConcentratingOn(spell.name) ? 'border-amber-500/80 bg-amber-950/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 'border-gray-800'">
-                                        <div class="flex items-center gap-2.5 min-w-0">
-                                            <span class="font-black px-2 py-0.5 rounded bg-dark-950 text-gray-200 border border-gray-700 text-xs shrink-0"
-                                                x-text="spell.level === 0 ? 'C' : `L${spell.level}`"></span>
-                                            <div class="truncate">
-                                                <span class="font-bold text-white text-sm md:text-base" x-text="spell.name"></span>
-                                                <span class="text-xs font-semibold ml-1.5"
-                                                    :class="spell.actionType === 'bonus' ? 'text-brand-300' : (spell.actionType === 'reaction' ? 'text-amber-300' : 'text-blue-300')"
-                                                    x-text="spell.actionType === 'bonus' ? 'Bonus' : (spell.actionType === 'reaction' ? 'Reaction' : 'Action')"></span>
-                                                <span class="text-xs text-gray-400 ml-1" x-text="`• ${spell.range}`"></span>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex items-center gap-2 shrink-0">
-                                            <span x-show="spell.damage && spell.damage !== '—'"
-                                                class="text-xs bg-brand-950/60 text-brand-200 border border-brand-500/50 px-2 py-0.5 rounded font-black cursor-pointer hover:bg-brand-900/60"
-                                                :title="spell.slotScaling && spell.slotScaling.length > 0 ? ('Higher slot damage:\n' + spell.slotScaling.map(s => `${s.label}: ${s.damage}`).join('\n')) : ''"
-                                                @click="openSpellDetail(spell)"
-                                                x-text="`💥 ${spell.damage}`"></span>
-                                            <span x-show="spell.saveStat" class="text-xs bg-amber-950/50 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-bold"
-                                                x-text="`DC ${stats.spellSaveDC} ${spell.saveStat}`"></span>
-                                            <button x-show="spell.conc" @click="requestCastConcentration(spell.name)"
-                                                class="px-2.5 py-1 rounded text-xs font-bold border transition"
-                                                :class="isConcentratingOn(spell.name) ? 'bg-amber-500 text-black border-amber-400' : 'bg-dark-950 text-gray-300 border-gray-700 hover:border-amber-400'"
-                                                x-text="isConcentratingOn(spell.name) ? '🧠 Active' : '🧠 Conc'"></button>
-                                            <button @click="openSpellDetail(spell)"
-                                                class="px-2.5 py-1 rounded bg-dark-950 hover:bg-dark-850 text-gray-300 border border-gray-700 text-xs" title="View description">👁️</button>
-                                            <button @click="removeSpell(spell.name)"
-                                                class="px-2.5 py-1 rounded bg-dark-950 hover:bg-red-950 text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-500/50 text-xs transition" title="Delete spell">🗑️</button>
-                                        </div>
-                                    </div>
-                                </template>
-                                <div x-show="filteredSpells.length === 0" class="text-center py-6 text-gray-500 text-sm">No spells match this filter.</div>
                             </div>
                         </div>
                     </div>
@@ -872,23 +941,43 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
-                        <h4 class="text-base font-bold text-gray-100 flex items-center gap-2 mb-3 border-b border-gray-700 pb-2">
-                            <span>🛡️</span> Armor & Protection
-                        </h4>
+                        <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>🛡️</span> Armor & Protection
+                            </h4>
+                            <button @click="openArmorModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
                         <ul class="space-y-3 text-xs md:text-sm text-gray-300">
                             <template x-for="(a, idx) in data.inventory.armors" :key="idx">
                                 <li class="bg-dark-900 p-3 rounded-xl border flex items-start justify-between gap-3"
                                     :class="a.equipped ? 'border-brand-500/60 bg-brand-950/15' : 'border-gray-800'">
-                                    <div>
-                                        <strong class="text-gray-100 text-sm" x-text="`${a.name} (AC ${a.baseAc})`"></strong>
-                                        <p class="text-xs text-gray-400 mt-0.5" x-text="a.special || ''"></p>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <strong class="text-gray-100 text-sm" x-text="a.name"></strong>
+                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-dark-950 border border-gray-700 text-brand-300"
+                                                x-text="(a.type === 'accessory' || a.type === 'shield') ? `${(parseInt(a.baseAc, 10) || 0) > 0 ? '+' + a.baseAc : '+0'} AC • ${a.type === 'shield' ? 'Shield' : 'Accessory'}` : `AC ${a.baseAc} • ${a.type ? (a.type.charAt(0).toUpperCase() + a.type.slice(1)) : 'Armor'}`"></span>
+                                            <span x-show="a.stealthDisadv" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-950/70 border border-red-800/60 text-red-300">
+                                                Stealth Disadv.
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1" x-text="a.special || ''"></p>
                                     </div>
-                                    <label class="flex items-center gap-1.5 text-xs shrink-0 cursor-pointer">
-                                        <input type="checkbox" class="cb-custom w-4 h-4" x-model="a.equipped" @change="saveState()">
-                                        <span :class="a.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
-                                    </label>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <label class="flex items-center gap-1.5 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
+                                            <input type="checkbox" class="cb-custom w-4 h-4" x-model="a.equipped" @change="saveState()">
+                                            <span :class="a.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
+                                        </label>
+                                        <button @click="openArmorModal(idx)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit armor">✏️</button>
+                                        <button @click="removeArmor(idx)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete armor">🗑️</button>
+                                    </div>
                                 </li>
                             </template>
+                            <div x-show="!data.inventory.armors || data.inventory.armors.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No armor or protection recorded. Click "➕ Add".
+                            </div>
                         </ul>
                     </div>
 
@@ -1217,6 +1306,60 @@
                         class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-xs font-bold text-gray-300">Cancel</button>
                     <button type="submit"
                         class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Save Weapon</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ARMOR & PROTECTION MANAGEMENT -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        x-show="modalArmorOpen">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-md w-full p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-4">
+                <h3 class="text-base font-bold text-white" x-text="editingArmorIndex !== null ? '✏️ Edit Armor / Protection' : '🛡️ Add Armor / Protection'"></h3>
+                <button @click="modalArmorOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <form @submit.prevent="handleSaveArmor()" class="space-y-3.5 text-xs md:text-sm">
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-1">Armor / Item Name *</label>
+                    <input type="text" x-model="armorForm.name" required placeholder="e.g. Studded Leather, Shield, Chain Shirt..."
+                        class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1">Type</label>
+                        <select x-model="armorForm.type"
+                            @change="if (armorForm.type === 'accessory' && (armorForm.baseAc === 12 || armorForm.baseAc === 10)) armorForm.baseAc = 0; else if (armorForm.type === 'shield' && armorForm.baseAc === 0) armorForm.baseAc = 2; else if (armorForm.type === 'light' && armorForm.baseAc === 0) armorForm.baseAc = 11;"
+                            class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
+                            <option value="light">Light Armor (+ full DEX)</option>
+                            <option value="medium">Medium Armor (+ max 2 DEX)</option>
+                            <option value="heavy">Heavy Armor (No DEX)</option>
+                            <option value="shield">Shield (+2 AC bonus)</option>
+                            <option value="accessory">Magic Item / Accessory (Cloak, Ring, Amulet... +0 or +AC)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1" x-text="armorForm.type === 'shield' || armorForm.type === 'accessory' ? 'AC Bonus (0 = no AC change)' : 'Base AC'"></label>
+                        <input type="number" min="0" x-model.number="armorForm.baseAc" required
+                            class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="armorStealthDisadv" class="cb-custom" x-model="armorForm.stealthDisadv">
+                    <label for="armorStealthDisadv" class="text-gray-300 font-semibold cursor-pointer select-none">
+                        Imposes Stealth Disadvantage
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-1">Special / Notes</label>
+                    <input type="text" x-model="armorForm.special" placeholder="e.g. Light armor. Add your full Dexterity modifier to AC."
+                        class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-gray-800">
+                    <button type="button" @click="modalArmorOpen = false"
+                        class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-xs font-bold text-gray-300">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Save Armor</button>
                 </div>
             </form>
         </div>

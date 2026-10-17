@@ -5,99 +5,11 @@ const SafeFileReader = (typeof window !== 'undefined' && window.FileReader)
 
 const STORAGE_KEY = 'character_dnd_v21';
 
-export const DND_CONDITIONS = [
-    {
-        id: 'blinded',
-        name: 'Blinded',
-        icon: '🙈',
-        summary: 'Cannot see (fails sight checks). Attacks against have advantage, attacks have disadvantage.'
-    },
-    {
-        id: 'charmed',
-        name: 'Charmed',
-        icon: '💖',
-        summary: 'Cannot attack charmer. Charmer has advantage on social ability checks against you.'
-    },
-    {
-        id: 'deafened',
-        name: 'Deafened',
-        icon: '🙉',
-        summary: 'Cannot hear and automatically fails ability checks that require hearing.'
-    },
-    {
-        id: 'exhaustion',
-        name: 'Exhaustion',
-        icon: '⌛',
-        summary: 'Cumulative penalties (1: Disadv. checks, 2: Speed halved, 3: Disadv. attacks/saves, 4: Max HP halved, 5: Speed 0, 6: Death).'
-    },
-    {
-        id: 'frightened',
-        name: 'Frightened',
-        icon: '😨',
-        summary: 'Disadvantage on ability checks & attack rolls while source of fear is in line of sight. Cannot willingly move closer.'
-    },
-    {
-        id: 'grappled',
-        name: 'Grappled',
-        icon: '🤼',
-        summary: 'Speed becomes 0, cannot benefit from speed bonuses. Ends if grappler is incapacitated.'
-    },
-    {
-        id: 'incapacitated',
-        name: 'Incapacitated',
-        icon: '💫',
-        summary: 'Cannot take actions or reactions. Breaks concentration immediately.'
-    },
-    {
-        id: 'invisible',
-        name: 'Invisible',
-        icon: '👻',
-        summary: 'Impossible to see without aid. Attack rolls against have disadvantage, attacks have advantage.'
-    },
-    {
-        id: 'paralyzed',
-        name: 'Paralyzed',
-        icon: '⚡',
-        summary: 'Incapacitated, cannot move or speak. Auto-fail STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits!'
-    },
-    {
-        id: 'petrified',
-        name: 'Petrified',
-        icon: '🗿',
-        summary: 'Transformed into solid stone. Incapacitated, weight x10. Auto-fail STR/DEX saves. Resistance to all damage, immune to poison/disease.'
-    },
-    {
-        id: 'poisoned',
-        name: 'Poisoned',
-        icon: '🤢',
-        summary: 'Disadvantage on attack rolls and ability checks.'
-    },
-    {
-        id: 'prone',
-        name: 'Prone',
-        icon: '🧎',
-        summary: 'Can crawl (costs double movement) or spend half speed to stand. Attacks have disadv. Attacks within 5 ft have adv; >5 ft have disadv.'
-    },
-    {
-        id: 'restrained',
-        name: 'Restrained',
-        icon: '🕸️',
-        summary: 'Speed 0. Attack rolls against have adv, attacks have disadv. Disadvantage on DEX saving throws.'
-    },
-    {
-        id: 'stunned',
-        name: 'Stunned',
-        icon: '🌀',
-        summary: 'Incapacitated, cannot move, speaks falteringly. Auto-fail STR/DEX saves. Attacks against have advantage.'
-    },
-    {
-        id: 'unconscious',
-        name: 'Unconscious',
-        icon: '💤',
-        summary: 'Incapacitated, drops what holding, falls prone. Auto-fails STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits.'
-    }
-];
-
+import DND_CONDITIONS from "./dnd-data/conditions.json";
+import DAMAGE_TYPES from "./dnd-data/damage-types.json";
+import SPELL_SLOTS_TABLES from "./dnd-data/spell-slots-tables.json";
+import CLASS_FEATURES_SYNC from "./dnd-data/class-features-sync.json";
+import SUBCLASS_ALIASES from "./dnd-data/subclass-aliases.json";
 import CHARACTER_DATA from "./character.json";
 import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json";
 import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json";
@@ -105,19 +17,17 @@ import PHB_SPELLS from "./dnd-data/spells/spells-phb.json";
 import TCE_SPELLS from "./dnd-data/spells/spells-tce.json";
 import XGE_SPELLS from "./dnd-data/spells/spells-xge.json";
 
+export { DND_CONDITIONS, DAMAGE_TYPES };
+
+const MULTICLASS_SPELL_SLOTS = SPELL_SLOTS_TABLES.multiclassSpellSlots;
+const WARLOCK_PACT_TABLE = SPELL_SLOTS_TABLES.warlockPactSlots;
+
 const SPELL_SOURCES = [PHB_SPELLS, TCE_SPELLS, XGE_SPELLS];
 
 function normalizeKey(str) {
     if (!str) return '';
     return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
 }
-
-const SUBCLASS_ALIASES = {
-    djinni: 'genie',
-    efreeti: 'genie',
-    dao: 'genie',
-    marid: 'genie'
-};
 
 function findCompendiumClass(className) {
     const normClass = normalizeKey(className);
@@ -203,52 +113,6 @@ function resolveAttributeMod(attributes, attrKey) {
     const score = typeof raw?.score === 'number' ? raw.score : (parseInt(raw?.score, 10) || 10);
     return Math.floor((score - 10) / 2);
 }
-
-const MULTICLASS_SPELL_SLOTS = {
-    1:  [2],
-    2:  [3],
-    3:  [4, 2],
-    4:  [4, 3],
-    5:  [4, 3, 2],
-    6:  [4, 3, 3],
-    7:  [4, 3, 3, 1],
-    8:  [4, 3, 3, 2],
-    9:  [4, 3, 3, 3, 1],
-    10: [4, 3, 3, 3, 2],
-    11: [4, 3, 3, 3, 2, 1],
-    12: [4, 3, 3, 3, 2, 1],
-    13: [4, 3, 3, 3, 2, 1, 1],
-    14: [4, 3, 3, 3, 2, 1, 1],
-    15: [4, 3, 3, 3, 2, 1, 1, 1],
-    16: [4, 3, 3, 3, 2, 1, 1, 1],
-    17: [4, 3, 3, 3, 2, 1, 1, 1, 1],
-    18: [4, 3, 3, 3, 3, 1, 1, 1, 1],
-    19: [4, 3, 3, 3, 3, 2, 1, 1, 1],
-    20: [4, 3, 3, 3, 3, 2, 2, 1, 1]
-};
-
-const WARLOCK_PACT_TABLE = {
-    1:  { count: 1, level: 1 },
-    2:  { count: 2, level: 1 },
-    3:  { count: 2, level: 2 },
-    4:  { count: 2, level: 2 },
-    5:  { count: 2, level: 3 },
-    6:  { count: 2, level: 3 },
-    7:  { count: 2, level: 4 },
-    8:  { count: 2, level: 4 },
-    9:  { count: 2, level: 5 },
-    10: { count: 2, level: 5 },
-    11: { count: 3, level: 5 },
-    12: { count: 3, level: 5 },
-    13: { count: 3, level: 5 },
-    14: { count: 3, level: 5 },
-    15: { count: 3, level: 5 },
-    16: { count: 3, level: 5 },
-    17: { count: 4, level: 5 },
-    18: { count: 4, level: 5 },
-    19: { count: 4, level: 5 },
-    20: { count: 4, level: 5 }
-};
 
 function calculateExpectedSlots(classes = []) {
     const list = [];
@@ -362,108 +226,20 @@ function detectClassFeaturesToSync(d) {
         const subKey = normalizeKey(cls.subclass || '');
         const currentLvl = parseInt(cls.level, 10) || 1;
 
-        // Eloquence Bard
-        if (classKey === 'bard' && (subKey.includes('eloquence') || subKey.includes('elocuencia'))) {
-            if (currentLvl >= 6 && !existingResourceIds.has('eloquence_universal_speech')) {
-                newResources.push({
-                    id: 'eloquence_universal_speech',
-                    name: 'Universal Speech (Eloquence 6)',
-                    uses: 1,
-                    actionCost: 'Action',
-                    reset: 'Long Rest',
-                    color: 'text-teal-300',
-                    spent: [false]
-                });
-            }
-            if (currentLvl >= 6 && !existingTraitNames.has('unfailinginspiration')) {
-                newTraits.push({
-                    name: 'Unfailing Inspiration (Eloquence 6)',
-                    desc: 'When a creature adds one of your Bardic Inspiration dice to its check, attack, or saving throw and the roll fails, the creature keeps the Bardic Inspiration die.'
-                });
-            }
-            if (currentLvl >= 14 && !existingResourceIds.has('eloquence_infectious_insp')) {
-                newResources.push({
-                    id: 'eloquence_infectious_insp',
-                    name: 'Infectious Inspiration (Eloquence 14)',
-                    usesKey: 'CHA',
-                    actionCost: 'Reaction',
-                    reset: 'Long Rest',
-                    color: 'text-amber-300',
-                    spent: []
-                });
-            }
-        }
+        (CLASS_FEATURES_SYNC || []).forEach(rule => {
+            if (rule.classKey && rule.classKey !== classKey) return;
+            if (rule.subKey && !subKey.includes(rule.subKey)) return;
+            if (currentLvl < (rule.minLevel || 1)) return;
 
-        // Glamour Bard
-        if (classKey === 'bard' && subKey.includes('glamour')) {
-            if (currentLvl >= 3 && !existingResourceIds.has('glamour_enthralling_perf')) {
-                newResources.push({
-                    id: 'glamour_enthralling_perf',
-                    name: 'Enthralling Performance (Glamour 3)',
-                    uses: 1,
-                    actionCost: 'Action (1 min)',
-                    reset: 'Short/Long',
-                    color: 'text-pink-300',
-                    spent: [false]
-                });
+            if (rule.resource && !existingResourceIds.has(rule.resource.id)) {
+                newResources.push(JSON.parse(JSON.stringify(rule.resource)));
+                existingResourceIds.add(rule.resource.id);
             }
-            if (currentLvl >= 6 && !existingResourceIds.has('glamour_mantle_majesty')) {
-                newResources.push({
-                    id: 'glamour_mantle_majesty',
-                    name: 'Mantle of Majesty (Glamour 6)',
-                    uses: 1,
-                    actionCost: 'Bonus Action',
-                    reset: 'Long Rest',
-                    color: 'text-purple-300',
-                    spent: [false]
-                });
+            if (rule.trait && !existingTraitNames.has(normalizeKey(rule.trait.name))) {
+                newTraits.push(JSON.parse(JSON.stringify(rule.trait)));
+                existingTraitNames.add(normalizeKey(rule.trait.name));
             }
-        }
-
-        // Base Bard Countercharm
-        if (classKey === 'bard' && currentLvl >= 6 && !existingTraitNames.has('countercharm')) {
-            newTraits.push({
-                name: 'Countercharm (Bard 6)',
-                desc: 'Action: perform until the end of your next turn. You and friendly creatures within 30 ft have advantage on saving throws against being frightened or charmed.'
-            });
-        }
-
-        // Warlock Genie
-        if (classKey === 'warlock' && (subKey.includes('genie') || subKey.includes('djinni') || subKey.includes('efreeti') || subKey.includes('dao') || subKey.includes('marid'))) {
-            if (currentLvl >= 6 && !existingResourceIds.has('genie_elemental_gift')) {
-                newResources.push({
-                    id: 'genie_elemental_gift',
-                    name: 'Elemental Gift: Flight 30ft (Genie 6)',
-                    usesKey: 'PB',
-                    actionCost: 'Bonus Action',
-                    reset: 'Long Rest',
-                    color: 'text-sky-300',
-                    spent: []
-                });
-            }
-            if (currentLvl >= 10 && !existingResourceIds.has('genie_sanctuary')) {
-                newResources.push({
-                    id: 'genie_sanctuary',
-                    name: 'Sanctuary Vessel (Genie 10)',
-                    uses: 1,
-                    actionCost: 'Action',
-                    reset: 'Long Rest',
-                    color: 'text-cyan-300',
-                    spent: [false]
-                });
-            }
-            if (currentLvl >= 14 && !existingResourceIds.has('genie_limited_wish')) {
-                newResources.push({
-                    id: 'genie_limited_wish',
-                    name: 'Limited Wish (Genie 14)',
-                    uses: 1,
-                    actionCost: 'Action',
-                    reset: '1d4 Long Rests',
-                    color: 'text-yellow-300',
-                    spent: [false]
-                });
-            }
-        }
+        });
     });
 
     return { newResources, newTraits };
@@ -632,21 +408,6 @@ function resolveGenieDamage(d, profBonus) {
     return `+${profBonus} ${dmgType} damage`;
 }
 
-export const DAMAGE_TYPES = [
-    { id: 'fire', name: 'Fire', icon: '🔥' },
-    { id: 'cold', name: 'Cold', icon: '❄️' },
-    { id: 'lightning', name: 'Lightning', icon: '⚡' },
-    { id: 'thunder', name: 'Thunder', icon: '🔊' },
-    { id: 'acid', name: 'Acid', icon: '🧪' },
-    { id: 'poison', name: 'Poison', icon: '🤢' },
-    { id: 'necrotic', name: 'Necrotic', icon: '💀' },
-    { id: 'radiant', name: 'Radiant', icon: '☀️' },
-    { id: 'force', name: 'Force', icon: '✨' },
-    { id: 'psychic', name: 'Psychic', icon: '🧠' },
-    { id: 'bludgeoning', name: 'Bludgeoning', icon: '🔨' },
-    { id: 'piercing', name: 'Piercing', icon: '🗡️' },
-    { id: 'slashing', name: 'Slashing', icon: '⚔️' }
-];
 
 function resolveCharacterResistances(d) {
     const list = [];
@@ -787,25 +548,41 @@ function computeStats(d) {
     let armorDesc = `10 + DEX (${computedAttrs.DEX.modStr})`;
 
     const equippedArmors = (d?.inventory?.armors || []).filter(a => a.equipped);
-    const mainArmor = equippedArmors.find(a => a.type !== 'shield');
+    // Main armor must be light, medium, or heavy (or custom base body armor)
+    const mainArmor = equippedArmors.find(a => ['light', 'medium', 'heavy'].includes(a.type) || (a.type !== 'shield' && a.type !== 'accessory' && (parseInt(a.baseAc, 10) || 0) >= 10));
     const equippedShield = equippedArmors.find(a => a.type === 'shield');
+    // Magic accessories (cloaks, rings, amulets, wondrous items) that grant bonus AC (or 0 AC)
+    const accessories = equippedArmors.filter(a => a !== mainArmor && a !== equippedShield);
 
     if (mainArmor) {
+        const bAc = parseInt(mainArmor.baseAc, 10) || 10;
         if (mainArmor.type === 'light') {
-            calculatedAc = mainArmor.baseAc + computedAttrs.DEX.mod;
-            armorDesc = `${mainArmor.name} (${mainArmor.baseAc} + DEX)`;
+            calculatedAc = bAc + computedAttrs.DEX.mod;
+            armorDesc = `${mainArmor.name} (${bAc} + DEX)`;
         } else if (mainArmor.type === 'medium') {
-            calculatedAc = mainArmor.baseAc + Math.min(2, computedAttrs.DEX.mod);
-            armorDesc = `${mainArmor.name} (${mainArmor.baseAc} + max 2)`;
+            calculatedAc = bAc + Math.min(2, computedAttrs.DEX.mod);
+            armorDesc = `${mainArmor.name} (${bAc} + max 2)`;
         } else if (mainArmor.type === 'heavy') {
-            calculatedAc = mainArmor.baseAc;
-            armorDesc = `${mainArmor.name} (${mainArmor.baseAc})`;
+            calculatedAc = bAc;
+            armorDesc = `${mainArmor.name} (${bAc})`;
+        } else {
+            // General custom armor base
+            calculatedAc = bAc + computedAttrs.DEX.mod;
+            armorDesc = `${mainArmor.name} (${bAc} + DEX)`;
         }
     }
     if (equippedShield) {
-        calculatedAc += 2;
-        armorDesc += " + Shield";
+        const sBonus = parseInt(equippedShield.baseAc, 10) || 2;
+        calculatedAc += sBonus;
+        armorDesc += ` + ${equippedShield.name || 'Shield'} (+${sBonus})`;
     }
+    accessories.forEach(acc => {
+        const bonus = parseInt(acc.baseAc, 10) || 0;
+        if (bonus > 0) {
+            calculatedAc += bonus;
+            armorDesc += ` + ${acc.name} (+${bonus})`;
+        }
+    });
 
     const computedWeapons = (d?.inventory?.weapons || []).map((w, idx) => {
         let usedAttr = 'STR';
@@ -1137,6 +914,7 @@ document.addEventListener('alpine:init', () => {
         data: loadInitialData(),
         activeTab: 'profile',
         currentSpellFilter: 'all',
+        showFullSpellbook: false,
         compendiumCount: 0,
 
         // Estado de Modales
@@ -1148,6 +926,16 @@ document.addEventListener('alpine:init', () => {
             dice: '1d8',
             damageType: 'Piercing',
             propsRaw: ''
+        },
+
+        modalArmorOpen: false,
+        editingArmorIndex: null,
+        armorForm: {
+            name: '',
+            type: 'light',
+            baseAc: 12,
+            stealthDisadv: false,
+            special: ''
         },
 
         modalShortRestOpen: false,
@@ -1698,6 +1486,71 @@ document.addEventListener('alpine:init', () => {
             if (!ok) return;
 
             this.data.inventory.weapons.splice(index, 1);
+            this.saveState();
+        },
+
+        // Armaduras y Protección
+        openArmorModal(index = null) {
+            this.editingArmorIndex = index;
+            if (index !== null && this.data.inventory?.armors?.[index]) {
+                const a = this.data.inventory.armors[index];
+                this.armorForm = {
+                    name: a.name || '',
+                    type: a.type || 'light',
+                    baseAc: a.baseAc !== undefined ? a.baseAc : 12,
+                    stealthDisadv: !!a.stealthDisadv,
+                    special: a.special || ''
+                };
+            } else {
+                this.armorForm = {
+                    name: '',
+                    type: 'light',
+                    baseAc: 12,
+                    stealthDisadv: false,
+                    special: ''
+                };
+            }
+            this.modalArmorOpen = true;
+        },
+
+        handleSaveArmor() {
+            const name = this.armorForm.name.trim();
+            if (!name) return;
+            if (!Array.isArray(this.data.inventory.armors)) this.data.inventory.armors = [];
+
+            const isEdit = this.editingArmorIndex !== null;
+            const existing = isEdit ? this.data.inventory.armors[this.editingArmorIndex] : null;
+
+            const parsedAc = parseInt(this.armorForm.baseAc, 10);
+            const baseAc = isNaN(parsedAc) ? (this.armorForm.type === 'shield' ? 2 : (this.armorForm.type === 'accessory' ? 0 : 10)) : Math.max(0, parsedAc);
+
+            const armorObj = {
+                name,
+                type: this.armorForm.type,
+                baseAc,
+                stealthDisadv: !!this.armorForm.stealthDisadv,
+                equipped: existing ? !!existing.equipped : false,
+                special: this.armorForm.special.trim()
+            };
+
+            if (isEdit) {
+                this.data.inventory.armors[this.editingArmorIndex] = armorObj;
+            } else {
+                this.data.inventory.armors.push(armorObj);
+            }
+
+            this.saveState();
+            this.modalArmorOpen = false;
+            this.editingArmorIndex = null;
+        },
+
+        async removeArmor(index) {
+            const a = this.data.inventory?.armors?.[index];
+            if (!a) return;
+            const ok = await this.uiConfirm(`Do you want to remove the armor/protection "${a.name}"?`, "Remove Armor", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
+            if (!ok) return;
+
+            this.data.inventory.armors.splice(index, 1);
             this.saveState();
         },
 

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "blinded",
+    "name": "Blinded",
+    "icon": "🙈",
+    "summary": "Cannot see (fails sight checks). Attacks against have advantage, attacks have disadvantage."
+  },
+  {
+    "id": "charmed",
+    "name": "Charmed",
+    "icon": "💖",
+    "summary": "Cannot attack charmer. Charmer has advantage on social ability checks against you."
+  },
+  {
+    "id": "deafened",
+    "name": "Deafened",
+    "icon": "🙉",
+    "summary": "Cannot hear and automatically fails ability checks that require hearing."
+  },
+  {
+    "id": "exhaustion",
+    "name": "Exhaustion",
+    "icon": "⌛",
+    "summary": "Cumulative penalties (1: Disadv. checks, 2: Speed halved, 3: Disadv. attacks/saves, 4: Max HP halved, 5: Speed 0, 6: Death)."
+  },
+  {
+    "id": "frightened",
+    "name": "Frightened",
+    "icon": "😨",
+    "summary": "Disadvantage on ability checks & attack rolls while source of fear is in line of sight. Cannot willingly move closer."
+  },
+  {
+    "id": "grappled",
+    "name": "Grappled",
+    "icon": "🤼",
+    "summary": "Speed becomes 0, cannot benefit from speed bonuses. Ends if grappler is incapacitated."
+  },
+  {
+    "id": "incapacitated",
+    "name": "Incapacitated",
+    "icon": "💫",
+    "summary": "Cannot take actions or reactions. Breaks concentration immediately."
+  },
+  {
+    "id": "invisible",
+    "name": "Invisible",
+    "icon": "👻",
+    "summary": "Impossible to see without aid. Attack rolls against have disadvantage, attacks have advantage."
+  },
+  {
+    "id": "paralyzed",
+    "name": "Paralyzed",
+    "icon": "⚡",
+    "summary": "Incapacitated, cannot move or speak. Auto-fail STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits!"
+  },
+  {
+    "id": "petrified",
+    "name": "Petrified",
+    "icon": "🗿",
+    "summary": "Transformed into solid stone. Incapacitated, weight x10. Auto-fail STR/DEX saves. Resistance to all damage, immune to poison/disease."
+  },
+  {
+    "id": "poisoned",
+    "name": "Poisoned",
+    "icon": "🤢",
+    "summary": "Disadvantage on attack rolls and ability checks."
+  },
+  {
+    "id": "prone",
+    "name": "Prone",
+    "icon": "🧎",
+    "summary": "Can crawl (costs double movement) or spend half speed to stand. Attacks have disadv. Attacks within 5 ft have adv; >5 ft have disadv."
+  },
+  {
+    "id": "restrained",
+    "name": "Restrained",
+    "icon": "🕸️",
+    "summary": "Speed 0. Attack rolls against have adv, attacks have disadv. Disadvantage on DEX saving throws."
+  },
+  {
+    "id": "stunned",
+    "name": "Stunned",
+    "icon": "🌀",
+    "summary": "Incapacitated, cannot move, speaks falteringly. Auto-fail STR/DEX saves. Attacks against have advantage."
+  },
+  {
+    "id": "unconscious",
+    "name": "Unconscious",
+    "icon": "💤",
+    "summary": "Incapacitated, drops what holding, falls prone. Auto-fails STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits."
+  }
+]
