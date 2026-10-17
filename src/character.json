@@ -6,14 +6,14 @@
     "background": "Charlatan",
     "classes": [
       {
-        "name": "bard",
-        "subclass": "eloquence",
+        "name": "Bard",
+        "subclass": "Eloquence",
         "level": 5,
         "hitDie": "d8"
       },
       {
-        "name": "warlock",
-        "subclass": "Djinni",
+        "name": "Warlock",
+        "subclass": "Genie (Djinni)",
         "level": 1,
         "hitDie": "d8"
       }
@@ -112,9 +112,7 @@
       "id": "deception",
       "name": "Deception",
       "attr": "CHA",
-      "profType": "P",
-      "note": "Advantage",
-      "minTen": true
+      "profType": "P"
     },
     {
       "id": "history",
@@ -168,9 +166,7 @@
       "id": "persuasion",
       "name": "Persuasion",
       "attr": "CHA",
-      "profType": "P",
-      "note": "Advantage",
-      "minTen": true
+      "profType": "P"
     },
     {
       "id": "religion",
@@ -295,15 +291,16 @@
       },
       {
         "name": "Song of Rest (Bard 2)",
-        "desc": "You and allies regain an extra 1d6 hit points when spending Hit Dice during a short rest."
+        "desc": "You and allies regain an extra {{songOfRestDie}} hit points when spending Hit Dice during a short rest."
       },
       {
         "name": "Genie's Vessel (Warlock 1)",
-        "desc": "You can enter your vessel for up to 6 hours (2x proficiency bonus). AC 15, HP 3."
+        "desc": "You can enter your vessel for up to {{vesselHours}} hours (2x proficiency bonus). AC 15, HP 3."
       },
       {
         "name": "Genie's Wrath (Warlock 1)",
-        "desc": "Once during each of your turns when you hit with an attack, you deal extra thunder damage equal to your proficiency bonus (+3)."
+        "badge": "+{{PB}} Thunder",
+        "desc": "Once during each of your turns when you hit with an attack, you deal extra thunder damage equal to your proficiency bonus (+{{PB}})."
       },
       {
         "name": "Telepathic Feat",
@@ -514,11 +511,6 @@
         "name": "Dispel Magic",
         "source": "bard",
         "sourceType": "bard"
-      },
-      {
-        "name": "Dimension Door",
-        "source": "Cloak of the Mountebank",
-        "sourceType": "item"
       }
     ]
   },
@@ -536,7 +528,25 @@
         "baseAc": 12,
         "stealthDisadv": false,
         "equipped": true,
+        "grantedSpells": [],
+        "resistances": [],
+        "statBonuses": {},
+        "advantageSkills": [],
         "special": "Light armor. Add your full Dexterity modifier to AC."
+      },
+      {
+        "name": "Cloak of the Mountebank",
+        "type": "accessory",
+        "baseAc": 0,
+        "stealthDisadv": false,
+        "equipped": true,
+        "grantedSpells": [
+          "Dimension Door"
+        ],
+        "resistances": [],
+        "statBonuses": {},
+        "advantageSkills": [],
+        "special": "Cast Dimension Door 1/day with cloud of smoke."
       }
     ],
     "weapons": [
@@ -719,12 +729,6 @@
         "isMagic": true
       },
       {
-        "name": "Cloak of the Mountebank",
-        "desc": "Dimension Door 1/day with cloud of smoke.",
-        "isSpecial": false,
-        "isMagic": true
-      },
-      {
         "name": "Dragon Medallion",
         "desc": "Dragon-shaped medallion.",
         "isSpecial": true,
@@ -746,7 +750,15 @@
         "name": "Ring of Consilium Dubium",
         "desc": "Permanent advantage on Persuasion and Deception checks.",
         "isSpecial": false,
-        "isMagic": true
+        "isMagic": true,
+        "equipped": true,
+        "grantedSpells": [],
+        "resistances": [],
+        "statBonuses": {},
+        "advantageSkills": [
+          "Persuasion",
+          "Deception"
+        ]
       },
       {
         "name": "Signet Ring",

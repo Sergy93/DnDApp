@@ -1,6 +1,130 @@
 {
-  "djinni": "genie",
-  "efreeti": "genie",
-  "dao": "genie",
-  "marid": "genie"
+  "warlock": {
+    "genie": {
+      "name": "The Genie",
+      "specializations": {
+        "djinni": { "displayName": "Genie (Djinni)", "element": "Air", "damageType": "Thunder" },
+        "efreeti": { "displayName": "Genie (Efreeti)", "element": "Fire", "damageType": "Fire" },
+        "dao": { "displayName": "Genie (Dao)", "element": "Earth", "damageType": "Bludgeoning" },
+        "marid": { "displayName": "Genie (Marid)", "element": "Water", "damageType": "Cold" }
+      }
+    },
+    "fiend": { "name": "The Fiend" },
+    "archfey": { "name": "The Archfey" },
+    "greatoldone": { "name": "The Great Old One" },
+    "hexblade": { "name": "The Hexblade" },
+    "fathomless": { "name": "The Fathomless" },
+    "celestial": { "name": "The Celestial" },
+    "undead": { "name": "The Undead" }
+  },
+  "bard": {
+    "eloquence": { "name": "College of Eloquence" },
+    "lore": { "name": "College of Lore" },
+    "valor": { "name": "College of Valor" },
+    "glamour": { "name": "College of Glamour" },
+    "swords": { "name": "College of Swords" },
+    "whispers": { "name": "College of Whispers" },
+    "creation": { "name": "College of Creation" }
+  },
+  "cleric": {
+    "life": { "name": "Life Domain" },
+    "light": { "name": "Light Domain" },
+    "war": { "name": "War Domain" },
+    "trickery": { "name": "Trickery Domain" },
+    "tempest": { "name": "Tempest Domain" },
+    "nature": { "name": "Nature Domain" },
+    "knowledge": { "name": "Knowledge Domain" },
+    "death": { "name": "Death Domain" },
+    "forge": { "name": "Forge Domain" },
+    "grave": { "name": "Grave Domain" },
+    "peace": { "name": "Peace Domain" },
+    "twilight": { "name": "Twilight Domain" }
+  },
+  "fighter": {
+    "champion": { "name": "Champion" },
+    "battlemaster": { "name": "Battle Master" },
+    "eldritchknight": { "name": "Eldritch Knight" },
+    "samurai": { "name": "Samurai" },
+    "echo_knight": { "name": "Echo Knight" },
+    "rune_knight": { "name": "Rune Knight" }
+  },
+  "rogue": {
+    "thief": { "name": "Thief" },
+    "assassin": { "name": "Assassin" },
+    "arcanetrickster": { "name": "Arcane Trickster" },
+    "swashbuckler": { "name": "Swashbuckler" },
+    "soulknife": { "name": "Soulknife" },
+    "phantom": { "name": "Phantom" }
+  },
+  "wizard": {
+    "abjuration": { "name": "School of Abjuration" },
+    "evocation": { "name": "School of Evocation" },
+    "divination": { "name": "School of Divination" },
+    "enchantment": { "name": "School of Enchantment" },
+    "illusion": { "name": "School of Illusion" },
+    "necromancy": { "name": "School of Necromancy" },
+    "transmutation": { "name": "School of Transmutation" },
+    "conjuration": { "name": "School of Conjuration" },
+    "bladesinging": { "name": "Bladesinging" },
+    "order_of_scribes": { "name": "Order of Scribes" }
+  },
+  "sorcerer": {
+    "draconic": { "name": "Draconic Bloodline" },
+    "wildmagic": { "name": "Wild Magic" },
+    "divinesoul": { "name": "Divine Soul" },
+    "shadow": { "name": "Shadow Magic" },
+    "storm": { "name": "Storm Sorcery" },
+    "aberrantmind": { "name": "Aberrant Mind" },
+    "clockwork": { "name": "Clockwork Soul" }
+  },
+  "paladin": {
+    "devotion": { "name": "Oath of Devotion" },
+    "ancients": { "name": "Oath of the Ancients" },
+    "vengeance": { "name": "Oath of Vengeance" },
+    "conquest": { "name": "Oath of Conquest" },
+    "redemption": { "name": "Oath of Redemption" },
+    "glory": { "name": "Oath of Glory" },
+    "watchers": { "name": "Oath of the Watchers" }
+  },
+  "ranger": {
+    "hunter": { "name": "Hunter" },
+    "beastmaster": { "name": "Beast Master" },
+    "gloomstalker": { "name": "Gloom Stalker" },
+    "horizonwalker": { "name": "Horizon Walker" },
+    "feywanderer": { "name": "Fey Wanderer" },
+    "drakewarden": { "name": "Drakewarden" }
+  },
+  "druid": {
+    "land": { "name": "Circle of the Land" },
+    "moon": { "name": "Circle of the Moon" },
+    "dreams": { "name": "Circle of Dreams" },
+    "shepherd": { "name": "Circle of the Shepherd" },
+    "spores": { "name": "Circle of Spores" },
+    "stars": { "name": "Circle of Stars" },
+    "wildfire": { "name": "Circle of Wildfire" }
+  },
+  "monk": {
+    "openhand": { "name": "Way of the Open Hand" },
+    "shadow": { "name": "Way of Shadow" },
+    "four_elements": { "name": "Way of the Four Elements" },
+    "drunken_master": { "name": "Way of the Drunken Master" },
+    "kensei": { "name": "Way of the Kensei" },
+    "mercy": { "name": "Way of Mercy" },
+    "astral_self": { "name": "Way of the Astral Self" }
+  },
+  "barbarian": {
+    "berserker": { "name": "Path of the Berserker" },
+    "totem": { "name": "Path of the Totem Warrior" },
+    "ancestral": { "name": "Path of the Ancestral Guardian" },
+    "stormherald": { "name": "Path of the Storm Herald" },
+    "zealot": { "name": "Path of the Zealot" },
+    "beast": { "name": "Path of the Beast" },
+    "wildmagic": { "name": "Path of Wild Magic" }
+  },
+  "artificer": {
+    "alchemist": { "name": "Alchemist" },
+    "armorer": { "name": "Armorer" },
+    "artillerist": { "name": "Artillerist" },
+    "battlesmith": { "name": "Battle Smith" }
+  }
 }

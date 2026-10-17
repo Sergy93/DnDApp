@@ -65,6 +65,7 @@
         "id": "",
         "name": "",
         "uses": 1,
+        "usesKey": "",
         "actionCost": "Action",
         "reset": "Long Rest",
         "color": "text-brand-300",
@@ -74,7 +75,9 @@
     "traits": [
       {
         "name": "",
-        "desc": ""
+        "desc": "",
+        "badge": "",
+        "badgeIcon": "⚡"
       }
     ]
   },
@@ -94,6 +97,10 @@
         "baseAc": 10,
         "stealthDisadv": false,
         "equipped": true,
+        "grantedSpells": [],
+        "resistances": [],
+        "statBonuses": {},
+        "advantageSkills": [],
         "special": ""
       }
     ],
@@ -104,6 +111,7 @@
         "dice": "1d6",
         "damageType": "",
         "proficient": true,
+        "magicBonus": 0,
         "properties": [],
         "special": ""
       }
@@ -115,7 +123,17 @@
       { "name": "", "icon": "🎒", "isInstrument": false }
     ],
     "story": [
-      { "name": "", "desc": "", "isSpecial": false, "isMagic": false }
+      {
+        "name": "",
+        "desc": "",
+        "isSpecial": false,
+        "isMagic": false,
+        "equipped": false,
+        "grantedSpells": [],
+        "resistances": [],
+        "statBonuses": {},
+        "advantageSkills": []
+      }
     ]
   }
 }

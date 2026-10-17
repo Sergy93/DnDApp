@@ -1,112 +1,174 @@
-[
-  {
-    "classKey": "bard",
-    "subKey": "eloquence",
-    "minLevel": 6,
-    "resource": {
-      "id": "eloquence_universal_speech",
-      "name": "Universal Speech (Eloquence 6)",
-      "uses": 1,
-      "actionCost": "Action",
-      "reset": "Long Rest",
-      "color": "text-teal-300",
-      "spent": [false]
+{
+  "bard": {
+    "base": {
+      "traits": [
+        {
+          "minLevel": 2,
+          "name": "Song of Rest (Bard 2)",
+          "desc": "You and allies regain an extra {{songOfRestDie}} hit points when spending Hit Dice during a short rest."
+        },
+        {
+          "minLevel": 5,
+          "name": "Font of Inspiration (Bard 5)",
+          "desc": "You regain all of your expended uses of Bardic Inspiration when you finish a short or long rest."
+        },
+        {
+          "minLevel": 6,
+          "name": "Countercharm (Bard 6)",
+          "desc": "Action: perform until the end of your next turn. You and friendly creatures within 30 ft have advantage on saving throws against being frightened or charmed."
+        }
+      ],
+      "resources": [
+        {
+          "minLevel": 1,
+          "id": "insp_bard",
+          "name": "Bardic Inspiration ({{bardicDie}})",
+          "usesKey": "CHA",
+          "actionCost": "Bonus Action",
+          "reset": "Long Rest",
+          "color": "text-brand-300",
+          "spent": []
+        }
+      ]
     },
-    "trait": {
-      "name": "Unfailing Inspiration (Eloquence 6)",
-      "desc": "When a creature adds one of your Bardic Inspiration dice to its check, attack, or saving throw and the roll fails, the creature keeps the Bardic Inspiration die."
+    "subclasses": {
+      "eloquence": {
+        "traits": [
+          {
+            "minLevel": 3,
+            "name": "Silver Tongue (Eloquence 3)",
+            "desc": "When you make a Charisma (Persuasion) or Charisma (Deception) check, you can treat a d20 roll of 9 or lower as a 10."
+          },
+          {
+            "minLevel": 3,
+            "name": "Unsettling Words (Eloquence 3)",
+            "desc": "Bonus Action: expend one use of Bardic Inspiration to roll a {{bardicDie}} die and subtract the number rolled from a creature's next saving throw."
+          },
+          {
+            "minLevel": 6,
+            "name": "Unfailing Inspiration (Eloquence 6)",
+            "desc": "When a creature adds one of your Bardic Inspiration dice to its check, attack, or saving throw and the roll fails, the creature keeps the Bardic Inspiration die."
+          }
+        ],
+        "resources": [
+          {
+            "minLevel": 6,
+            "id": "eloquence_universal_speech",
+            "name": "Universal Speech (Eloquence 6)",
+            "uses": 1,
+            "actionCost": "Action",
+            "reset": "Long Rest",
+            "color": "text-teal-300",
+            "spent": [false]
+          },
+          {
+            "minLevel": 14,
+            "id": "eloquence_infectious_insp",
+            "name": "Infectious Inspiration (Eloquence 14)",
+            "usesKey": "CHA",
+            "actionCost": "Reaction",
+            "reset": "Long Rest",
+            "color": "text-amber-300",
+            "spent": []
+          }
+        ]
+      },
+      "glamour": {
+        "traits": [],
+        "resources": [
+          {
+            "minLevel": 3,
+            "id": "glamour_enthralling_perf",
+            "name": "Enthralling Performance (Glamour 3)",
+            "uses": 1,
+            "actionCost": "Action (1 min)",
+            "reset": "Short/Long",
+            "color": "text-pink-300",
+            "spent": [false]
+          },
+          {
+            "minLevel": 6,
+            "id": "glamour_mantle_majesty",
+            "name": "Mantle of Majesty (Glamour 6)",
+            "uses": 1,
+            "actionCost": "Bonus Action",
+            "reset": "Long Rest",
+            "color": "text-purple-300",
+            "spent": [false]
+          }
+        ]
+      },
+      "lore": {
+        "traits": [
+          {
+            "minLevel": 3,
+            "name": "Cutting Words (Lore 3)",
+            "desc": "Reaction: when a creature makes an attack roll, ability check, or damage roll, expend one Bardic Inspiration die to subtract the number rolled from the total."
+          }
+        ],
+        "resources": []
+      }
     }
   },
-  {
-    "classKey": "bard",
-    "subKey": "eloquence",
-    "minLevel": 14,
-    "resource": {
-      "id": "eloquence_infectious_insp",
-      "name": "Infectious Inspiration (Eloquence 14)",
-      "usesKey": "CHA",
-      "actionCost": "Reaction",
-      "reset": "Long Rest",
-      "color": "text-amber-300",
-      "spent": []
-    }
-  },
-  {
-    "classKey": "bard",
-    "subKey": "glamour",
-    "minLevel": 3,
-    "resource": {
-      "id": "glamour_enthralling_perf",
-      "name": "Enthralling Performance (Glamour 3)",
-      "uses": 1,
-      "actionCost": "Action (1 min)",
-      "reset": "Short/Long",
-      "color": "text-pink-300",
-      "spent": [false]
-    }
-  },
-  {
-    "classKey": "bard",
-    "subKey": "glamour",
-    "minLevel": 6,
-    "resource": {
-      "id": "glamour_mantle_majesty",
-      "name": "Mantle of Majesty (Glamour 6)",
-      "uses": 1,
-      "actionCost": "Bonus Action",
-      "reset": "Long Rest",
-      "color": "text-purple-300",
-      "spent": [false]
-    }
-  },
-  {
-    "classKey": "bard",
-    "minLevel": 6,
-    "trait": {
-      "name": "Countercharm (Bard 6)",
-      "desc": "Action: perform until the end of your next turn. You and friendly creatures within 30 ft have advantage on saving throws against being frightened or charmed."
-    }
-  },
-  {
-    "classKey": "warlock",
-    "subKey": "genie",
-    "minLevel": 6,
-    "resource": {
-      "id": "genie_elemental_gift",
-      "name": "Elemental Gift: Flight 30ft (Genie 6)",
-      "usesKey": "PB",
-      "actionCost": "Bonus Action",
-      "reset": "Long Rest",
-      "color": "text-sky-300",
-      "spent": []
-    }
-  },
-  {
-    "classKey": "warlock",
-    "subKey": "genie",
-    "minLevel": 10,
-    "resource": {
-      "id": "genie_sanctuary",
-      "name": "Sanctuary Vessel (Genie 10)",
-      "uses": 1,
-      "actionCost": "Action",
-      "reset": "Long Rest",
-      "color": "text-cyan-300",
-      "spent": [false]
-    }
-  },
-  {
-    "classKey": "warlock",
-    "subKey": "genie",
-    "minLevel": 14,
-    "resource": {
-      "id": "genie_limited_wish",
-      "name": "Limited Wish (Genie 14)",
-      "uses": 1,
-      "actionCost": "Action",
-      "reset": "1d4 Long Rests",
-      "color": "text-yellow-300",
-      "spent": [false]
+  "warlock": {
+    "base": {
+      "traits": [],
+      "resources": []
+    },
+    "subclasses": {
+      "genie": {
+        "traits": [
+          {
+            "minLevel": 1,
+            "name": "Genie's Wrath (Warlock 1)",
+            "badge": "+{{PB}} Thunder",
+            "badgeIcon": "⚡",
+            "desc": "Once during each of your turns when you hit with an attack, you deal extra elemental damage equal to your proficiency bonus (+{{PB}})."
+          }
+        ],
+        "resources": [
+          {
+            "minLevel": 1,
+            "id": "genie_vessel",
+            "name": "Genie's Vessel ({{vesselHours}}h)",
+            "uses": 1,
+            "actionCost": "Action",
+            "reset": "Long Rest",
+            "color": "text-blue-300",
+            "spent": [false]
+          },
+          {
+            "minLevel": 6,
+            "id": "genie_elemental_gift",
+            "name": "Elemental Gift: Flight 30ft (Genie 6)",
+            "usesKey": "PB",
+            "actionCost": "Bonus Action",
+            "reset": "Long Rest",
+            "color": "text-sky-300",
+            "spent": []
+          },
+          {
+            "minLevel": 10,
+            "id": "genie_sanctuary",
+            "name": "Sanctuary Vessel (Genie 10)",
+            "uses": 1,
+            "actionCost": "Action",
+            "reset": "Long Rest",
+            "color": "text-cyan-300",
+            "spent": [false]
+          },
+          {
+            "minLevel": 14,
+            "id": "genie_limited_wish",
+            "name": "Limited Wish (Genie 14)",
+            "uses": 1,
+            "actionCost": "Action",
+            "reset": "1d4 Long Rests",
+            "color": "text-yellow-300",
+            "spent": [false]
+          }
+        ]
+      }
     }
   }
-]
+}

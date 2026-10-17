@@ -19,14 +19,39 @@ import XGE_SPELLS from "./dnd-data/spells/spells-xge.json";
 
 export { DND_CONDITIONS, DAMAGE_TYPES };
 
-const MULTICLASS_SPELL_SLOTS = SPELL_SLOTS_TABLES.multiclassSpellSlots;
-const WARLOCK_PACT_TABLE = SPELL_SLOTS_TABLES.warlockPactSlots;
-
 const SPELL_SOURCES = [PHB_SPELLS, TCE_SPELLS, XGE_SPELLS];
+
+const DND_5E_SKILLS = [
+    { id: 'acrobatics', name: 'Acrobatics', attr: 'DEX' },
+    { id: 'animal_handling', name: 'Animal Handling', attr: 'WIS' },
+    { id: 'arcana', name: 'Arcana', attr: 'INT' },
+    { id: 'athletics', name: 'Athletics', attr: 'STR' },
+    { id: 'deception', name: 'Deception', attr: 'CHA' },
+    { id: 'history', name: 'History', attr: 'INT' },
+    { id: 'insight', name: 'Insight', attr: 'WIS' },
+    { id: 'intimidation', name: 'Intimidation', attr: 'CHA' },
+    { id: 'investigation', name: 'Investigation', attr: 'INT' },
+    { id: 'medicine', name: 'Medicine', attr: 'WIS' },
+    { id: 'nature', name: 'Nature', attr: 'INT' },
+    { id: 'perception', name: 'Perception', attr: 'WIS' },
+    { id: 'performance', name: 'Performance', attr: 'CHA' },
+    { id: 'persuasion', name: 'Persuasion', attr: 'CHA' },
+    { id: 'religion', name: 'Religion', attr: 'INT' },
+    { id: 'sleight_of_hand', name: 'Sleight of Hand', attr: 'DEX' },
+    { id: 'stealth', name: 'Stealth', attr: 'DEX' },
+    { id: 'survival', name: 'Survival', attr: 'WIS' }
+];
 
 function normalizeKey(str) {
     if (!str) return '';
     return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+}
+
+function capitalizeWord(str) {
+    if (!str) return '';
+    const s = String(str).trim();
+    if (!s) return '';
+    return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 function findCompendiumClass(className) {
@@ -41,11 +66,72 @@ function findCompendiumClass(className) {
     return classKey ? { key: classKey, obj: CLASS_COMPENDIUM[classKey] } : null;
 }
 
-function findCompendiumSubclass(classObj, subclassName) {
+function resolveSubclassInfo(className, subclassName) {
+    if (!subclassName) return null;
+    const normSub = normalizeKey(subclassName);
+    const normClass = normalizeKey(className || '');
+
+    // 1. Direct class block check
+    const classBlock = SUBCLASS_ALIASES[normClass];
+    if (classBlock) {
+        for (const subKey of Object.keys(classBlock)) {
+            const entry = classBlock[subKey];
+            if (normalizeKey(subKey) === normSub || normalizeKey(entry.name || '') === normSub) {
+                return { key: subKey, name: entry.name, displayName: entry.name, specialization: null };
+            }
+            if (entry.specializations) {
+                for (const specKey of Object.keys(entry.specializations)) {
+                    const spec = entry.specializations[specKey];
+                    if (normalizeKey(specKey) === normSub || normalizeKey(spec.displayName || '') === normSub || normSub.includes(normalizeKey(specKey))) {
+                        return {
+                            key: subKey,
+                            name: entry.name,
+                            displayName: spec.displayName || `${entry.name} (${specKey})`,
+                            specialization: specKey,
+                            specInfo: spec
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Global search across all classes in SUBCLASS_ALIASES
+    for (const cKey of Object.keys(SUBCLASS_ALIASES)) {
+        const cBlock = SUBCLASS_ALIASES[cKey];
+        for (const subKey of Object.keys(cBlock)) {
+            const entry = cBlock[subKey];
+            if (normalizeKey(subKey) === normSub || normalizeKey(entry.name || '') === normSub) {
+                return { classKey: cKey, key: subKey, name: entry.name, displayName: entry.name, specialization: null };
+            }
+            if (entry.specializations) {
+                for (const specKey of Object.keys(entry.specializations)) {
+                    const spec = entry.specializations[specKey];
+                    if (normalizeKey(specKey) === normSub || normalizeKey(spec.displayName || '') === normSub || normSub.includes(normalizeKey(specKey))) {
+                        return {
+                            classKey: cKey,
+                            key: subKey,
+                            name: entry.name,
+                            displayName: spec.displayName || `${entry.name} (${specKey})`,
+                            specialization: specKey,
+                            specInfo: spec
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+function findCompendiumSubclass(classObj, subclassName, className = '') {
     if (!classObj || !classObj.subclasses || !subclassName) return null;
     const normSub = normalizeKey(subclassName);
     if (!normSub) return null;
-    const canonicalSub = SUBCLASS_ALIASES[normSub] || normSub;
+
+    const resolved = resolveSubclassInfo(className || classObj.name, subclassName);
+    const canonicalSub = resolved ? resolved.key : normSub;
 
     const subclasses = classObj.subclasses;
     const subKey = Object.keys(subclasses).find(key => {
@@ -62,7 +148,7 @@ function findCompendiumSubclass(classObj, subclassName) {
         return lvl1Feats.some(f => normalizeKey(f).includes(normSub));
     });
 
-    return subKey ? { key: subKey, obj: subclasses[subKey] } : null;
+    return subKey ? { key: subKey, obj: subclasses[subKey], resolved } : null;
 }
 
 function generateProgressionTree(className, subclassName, charProgressionMap = {}) {
@@ -119,46 +205,79 @@ function calculateExpectedSlots(classes = []) {
     const warlock = classes.find(c => normalizeKey(c?.name) === 'warlock');
     if (warlock) {
         const wLvl = Math.min(20, Math.max(1, parseInt(warlock.level, 10) || 1));
-        const pInfo = WARLOCK_PACT_TABLE[wLvl];
-        list.push({
-            id: 'pact',
-            level: `Pact (Warlock ${wLvl})`,
-            max: pInfo.count,
-            reset: 'short'
-        });
+        const pInfo = SPELL_SLOTS_TABLES.warlockPactSlots?.[wLvl];
+        if (pInfo) {
+            list.push({
+                id: 'pact',
+                level: `Pact (Warlock ${wLvl})`,
+                max: pInfo.count,
+                reset: 'short'
+            });
+        }
     }
 
-    let casterLvl = 0;
-    const standardCasters = [];
+    const nonWarlock = [];
     classes.forEach(c => {
         const n = normalizeKey(c?.name || '');
+        const sub = normalizeKey(c?.subclass || '');
         const lvl = parseInt(c?.level, 10) || 0;
+        if (lvl <= 0) return;
         if (['bard', 'cleric', 'druid', 'sorcerer', 'wizard'].includes(n)) {
-            casterLvl += lvl;
-            standardCasters.push({ name: c.name, level: lvl });
+            nonWarlock.push({ type: 'full', name: c.name, level: lvl });
         } else if (['paladin', 'ranger'].includes(n)) {
-            casterLvl += Math.floor(lvl / 2);
-            standardCasters.push({ name: c.name, level: lvl });
+            nonWarlock.push({ type: 'half', name: c.name, level: lvl });
         } else if (n === 'artificer') {
-            casterLvl += Math.ceil(lvl / 2);
-            standardCasters.push({ name: c.name, level: lvl });
+            nonWarlock.push({ type: 'artificer', name: c.name, level: lvl });
+        } else if (n === 'fighter' && (sub.includes('eldritch') || sub.includes('knight'))) {
+            nonWarlock.push({ type: 'third', name: c.name, level: lvl });
+        } else if (n === 'rogue' && (sub.includes('trickster') || sub.includes('arcane'))) {
+            nonWarlock.push({ type: 'third', name: c.name, level: lvl });
         }
     });
 
-    if (casterLvl > 0) {
-        const counts = MULTICLASS_SPELL_SLOTS[Math.min(20, casterLvl)] || [];
-        const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
-        const classTag = standardCasters.length === 1
-            ? ` (${standardCasters[0].name.charAt(0).toUpperCase() + standardCasters[0].name.slice(1)})`
-            : '';
+    const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
+    if (nonWarlock.length === 1) {
+        const caster = nonWarlock[0];
+        const lvl = Math.min(20, Math.max(1, caster.level));
+        const tableMap = {
+            full: SPELL_SLOTS_TABLES.fullCaster,
+            half: SPELL_SLOTS_TABLES.halfCaster,
+            artificer: SPELL_SLOTS_TABLES.artificer,
+            third: SPELL_SLOTS_TABLES.thirdCaster
+        };
+        const counts = tableMap[caster.type]?.[lvl] || [];
+        const classTag = ` (${capitalizeWord(caster.name)})`;
         counts.forEach((max, idx) => {
-            list.push({
-                id: `lvl${idx + 1}`,
-                level: `${ordinals[idx]} Level${classTag}`,
-                max: max,
-                reset: 'long'
-            });
+            if (max > 0) {
+                list.push({
+                    id: `lvl${idx + 1}`,
+                    level: `${ordinals[idx]} Level${classTag}`,
+                    max: max,
+                    reset: 'long'
+                });
+            }
         });
+    } else if (nonWarlock.length > 1) {
+        let combinedLvl = 0;
+        nonWarlock.forEach(c => {
+            if (c.type === 'full') combinedLvl += c.level;
+            else if (c.type === 'half') combinedLvl += Math.floor(c.level / 2);
+            else if (c.type === 'artificer') combinedLvl += Math.ceil(c.level / 2);
+            else if (c.type === 'third') combinedLvl += Math.floor(c.level / 3);
+        });
+        if (combinedLvl > 0) {
+            const counts = SPELL_SLOTS_TABLES.multiclassSpellSlots?.[Math.min(20, combinedLvl)] || [];
+            counts.forEach((max, idx) => {
+                if (max > 0) {
+                    list.push({
+                        id: `lvl${idx + 1}`,
+                        level: `${ordinals[idx]} Level`,
+                        max: max,
+                        reset: 'long'
+                    });
+                }
+            });
+        }
     }
     return list;
 }
@@ -223,23 +342,52 @@ function detectClassFeaturesToSync(d) {
     classes.forEach(cls => {
         const found = findCompendiumClass(cls.name);
         const classKey = found?.key || normalizeKey(cls.name);
-        const subKey = normalizeKey(cls.subclass || '');
         const currentLvl = parseInt(cls.level, 10) || 1;
 
-        (CLASS_FEATURES_SYNC || []).forEach(rule => {
-            if (rule.classKey && rule.classKey !== classKey) return;
-            if (rule.subKey && !subKey.includes(rule.subKey)) return;
-            if (currentLvl < (rule.minLevel || 1)) return;
+        const classRules = CLASS_FEATURES_SYNC?.[classKey];
+        if (!classRules) return;
 
-            if (rule.resource && !existingResourceIds.has(rule.resource.id)) {
-                newResources.push(JSON.parse(JSON.stringify(rule.resource)));
-                existingResourceIds.add(rule.resource.id);
+        // 1. Base class features
+        if (classRules.base) {
+            (classRules.base.traits || []).forEach(trait => {
+                if (currentLvl >= (trait.minLevel || 1) && !existingTraitNames.has(normalizeKey(trait.name))) {
+                    newTraits.push(JSON.parse(JSON.stringify(trait)));
+                    existingTraitNames.add(normalizeKey(trait.name));
+                }
+            });
+            (classRules.base.resources || []).forEach(res => {
+                if (currentLvl >= (res.minLevel || 1) && !existingResourceIds.has(res.id)) {
+                    newResources.push(JSON.parse(JSON.stringify(res)));
+                    existingResourceIds.add(res.id);
+                }
+            });
+        }
+
+        // 2. Subclass features
+        if (cls.subclass && classRules.subclasses) {
+            const resolvedSub = resolveSubclassInfo(cls.name, cls.subclass);
+            const targetSubKey = resolvedSub?.key || normalizeKey(cls.subclass || '');
+            const matchingSubKey = Object.keys(classRules.subclasses).find(sk => {
+                const normSk = normalizeKey(sk);
+                return normSk === targetSubKey || targetSubKey.includes(normSk) || normSk.includes(targetSubKey);
+            });
+
+            if (matchingSubKey && classRules.subclasses[matchingSubKey]) {
+                const subData = classRules.subclasses[matchingSubKey];
+                (subData.traits || []).forEach(trait => {
+                    if (currentLvl >= (trait.minLevel || 1) && !existingTraitNames.has(normalizeKey(trait.name))) {
+                        newTraits.push(JSON.parse(JSON.stringify(trait)));
+                        existingTraitNames.add(normalizeKey(trait.name));
+                    }
+                });
+                (subData.resources || []).forEach(res => {
+                    if (currentLvl >= (res.minLevel || 1) && !existingResourceIds.has(res.id)) {
+                        newResources.push(JSON.parse(JSON.stringify(res)));
+                        existingResourceIds.add(res.id);
+                    }
+                });
             }
-            if (rule.trait && !existingTraitNames.has(normalizeKey(rule.trait.name))) {
-                newTraits.push(JSON.parse(JSON.stringify(rule.trait)));
-                existingTraitNames.add(normalizeKey(rule.trait.name));
-            }
-        });
+        }
     });
 
     return { newResources, newTraits };
@@ -249,7 +397,7 @@ function getResourceMaxUses(res, attributes, profBonus = 2) {
     if (typeof res?.uses === 'number' && res.uses > 0) return res.uses;
     if (res?.usesKey) {
         const u = String(res.usesKey).toUpperCase();
-        if (u === 'PB' || u === 'PROF') return Math.max(1, profBonus);
+        if (u === 'PB') return Math.max(1, profBonus);
         return Math.max(1, resolveAttributeMod(attributes, res.usesKey));
     }
     if (Array.isArray(res?.spent) && res.spent.length > 0) return res.spent.length;
@@ -266,6 +414,11 @@ function sanitizeTracking(d) {
     if (!Array.isArray(d.identity.classes) || d.identity.classes.length === 0) {
         d.identity.classes = [{ name: "Character", subclass: "", level: 1, hitDie: "d8" }];
     }
+    d.identity.classes = d.identity.classes.map(c => ({
+        ...c,
+        name: capitalizeWord(c.name || "Character"),
+        subclass: c.subclass ? capitalizeWord(c.subclass) : ''
+    }));
 
     const totalHd = d.identity.classes.reduce((a, b) => a + (b.level || 0), 0) || 1;
     const profBonus = Math.floor((totalHd - 1) / 4) + 2;
@@ -279,6 +432,11 @@ function sanitizeTracking(d) {
     }
     if (!d.concentration) d.concentration = { active: false, spellName: "" };
     if (!Array.isArray(d.conditions)) d.conditions = [];
+    d.conditions = d.conditions.map(c => {
+        if (typeof c === 'string') return { id: c, source: 'General' };
+        if (c && typeof c === 'object' && c.id) return { id: c.id, source: c.source || 'General' };
+        return null;
+    }).filter(Boolean);
     if (!Array.isArray(d.sessionLog)) d.sessionLog = [];
     if (!Array.isArray(d.combat.resources)) d.combat.resources = [];
     if (!Array.isArray(d.combat.traits)) d.combat.traits = [];
@@ -323,13 +481,6 @@ function loadInitialData() {
     let raw = null;
     try {
         raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-            const legacyKeys = ['character_dnd_v20', 'character_dnd_v19', 'character_dnd_v18', 'character_dnd_data'];
-            for (const k of legacyKeys) {
-                raw = localStorage.getItem(k);
-                if (raw) break;
-            }
-        }
     } catch (e) {
         console.warn("[Storage] Could not read localStorage:", e);
     }
@@ -348,13 +499,7 @@ function parseCharacterFileContent(rawText) {
     if (!rawText || typeof rawText !== 'string') {
         throw new Error('Empty file');
     }
-    let cleaned = rawText.trim();
-    // Support both plain JSON and JS module format ("export var CHARACTER_DATA = {...};" or "CHARACTER_DATA = {...};")
-    cleaned = cleaned
-        .replace(/^\s*(?:export\s+(?:default\s+|(?:var|let|const)\s+[a-zA-Z_$][\w$]*\s*=\s*)|(?:var|let|const)?\s*[a-zA-Z_$][\w$]*\s*=\s*)/, '')
-        .replace(/;\s*$/, '')
-        .trim();
-    return JSON.parse(cleaned);
+    return JSON.parse(rawText.trim());
 }
 
 // ================= STATS COMPUTATION =================
@@ -409,26 +554,39 @@ function resolveGenieDamage(d, profBonus) {
 }
 
 
+function getAllEquippedItems(d) {
+    if (!d || !d.inventory) return [];
+    return [
+        ...(d.inventory.armors || []),
+        ...(d.inventory.story || []),
+        ...(d.inventory.weapons || [])
+    ].filter(a => a && a.equipped);
+}
+
 function resolveCharacterResistances(d) {
-    const list = [];
-    const seen = new Set();
+    const map = new Map();
+
+    const addRes = (idOrName, source) => {
+        const norm = normalizeKey(idOrName);
+        if (!norm) return;
+        const dt = DAMAGE_TYPES.find(t => normalizeKey(t.id) === norm || normalizeKey(t.name) === norm);
+        const id = dt ? dt.id : norm;
+        const name = dt ? dt.name : (idOrName.charAt(0).toUpperCase() + idOrName.slice(1));
+        const icon = dt ? dt.icon : '🛡️';
+
+        if (!map.has(id)) {
+            map.set(id, { id, name, icon, sources: [source] });
+        } else {
+            const entry = map.get(id);
+            if (!entry.sources.includes(source)) {
+                entry.sources.push(source);
+            }
+        }
+    };
 
     // 1. Explicit array in d.vitals.damageResistances if defined
     if (Array.isArray(d?.vitals?.damageResistances)) {
-        d.vitals.damageResistances.forEach(r => {
-            const norm = normalizeKey(r);
-            const dt = DAMAGE_TYPES.find(t => normalizeKey(t.id) === norm || normalizeKey(t.name) === norm);
-            const id = dt ? dt.id : norm;
-            if (id && !seen.has(id)) {
-                seen.add(id);
-                list.push({
-                    id,
-                    name: dt ? dt.name : (r.charAt(0).toUpperCase() + r.slice(1)),
-                    icon: dt ? dt.icon : '🛡️',
-                    source: 'Sheet'
-                });
-            }
-        });
+        d.vitals.damageResistances.forEach(r => addRes(r, 'Character Sheet / Race'));
     }
 
     // 2. Scan combat traits (e.g. Tiefling Infernal Resistance, class features)
@@ -438,19 +596,26 @@ function resolveCharacterResistances(d) {
         DAMAGE_TYPES.forEach(dt => {
             const typeName = dt.id;
             const reg = new RegExp(`(?:resistance|resistant)\\s+to\\s+[^.]*?\\b${typeName}\\b`, 'i');
-            if (reg.test(text) && !seen.has(dt.id)) {
-                seen.add(dt.id);
-                list.push({
-                    id: dt.id,
-                    name: dt.name,
-                    icon: dt.icon,
-                    source: t.name || 'Trait'
-                });
+            if (reg.test(text)) {
+                addRes(dt.id, t.name || 'Trait');
             }
         });
     });
 
-    return list;
+    // 3. Scan all equipped items (armors, accessories, story items, weapons)
+    const allEquipped = getAllEquippedItems(d);
+
+    allEquipped.forEach(item => {
+        const itemRes = Array.isArray(item.resistances) ? item.resistances : [];
+        itemRes.forEach(r => {
+            addRes(r, item.name || 'Equipment');
+        });
+    });
+
+    return Array.from(map.values()).map(r => ({
+        ...r,
+        source: r.sources.join(', ')
+    }));
 }
 
 function resolveClassHitDie(cls) {
@@ -465,12 +630,18 @@ function resolveClassHitDie(cls) {
 
 function resolveSpellcastingAttrKey(d) {
     if (d?.magic?.spellcastingAttr) return String(d.magic.spellcastingAttr).toUpperCase();
+    if (d?.identity?.spellcastingAbility) return String(d.identity.spellcastingAbility).toUpperCase();
     const classes = d?.identity?.classes || [];
     for (const cls of classes) {
-        const key = findCompendiumClass(cls?.name)?.key || normalizeKey(cls?.name);
+        const found = findCompendiumClass(cls?.name);
+        const key = found?.key || normalizeKey(cls?.name);
         if (['wizard', 'artificer'].includes(key)) return 'INT';
         if (['cleric', 'druid', 'ranger'].includes(key)) return 'WIS';
         if (['bard', 'warlock', 'sorcerer', 'paladin'].includes(key)) return 'CHA';
+        if (key === 'fighter' || key === 'rogue') {
+            const sub = normalizeKey(cls?.subclass || '');
+            if (sub.includes('eldritchknight') || sub.includes('arcanetrickster')) return 'INT';
+        }
     }
     return 'CHA';
 }
@@ -499,25 +670,89 @@ function computeStats(d) {
     const hasJackOfAllTrades = hasCharacterFeature(d, ['jackofalltrades']);
     const jackOfAllTrades = hasJackOfAllTrades ? Math.floor(profBonus / 2) : 0;
 
+    const allEquipped = getAllEquippedItems(d);
+
     const attrKeys = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
 
     const computedAttrs = {};
     attrKeys.forEach(k => {
         let raw = d?.attributes?.[k] || { score: 10, profSave: false };
-        const score = typeof raw.score === 'number' ? raw.score : (parseInt(raw.score, 10) || 10);
+        let baseScore = typeof raw.score === 'number' ? raw.score : (parseInt(raw.score, 10) || 10);
+        let bonusFromItems = 0;
+        let itemSaveBonus = 0;
+        let hasAttrAdvantage = false;
+        let attrAdvantageSources = [];
+        let hasSaveAdvantage = false;
+        let saveAdvantageSources = [];
+
+        allEquipped.forEach(item => {
+            const sb = item.statBonuses;
+            if (sb) {
+                if (sb[k]) bonusFromItems += parseInt(sb[k], 10) || 0;
+                if (sb.attr === k) {
+                    if (sb.attrMode === 'advantage') {
+                        hasAttrAdvantage = true;
+                        attrAdvantageSources.push(item.name || 'Equipment');
+                    } else if (sb.attrVal) {
+                        bonusFromItems += parseInt(sb.attrVal, 10) || 0;
+                    }
+                }
+
+                const saveType = (sb.saveType || 'all').toUpperCase();
+                const saveVal = parseInt(sb.saveVal, 10) || 0;
+                const isTargetSave = saveType === 'ALL' || saveType === k;
+                if (isTargetSave) {
+                    if (sb.saveMode === 'advantage') {
+                        hasSaveAdvantage = true;
+                        saveAdvantageSources.push(item.name || 'Equipment');
+                    } else if (saveVal) {
+                        itemSaveBonus += saveVal;
+                    }
+                }
+            }
+
+            // Direct advantage arrays on items
+            if (Array.isArray(item.advantageAttrs)) {
+                item.advantageAttrs.forEach(a => {
+                    if (String(a).toUpperCase() === k) {
+                        hasAttrAdvantage = true;
+                        attrAdvantageSources.push(item.name || 'Equipment');
+                    }
+                });
+            }
+            if (Array.isArray(item.advantageSaves)) {
+                item.advantageSaves.forEach(s => {
+                    const su = String(s).toUpperCase();
+                    if (su === 'ALL' || su === k) {
+                        hasSaveAdvantage = true;
+                        saveAdvantageSources.push(item.name || 'Equipment');
+                    }
+                });
+            }
+        });
+
+        const score = baseScore + bonusFromItems;
         const mod = Math.floor((score - 10) / 2);
-        const save = mod + (raw.profSave ? profBonus : 0);
+        const save = mod + (raw.profSave ? profBonus : 0) + itemSaveBonus;
         computedAttrs[k] = {
             score,
+            baseScore,
+            bonusFromItems,
             mod,
             modStr: mod >= 0 ? `+${mod}` : `${mod}`,
             save,
             saveStr: save >= 0 ? `+${save}` : `${save}`,
-            profSave: !!raw.profSave
+            profSave: !!raw.profSave,
+            itemSaveBonus,
+            hasAttrAdvantage,
+            attrAdvantageSources: [...new Set(attrAdvantageSources)],
+            hasSaveAdvantage,
+            saveAdvantageSources: [...new Set(saveAdvantageSources)]
         };
     });
 
     const hasSilverTongue = hasCharacterFeature(d, ['silvertongue']);
+    const hasReliableTalent = hasCharacterFeature(d, ['reliabletalent', 'reliable talent']);
 
     const computedSkills = (d?.skills || []).map(s => {
         const attrObj = computedAttrs[s.attr] || { mod: 0 };
@@ -527,13 +762,68 @@ function computeStats(d) {
         else bonus += jackOfAllTrades;
 
         const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception');
-        const applyMinTen = s.minTen !== undefined ? !!s.minTen : isSilverTongueSkill;
+        const isReliableTalentSkill = hasReliableTalent && (s.profType === 'C' || s.profType === 'P');
+        const applyMinTen = s.minTen !== undefined ? !!s.minTen : (isSilverTongueSkill || isReliableTalentSkill);
+        let minTenSource = '';
+        let minTenDesc = '';
+        if (applyMinTen) {
+            if (isSilverTongueSkill) {
+                minTenSource = 'Silver Tongue (Eloquence Bard)';
+                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+            } else if (isReliableTalentSkill) {
+                minTenSource = 'Reliable Talent (Rogue)';
+                minTenDesc = `Any d20 roll of 9 or lower on proficient checks becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+            } else if (s.minTenSource) {
+                minTenSource = s.minTenSource;
+                minTenDesc = s.minTenDesc || `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+            } else {
+                minTenSource = 'Reliable Talent / Feature';
+                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+            }
+        }
+
+        // Advantage check:
+        let hasAdvantage = false;
+        let advantageSources = [];
+
+        // Check base skill note if not an unequipped item note
+        if (s.note && String(s.note).toLowerCase().includes('advantage')) {
+            hasAdvantage = true;
+            advantageSources.push(s.noteSource || 'Sheet Note');
+        }
+
+        // If parent ability check has advantage, all derived skill checks have advantage
+        if (attrObj.hasAttrAdvantage) {
+            hasAdvantage = true;
+            advantageSources.push(...attrObj.attrAdvantageSources);
+        }
+
+        // Check all equipped items granting advantage on this skill
+        allEquipped.forEach(item => {
+            const advSkills = Array.isArray(item.advantageSkills) ? item.advantageSkills : [];
+            const normSkillId = normalizeKey(s.id);
+            const normSkillName = normalizeKey(s.name);
+            const matches = advSkills.some(ask => {
+                const n = normalizeKey(ask);
+                return n === normSkillId || n === normSkillName;
+            });
+            if (matches) {
+                hasAdvantage = true;
+                if (!advantageSources.includes(item.name)) {
+                    advantageSources.push(item.name || 'Equipment');
+                }
+            }
+        });
 
         return {
             ...s,
             valNum: bonus,
             valStr: bonus >= 0 ? `+${bonus}` : `${bonus}`,
-            minVal: applyMinTen ? (10 + bonus) : null
+            minVal: applyMinTen ? (10 + bonus) : null,
+            minTenSource,
+            minTenDesc,
+            hasAdvantage,
+            advantageSources: [...new Set(advantageSources)]
         };
     });
 
@@ -547,12 +837,15 @@ function computeStats(d) {
     let calculatedAc = 10 + computedAttrs.DEX.mod;
     let armorDesc = `10 + DEX (${computedAttrs.DEX.modStr})`;
 
-    const equippedArmors = (d?.inventory?.armors || []).filter(a => a.equipped);
+    const equippedArmors = (d?.inventory?.armors || []).filter(a => a && a.equipped);
+    const equippedStory = (d?.inventory?.story || []).filter(s => s && s.equipped);
+
     // Main armor must be light, medium, or heavy (or custom base body armor)
     const mainArmor = equippedArmors.find(a => ['light', 'medium', 'heavy'].includes(a.type) || (a.type !== 'shield' && a.type !== 'accessory' && (parseInt(a.baseAc, 10) || 0) >= 10));
     const equippedShield = equippedArmors.find(a => a.type === 'shield');
     // Magic accessories (cloaks, rings, amulets, wondrous items) that grant bonus AC (or 0 AC)
     const accessories = equippedArmors.filter(a => a !== mainArmor && a !== equippedShield);
+    accessories.push(...equippedStory);
 
     if (mainArmor) {
         const bAc = parseInt(mainArmor.baseAc, 10) || 10;
@@ -592,8 +885,12 @@ function computeStats(d) {
         }
 
         const attrMod = (computedAttrs[usedAttr] || computedAttrs.STR).mod;
-        const atkBonus = attrMod + (w.proficient !== false ? profBonus : 0);
-        const dmgStr = `${w.dice} ${attrMod >= 0 ? '+' + attrMod : '-' + Math.abs(attrMod)} ${w.damageType || ''}`.trim();
+        const nameBonusMatch = (w.name || '').match(/\+(\d+)/);
+        const nameBonus = nameBonusMatch ? parseInt(nameBonusMatch[1], 10) : 0;
+        const magicBonus = parseInt(w.magicBonus !== undefined ? w.magicBonus : nameBonus, 10) || 0;
+        const atkBonus = attrMod + (w.proficient !== false ? profBonus : 0) + magicBonus;
+        const dmgMod = attrMod + magicBonus;
+        const dmgStr = `${w.dice} ${dmgMod >= 0 ? '+' + dmgMod : '-' + Math.abs(dmgMod)} ${w.damageType || ''}`.trim();
 
         return {
             ...w,
@@ -606,17 +903,44 @@ function computeStats(d) {
 
     const spellcastingAttrKey = resolveSpellcastingAttrKey(d);
     const spellAttrMod = (computedAttrs[spellcastingAttrKey] || computedAttrs.CHA).mod;
-    const spellAtkNum = spellAttrMod + profBonus;
-    const spellSaveDC = 8 + profBonus + spellAttrMod;
+    let itemSpellDcBonus = 0;
+    let itemSpellAtkBonus = 0;
+    allEquipped.forEach(item => {
+        if (item.statBonuses?.spellDc) itemSpellDcBonus += parseInt(item.statBonuses.spellDc, 10) || 0;
+        if (item.statBonuses?.spellAtk) itemSpellAtkBonus += parseInt(item.statBonuses.spellAtk, 10) || 0;
+    });
+    const spellAtkNum = spellAttrMod + profBonus + itemSpellAtkBonus;
+    const spellDC = 8 + profBonus + spellAttrMod + itemSpellDcBonus;
     const bardicUses = Math.max(1, computedAttrs.CHA.mod);
     const hitDiceList = classes.map(c => `${c.level} ${resolveClassHitDie(c)}`).join(' + ');
     const songOfRestDie = resolveSongOfRestDie(d);
     const bardicDie = resolveBardicDie(d);
 
+    const genieDamage = resolveGenieDamage(d, profBonus);
+    const combatBadges = [];
+    (d?.combat?.traits || []).forEach(t => {
+        if (t.badge) {
+            let badgeText = t.badge;
+            badgeText = badgeText.replace(/\{\{PB\}\}/g, `+${profBonus}`);
+            combatBadges.push({
+                icon: t.badgeIcon || '⚡',
+                text: badgeText,
+                title: t.name || 'Trait'
+            });
+        }
+    });
+    if (genieDamage && !combatBadges.some(b => b.text.includes(genieDamage) || (b.title && b.title.includes("Genie's Wrath")))) {
+        combatBadges.push({
+            icon: '🌩️',
+            text: genieDamage,
+            title: "Genie's Wrath"
+        });
+    }
+
     return {
         totalLevel,
-        profBonus,
-        profBonusStr: `+${profBonus}`,
+        pb: profBonus,
+        pbStr: `+${profBonus}`,
         hasJackOfAllTrades,
         jackOfAllTrades,
         computedAttrs,
@@ -627,15 +951,17 @@ function computeStats(d) {
         initDesc,
         ac: calculatedAc,
         armorDesc,
+        spellStat: spellcastingAttrKey,
         spellAtkStr: spellAtkNum >= 0 ? `+${spellAtkNum}` : `${spellAtkNum}`,
-        spellSaveDC,
-        genieDamage: resolveGenieDamage(d, profBonus),
+        spellDC,
+        genieDamage,
+        combatBadges,
         songOfRestDie,
         bardicDie,
         bardicUses,
         hitDiceList,
-        hitDiceBreakdown: classes.map(c => `${c.level} ${c.name}`).join(' + '),
-        classesSummary: classes.map(c => `${c.name}${c.subclass ? ` (${c.subclass})` : ''} ${c.level}`).join(' / '),
+        hitDiceBreakdown: classes.map(c => `${c.level} ${capitalizeWord(c.name)}`).join(' + '),
+        classesSummary: classes.map(c => `${capitalizeWord(c.name)}${c.subclass ? ` (${capitalizeWord(c.subclass)})` : ''} ${c.level}`).join(' / '),
         computedWeapons,
         resistances: resolveCharacterResistances(d)
     };
@@ -833,7 +1159,7 @@ function resolveScaledSpellDamage(comp, charSpell, totalLevel = 1, lvlNum = 1) {
     }
 
     // 3. Standard cantrip die scaling if mentions levels 5/11/17
-    if (multiplier > 1 && /5th level|nivel 5/i.test(comp?.desc || '')) {
+    if (multiplier > 1 && /5th level/i.test(comp?.desc || '')) {
         return baseDmg.replace(/^(\d+)d(\d+)/i, (_, count, faces) => `${(parseInt(count, 10) || 1) * multiplier}d${faces}`);
     }
 
@@ -929,6 +1255,14 @@ document.addEventListener('alpine:init', () => {
             propsRaw: ''
         },
 
+        equipRevision: 0,
+        selectedSpellToAdd: '',
+        selectedResToAdd: '',
+        selectedSkillAdvToAdd: '',
+        storySpellToAdd: '',
+        storyResToAdd: '',
+        storySkillAdvToAdd: '',
+
         modalArmorOpen: false,
         editingArmorIndex: null,
         armorForm: {
@@ -936,7 +1270,17 @@ document.addEventListener('alpine:init', () => {
             type: 'light',
             baseAc: 12,
             stealthDisadv: false,
-            special: ''
+            special: '',
+            grantedSpells: [],
+            resistances: [],
+            bonusAttr: '',
+            attrMode: 'bonus', // 'bonus' | 'advantage'
+            bonusAttrVal: 0,
+            saveType: '',
+            saveMode: 'bonus', // 'bonus' | 'advantage'
+            saveVal: 0,
+            advantageSkills: [],
+            equipped: false
         },
 
         modalShortRestOpen: false,
@@ -951,8 +1295,11 @@ document.addEventListener('alpine:init', () => {
             message: '',
             icon: 'ℹ️',
             showCancel: false,
-            confirmText: 'Aceptar',
-            cancelText: 'Cancelar',
+            showInput: false,
+            inputValue: '',
+            inputPlaceholder: '',
+            confirmText: 'OK',
+            cancelText: 'Cancel',
             confirmClass: 'bg-brand-600 hover:bg-brand-500',
             resolve: null
         },
@@ -985,7 +1332,22 @@ document.addEventListener('alpine:init', () => {
 
         modalStoryItemOpen: false,
         editingStoryItemIndex: null,
-        storyItemForm: { name: '', desc: '', isSpecial: false, isMagic: true },
+        storyItemForm: {
+            name: '',
+            desc: '',
+            isSpecial: false,
+            isMagic: true,
+            equipped: false,
+            grantedSpells: [],
+            resistances: [],
+            bonusAttr: '',
+            attrMode: 'bonus', // 'bonus' | 'advantage'
+            bonusAttrVal: 0,
+            saveType: '',
+            saveMode: 'bonus', // 'bonus' | 'advantage'
+            saveVal: 0,
+            advantageSkills: []
+        },
 
         modalToolOpen: false,
         editingToolIndex: null,
@@ -997,7 +1359,7 @@ document.addEventListener('alpine:init', () => {
         spellCompendiumSearch: '',
         spellCompendiumLevelFilter: 'all',
         selectedCompendiumSpell: null,
-        spellCompendiumSource: 'bard',
+        spellCompendiumSource: 'Class',
         spellManualForm: {
             name: '',
             level: 1,
@@ -1007,10 +1369,10 @@ document.addEventListener('alpine:init', () => {
             damage: '',
             conc: false,
             desc: '',
-            source: 'bard'
+            source: 'Class'
         },
 
-        // Modal de Subida de Nivel / Ficha
+        // Level Up & Character Sheet Modal
         modalLevelUpOpen: false,
         levelUpForm: {
             classes: [],
@@ -1027,7 +1389,25 @@ document.addEventListener('alpine:init', () => {
 
         // Getters Reactivos
         get stats() {
+            const _rev = this.equipRevision;
             return computeStats(this.data);
+        },
+
+        get allCompendiumSpellsList() {
+            if (!spellsCompendium || spellsCompendium.length === 0) {
+                buildSpellsCompendium();
+            }
+            return [...spellsCompendium].sort((a, b) =>
+                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+            );
+        },
+
+        get allDamageTypesList() {
+            return DAMAGE_TYPES;
+        },
+
+        get allSkillsList() {
+            return DND_5E_SKILLS;
         },
 
         get computedCombatResources() {
@@ -1054,14 +1434,31 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        get allEquipped() {
+            return getAllEquippedItems(this.data);
+        },
+
         get computedTraits() {
             const bardicDie = this.stats.bardicDie || '1d8';
-            const profBonus = this.stats.profBonus || 3;
+            const pb = this.stats.pb || 3;
             const songOfRestDie = this.stats.songOfRestDie || '1d6';
+            const spellDC = this.stats.spellDC || 15;
+            const spellAtk = this.stats.spellAtkStr || '+7';
+            const vesselHours = pb * 2;
 
             return (this.data.combat?.traits || []).map((t, idx) => {
                 let displayName = t.name || '';
                 let displayDesc = t.desc || '';
+
+                // Dynamic placeholder interpolation (strictly standardized canonical tokens)
+                displayDesc = displayDesc
+                    .replace(/\{\{PB\}\}/g, `+${pb}`)
+                    .replace(/\{\{DC\}\}/g, `${spellDC}`)
+                    .replace(/\{\{spellAtk\}\}/g, `${spellAtk}`)
+                    .replace(/\{\{bardicDie\}\}/g, bardicDie)
+                    .replace(/\{\{songOfRestDie\}\}/g, songOfRestDie)
+                    .replace(/\{\{vesselHours\}\}/g, `${vesselHours}`);
+
                 const norm = normalizeKey(t.name || '');
 
                 if (norm.includes('unsettlingwords')) {
@@ -1073,8 +1470,8 @@ document.addEventListener('alpine:init', () => {
                 if (norm.includes('songofrest')) {
                     displayDesc = displayDesc.replace(/\b1d\d+\b/g, songOfRestDie);
                 }
-                if (norm.includes('genieswrath') || norm.includes('iradelgenio')) {
-                    displayDesc = displayDesc.replace(/\(\+\d+\)/g, `(+${profBonus})`);
+                if (norm.includes('genieswrath')) {
+                    displayDesc = displayDesc.replace(/\(\+\d+\)/g, `(+${pb})`);
                 }
 
                 return {
@@ -1100,10 +1497,40 @@ document.addEventListener('alpine:init', () => {
         },
 
         get allResolvedSpells() {
+            const _rev = this.equipRevision;
             const totalLevel = this.stats.totalLevel;
             const maxSlot = this.maxSlotLevel;
             const spellAttrMod = (this.stats.computedAttrs?.[this.stats.spellcastingAttrKey] || this.stats.computedAttrs?.CHA)?.mod ?? 0;
-            return (this.data.magic?.spells || []).map(sp => resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod));
+
+            // 1. Spells defined on the character (exclude any static sourceType === 'item')
+            const list = (this.data.magic?.spells || []).filter(sp => sp && sp.sourceType !== 'item');
+            const seen = new Set(list.map(s => normalizeKey(s.name)));
+
+            // 2. Spells dynamically granted by ALL EQUIPPED armors / accessories / story items / weapons
+            const allEquipped = this.allEquipped;
+
+            allEquipped.forEach(item => {
+                const granted = Array.isArray(item.grantedSpells) ? item.grantedSpells : [];
+                granted.forEach(spellName => {
+                    const cleanName = String(spellName).trim();
+                    const norm = normalizeKey(cleanName);
+                    if (cleanName && !seen.has(norm)) {
+                        seen.add(norm);
+                        list.push({
+                            name: cleanName,
+                            source: item.name,
+                            sourceType: 'item',
+                            isItemGranted: true
+                        });
+                    }
+                });
+            });
+
+            return list.map(sp => {
+                const resolved = resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod);
+                resolved.isFavorite = this.isSpellFavorite(sp.name);
+                return resolved;
+            });
         },
 
         get favoriteSpells() {
@@ -1114,9 +1541,9 @@ document.addEventListener('alpine:init', () => {
         sortSpellsByCategory(spellsList) {
             const getCategoryRank = (sp) => {
                 const hasDamage = sp.damage && sp.damage !== '—';
-                if (hasDamage) return 1;    // 1: Daño
-                if (sp.isHealing) return 2;  // 2: Curar
-                return 3;                   // 3: Utilidad
+                if (hasDamage) return 1;    // 1: Damage
+                if (sp.isHealing) return 2;  // 2: Heal
+                return 3;                   // 3: Utility
             };
 
             return [...spellsList].sort((a, b) => {
@@ -1128,15 +1555,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         get combatSpells() {
-            const favs = this.favoriteSpells;
-            if (favs.length > 0) return favs;
-            // Fallback if the user hasn't starred any spell yet: show damage & heal spells
-            const fallback = this.allResolvedSpells.filter(sp => {
-                const hasDamage = sp.damage && sp.damage !== '—';
-                const isCombatAction = sp.actionType === 'action' || sp.actionType === 'bonus' || sp.actionType === 'reaction';
-                return (hasDamage && isCombatAction) || sp.isHealing;
-            });
-            return this.sortSpellsByCategory(fallback);
+            return this.favoriteSpells;
         },
 
         get offensiveSpells() {
@@ -1156,8 +1575,17 @@ document.addEventListener('alpine:init', () => {
         },
 
         get activeConditionsList() {
-            const activeIds = new Set(this.data.conditions || []);
-            return this.allConditions.filter(c => activeIds.has(c.id));
+            if (!Array.isArray(this.data.conditions)) return [];
+            return this.data.conditions.map(entry => {
+                const id = typeof entry === 'string' ? entry : entry.id;
+                const source = (typeof entry === 'object' && entry && entry.source) ? entry.source : '';
+                const condObj = this.allConditions.find(c => c.id === id);
+                if (!condObj) return null;
+                return {
+                    ...condObj,
+                    source: source || 'General / Unknown'
+                };
+            }).filter(Boolean);
         },
 
         get damageCalculation() {
@@ -1241,6 +1669,112 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        get dynamicBonusActions() {
+            const list = [];
+            const seen = new Set();
+
+            // 1. From tactical resources
+            (this.data.combat?.resources || []).forEach(r => {
+                const cost = (r.actionCost || '').toLowerCase();
+                if (cost.includes('bonus')) {
+                    const key = normalizeKey(r.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: r.name,
+                            desc: r.desc || (r.usesKey ? `Expend 1 use (${r.reset} reset).` : 'Bonus action resource.')
+                        });
+                    }
+                }
+            });
+
+            // 2. From traits
+            (this.data.combat?.traits || []).forEach(t => {
+                const text = `${t.name || ''} ${t.desc || ''}`.toLowerCase();
+                if (text.includes('bonus action') || (t.actionCost && t.actionCost.toLowerCase().includes('bonus'))) {
+                    const key = normalizeKey(t.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: t.name,
+                            desc: t.desc || 'Bonus action feature.'
+                        });
+                    }
+                }
+            });
+
+            // 3. From equipped items
+            (this.allEquipped || []).forEach(item => {
+                const text = `${item.name || ''} ${item.desc || ''} ${item.notes || ''} ${item.properties || ''} ${item.special || ''}`.toLowerCase();
+                const cost = (item.actionCost || '').toLowerCase();
+                if (cost.includes('bonus') || text.includes('bonus action') || text.includes('as a bonus action')) {
+                    const key = normalizeKey(item.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: item.name,
+                            desc: item.desc || item.special || item.notes || 'Equipped item bonus action.'
+                        });
+                    }
+                }
+            });
+
+            return list;
+        },
+
+        get dynamicReactionActions() {
+            const list = [];
+            const seen = new Set();
+
+            // 1. From tactical resources
+            (this.data.combat?.resources || []).forEach(r => {
+                const cost = (r.actionCost || '').toLowerCase();
+                if (cost.includes('reaction')) {
+                    const key = normalizeKey(r.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: r.name,
+                            desc: r.desc || (r.usesKey ? `Expend 1 use (${r.reset} reset).` : 'Reaction resource.')
+                        });
+                    }
+                }
+            });
+
+            // 2. From traits
+            (this.data.combat?.traits || []).forEach(t => {
+                const text = `${t.name || ''} ${t.desc || ''}`.toLowerCase();
+                if (text.includes('reaction:') || text.includes('as a reaction') || (t.actionCost && t.actionCost.toLowerCase().includes('reaction'))) {
+                    const key = normalizeKey(t.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: t.name,
+                            desc: t.desc || 'Reaction feature.'
+                        });
+                    }
+                }
+            });
+
+            // 3. From equipped items
+            (this.allEquipped || []).forEach(item => {
+                const text = `${item.name || ''} ${item.desc || ''} ${item.notes || ''} ${item.properties || ''} ${item.special || ''}`.toLowerCase();
+                const cost = (item.actionCost || '').toLowerCase();
+                if (cost.includes('reaction') || text.includes('reaction:') || text.includes('as a reaction')) {
+                    const key = normalizeKey(item.name);
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        list.push({
+                            name: item.name,
+                            desc: item.desc || item.special || item.notes || 'Equipped item reaction.'
+                        });
+                    }
+                }
+            });
+
+            return list;
+        },
+
         get bonusResourcesAndTraits() {
             const items = [];
             (this.data.combat?.resources || []).forEach(r => {
@@ -1252,6 +1786,17 @@ document.addEventListener('alpine:init', () => {
                 if (desc.includes('action: bonus') || desc.includes('bonus action')) items.push(t.name);
             });
             return items;
+        },
+
+        get shortRestHealingBonus() {
+            if (this.stats.songOfRestDie) {
+                return { name: "Song of Rest", die: this.stats.songOfRestDie };
+            }
+            const feat = (this.data.combat?.traits || []).find(t => /short rest.*extra.*(?:hp|hit points)/i.test(t.desc || ''));
+            if (feat) {
+                return { name: feat.name, die: '1d6' };
+            }
+            return null;
         },
 
         get primaryHitDie() {
@@ -1290,8 +1835,8 @@ document.addEventListener('alpine:init', () => {
         get progressionTrees() {
             const activeClasses = this.data.identity?.classes || [];
             return activeClasses.map(cls => ({
-                name: cls.name,
-                subclass: cls.subclass,
+                name: capitalizeWord(cls.name),
+                subclass: cls.subclass ? capitalizeWord(cls.subclass) : '',
                 currentLevel: cls.level || 1,
                 tree: generateProgressionTree(cls.name, cls.subclass, this.data.progression)
             }));
@@ -1310,12 +1855,12 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
-        // Persistencia
+        // Persistence
         saveState() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
             } catch (e) {
-                console.error("[Storage] Error al escribir:", e);
+                console.error("[Storage] Error saving state:", e);
             }
         },
 
@@ -1328,6 +1873,9 @@ document.addEventListener('alpine:init', () => {
                     message,
                     icon,
                     showCancel: false,
+                    showInput: false,
+                    inputValue: "",
+                    inputPlaceholder: "",
                     confirmText: "Got it",
                     cancelText: "Cancel",
                     confirmClass: "bg-brand-600 hover:bg-brand-500",
@@ -1343,7 +1891,7 @@ document.addEventListener('alpine:init', () => {
             meta.push(spell.actionType === 'bonus' ? 'Bonus Action' : (spell.actionType === 'reaction' ? 'Reaction' : 'Action'));
             if (spell.range) meta.push(`Range: ${spell.range}`);
             if (spell.duration) meta.push(`Duration: ${spell.duration}`);
-            if (spell.useSpellDc) meta.push(`Save: ${spell.saveStat || ''} (DC ${this.stats.spellSaveDC})`);
+            if (spell.useSpellDc) meta.push(`Save: ${spell.saveStat || ''} (DC ${this.stats.spellDC})`);
             if (spell.damage && spell.damage !== '—') meta.push(`Base Damage: ${spell.damage}`);
 
             const header = meta.join(' • ');
@@ -1365,6 +1913,9 @@ document.addEventListener('alpine:init', () => {
                     message,
                     icon,
                     showCancel: true,
+                    showInput: false,
+                    inputValue: "",
+                    inputPlaceholder: "",
                     confirmText,
                     cancelText: "Cancel",
                     confirmClass,
@@ -1373,8 +1924,33 @@ document.addEventListener('alpine:init', () => {
             });
         },
 
+        uiPrompt(message, title = "Input Required", defaultValue = "", placeholder = "", icon = "❓", confirmText = "Apply") {
+            return new Promise(resolve => {
+                this.modalDialog = {
+                    open: true,
+                    title,
+                    message,
+                    icon,
+                    showCancel: true,
+                    showInput: true,
+                    inputValue: defaultValue,
+                    inputPlaceholder: placeholder,
+                    confirmText,
+                    cancelText: "Cancel",
+                    confirmClass: "bg-brand-600 hover:bg-brand-500",
+                    resolve
+                };
+            });
+        },
+
         resolveDialog(result) {
-            if (this.modalDialog.resolve) this.modalDialog.resolve(result);
+            if (this.modalDialog.resolve) {
+                if (this.modalDialog.showInput) {
+                    this.modalDialog.resolve(result ? (this.modalDialog.inputValue || '').trim() : null);
+                } else {
+                    this.modalDialog.resolve(result);
+                }
+            }
             this.modalDialog.open = false;
         },
 
@@ -1515,9 +2091,12 @@ document.addEventListener('alpine:init', () => {
             this.saveState();
         },
 
-        // Armaduras y Protección
+        // Armor, Protection & Magic Accessories
         openArmorModal(index = null) {
             this.editingArmorIndex = index;
+            this.selectedSpellToAdd = '';
+            this.selectedResToAdd = '';
+            this.selectedSkillAdvToAdd = '';
             if (index !== null && this.data.inventory?.armors?.[index]) {
                 const a = this.data.inventory.armors[index];
                 this.armorForm = {
@@ -1525,7 +2104,17 @@ document.addEventListener('alpine:init', () => {
                     type: a.type || 'light',
                     baseAc: a.baseAc !== undefined ? a.baseAc : 12,
                     stealthDisadv: !!a.stealthDisadv,
-                    special: a.special || ''
+                    special: a.special || '',
+                    grantedSpells: Array.isArray(a.grantedSpells) ? [...a.grantedSpells] : [],
+                    resistances: Array.isArray(a.resistances) ? [...a.resistances] : [],
+                    bonusAttr: a.statBonuses?.attr || '',
+                    attrMode: a.statBonuses?.attrMode || (a.statBonuses?.attrVal ? 'bonus' : 'advantage'),
+                    bonusAttrVal: a.statBonuses?.attrVal || 0,
+                    saveType: a.statBonuses?.saveType || '',
+                    saveMode: a.statBonuses?.saveMode || (a.statBonuses?.saveVal ? 'bonus' : 'advantage'),
+                    saveVal: a.statBonuses?.saveVal || 0,
+                    advantageSkills: Array.isArray(a.advantageSkills) ? [...a.advantageSkills] : [],
+                    equipped: a.equipped !== undefined ? !!a.equipped : false
                 };
             } else {
                 this.armorForm = {
@@ -1533,10 +2122,68 @@ document.addEventListener('alpine:init', () => {
                     type: 'light',
                     baseAc: 12,
                     stealthDisadv: false,
-                    special: ''
+                    special: '',
+                    grantedSpells: [],
+                    resistances: [],
+                    bonusAttr: '',
+                    attrMode: 'bonus',
+                    bonusAttrVal: 0,
+                    saveType: '',
+                    saveMode: 'bonus',
+                    saveVal: 0,
+                    advantageSkills: [],
+                    equipped: false
                 };
             }
             this.modalArmorOpen = true;
+        },
+
+        addSpellToArmorForm() {
+            const sp = (this.selectedSpellToAdd || '').trim();
+            if (!sp) return;
+            if (!Array.isArray(this.armorForm.grantedSpells)) this.armorForm.grantedSpells = [];
+            if (!this.armorForm.grantedSpells.includes(sp)) {
+                this.armorForm.grantedSpells.push(sp);
+            }
+            this.selectedSpellToAdd = '';
+        },
+
+        removeSpellFromArmorForm(idx) {
+            if (Array.isArray(this.armorForm.grantedSpells)) {
+                this.armorForm.grantedSpells.splice(idx, 1);
+            }
+        },
+
+        addResToArmorForm() {
+            const res = (this.selectedResToAdd || '').trim();
+            if (!res) return;
+            if (!Array.isArray(this.armorForm.resistances)) this.armorForm.resistances = [];
+            if (!this.armorForm.resistances.includes(res)) {
+                this.armorForm.resistances.push(res);
+            }
+            this.selectedResToAdd = '';
+        },
+
+        removeResFromArmorForm(idx) {
+            if (Array.isArray(this.armorForm.resistances)) {
+                this.armorForm.resistances.splice(idx, 1);
+            }
+        },
+
+        addSkillAdvToArmorForm() {
+            const sk = (this.selectedSkillAdvToAdd || '').trim();
+            if (!sk) return;
+            if (!Array.isArray(this.armorForm.advantageSkills)) this.armorForm.advantageSkills = [];
+            if (!this.armorForm.advantageSkills.includes(sk)) {
+                this.armorForm.advantageSkills.push(sk);
+            }
+            this.selectedSkillAdvToAdd = '';
+        },
+
+        removeSkillAdvFromArmorForm(idx) {
+            if (Array.isArray(this.armorForm.advantageSkills)) {
+                this.armorForm.advantageSkills.splice(idx, 1);
+            }
         },
 
         handleSaveArmor() {
@@ -1550,13 +2197,44 @@ document.addEventListener('alpine:init', () => {
             const parsedAc = parseInt(this.armorForm.baseAc, 10);
             const baseAc = isNaN(parsedAc) ? (this.armorForm.type === 'shield' ? 2 : (this.armorForm.type === 'accessory' ? 0 : 10)) : Math.max(0, parsedAc);
 
+            const grantedSpells = [...(this.armorForm.grantedSpells || [])];
+            const resistances = [...(this.armorForm.resistances || [])];
+            const advantageSkills = [...(this.armorForm.advantageSkills || [])];
+
+            const statBonuses = {};
+            if (this.armorForm.bonusAttr) {
+                statBonuses.attr = this.armorForm.bonusAttr;
+                statBonuses.attrMode = this.armorForm.attrMode || 'bonus';
+                if (statBonuses.attrMode === 'bonus') {
+                    const val = parseInt(this.armorForm.bonusAttrVal, 10) || 0;
+                    if (val) {
+                        statBonuses[this.armorForm.bonusAttr] = val;
+                        statBonuses.attrVal = val;
+                    }
+                }
+            }
+            if (this.armorForm.saveType) {
+                statBonuses.saveType = this.armorForm.saveType;
+                statBonuses.saveMode = this.armorForm.saveMode || 'bonus';
+                if (statBonuses.saveMode === 'bonus') {
+                    const saveVal = parseInt(this.armorForm.saveVal, 10) || 0;
+                    if (saveVal) {
+                        statBonuses.saveVal = saveVal;
+                    }
+                }
+            }
+
             const armorObj = {
                 name,
                 type: this.armorForm.type,
                 baseAc,
                 stealthDisadv: !!this.armorForm.stealthDisadv,
-                equipped: existing ? !!existing.equipped : false,
-                special: this.armorForm.special.trim()
+                equipped: existing ? !!existing.equipped : (this.armorForm.equipped || false),
+                special: this.armorForm.special.trim(),
+                grantedSpells,
+                resistances,
+                advantageSkills,
+                statBonuses
             };
 
             if (isEdit) {
@@ -1565,6 +2243,7 @@ document.addEventListener('alpine:init', () => {
                 this.data.inventory.armors.push(armorObj);
             }
 
+            this.equipRevision++;
             this.saveState();
             this.modalArmorOpen = false;
             this.editingArmorIndex = null;
@@ -1582,22 +2261,45 @@ document.addEventListener('alpine:init', () => {
 
         // ================= CONDITIONS =================
         hasCondition(id) {
-            return Array.isArray(this.data.conditions) && this.data.conditions.includes(id);
+            if (!Array.isArray(this.data.conditions)) return false;
+            return this.data.conditions.some(c => (typeof c === 'string' ? c : c.id) === id);
         },
 
-        toggleCondition(id) {
+        getConditionSource(id) {
+            if (!Array.isArray(this.data.conditions)) return '';
+            const entry = this.data.conditions.find(c => (typeof c === 'string' ? c : c.id) === id);
+            if (!entry) return '';
+            return (typeof entry === 'object' && entry.source) ? entry.source : '';
+        },
+
+        async toggleCondition(id) {
             if (!Array.isArray(this.data.conditions)) this.data.conditions = [];
             const condObj = this.allConditions.find(c => c.id === id);
             const condName = condObj ? condObj.name : id;
             const condIcon = condObj ? condObj.icon : '✨';
-            const idx = this.data.conditions.indexOf(id);
+            const existingIdx = this.data.conditions.findIndex(c => (typeof c === 'string' ? c : c.id) === id);
 
-            if (idx >= 0) {
-                this.data.conditions.splice(idx, 1);
+            if (existingIdx >= 0) {
+                this.data.conditions.splice(existingIdx, 1);
                 this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
             } else {
-                this.data.conditions.push(id);
-                this.logEvent(condIcon, 'Condition Gained', `Gained "${condName}" condition.`);
+                const source = await this.uiPrompt(
+                    `Enter the source or cause for the "${condName}" condition (e.g. Poison Spray spell, Ghoul attack, Trap):`,
+                    `Apply Condition: ${condName}`,
+                    "",
+                    "e.g. Enemy Spell, Poison Trap, Monster Attack...",
+                    condIcon,
+                    "Apply Condition"
+                );
+                if (source === null) return; // User clicked Cancel
+
+                const finalSource = (source || '').trim() || 'Unknown';
+                this.data.conditions.push({
+                    id,
+                    source: finalSource
+                });
+                this.logEvent(condIcon, 'Condition Gained', `Gained "${condName}" condition (Source: ${finalSource}).`);
+
                 // If condition incapacitates or makes unconscious, notify and break concentration
                 if (['incapacitated', 'unconscious', 'paralyzed', 'petrified', 'stunned'].includes(id)) {
                     if (this.data.concentration?.active) {
@@ -1614,7 +2316,7 @@ document.addEventListener('alpine:init', () => {
             if (!Array.isArray(this.data.conditions)) return;
             const condObj = this.allConditions.find(c => c.id === id);
             const condName = condObj ? condObj.name : id;
-            this.data.conditions = this.data.conditions.filter(c => c !== id);
+            this.data.conditions = this.data.conditions.filter(c => (typeof c === 'string' ? c : c.id) !== id);
             this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
             this.saveState();
         },
@@ -1629,7 +2331,8 @@ document.addEventListener('alpine:init', () => {
 
         showConditionDetail(cond) {
             this.conditionDetailItem = cond;
-            this.uiAlert(cond.summary, `${cond.icon} Condition: ${cond.name}`, cond.icon);
+            const srcText = cond.source ? `\n\n🎯 Source: ${cond.source}` : '';
+            this.uiAlert(`${cond.summary}${srcText}`, `${cond.icon} Condition: ${cond.name}`, cond.icon);
         },
 
         // ================= BACKGROUND COMPENDIUM =================
@@ -1650,17 +2353,6 @@ document.addEventListener('alpine:init', () => {
 
         selectBackground(bg) {
             this.backgroundDetailItem = bg;
-        },
-
-        async applyBackgroundToCharacter(bg) {
-            if (!bg) return;
-            const ok = await this.uiConfirm(`Do you want to set your character's background to "${bg.name}"?`, "Change Background", "📜", "Set Background");
-            if (!ok) return;
-            this.data.identity.background = bg.name;
-            this.logEvent('📜', 'Background Updated', `Changed background to "${bg.name}". Feature: "${bg.feature?.name}".`);
-            this.saveState();
-            this.modalBackgroundsOpen = false;
-            await this.uiAlert(`Character background set to "${bg.name}". Feature: "${bg.feature?.name}".`, "Background Updated", "✨");
         },
 
         // ================= DAMAGE / HEAL MANAGER =================
@@ -1839,18 +2531,94 @@ document.addEventListener('alpine:init', () => {
                 index = this.data.inventory?.story?.indexOf(target);
             }
             this.editingStoryItemIndex = (index !== null && index >= 0) ? index : null;
+            this.storySpellToAdd = '';
+            this.storyResToAdd = '';
+            this.storySkillAdvToAdd = '';
             if (this.editingStoryItemIndex !== null && this.data.inventory?.story?.[this.editingStoryItemIndex]) {
                 const st = this.data.inventory.story[this.editingStoryItemIndex];
                 this.storyItemForm = {
                     name: st.name || '',
                     desc: st.desc || '',
                     isSpecial: !!st.isSpecial,
-                    isMagic: st.isMagic !== undefined ? !!st.isMagic : true
+                    isMagic: st.isMagic !== undefined ? !!st.isMagic : true,
+                    equipped: st.equipped !== undefined ? !!st.equipped : false,
+                    grantedSpells: Array.isArray(st.grantedSpells) ? [...st.grantedSpells] : [],
+                    resistances: Array.isArray(st.resistances) ? [...st.resistances] : [],
+                    bonusAttr: st.statBonuses?.attr || '',
+                    attrMode: st.statBonuses?.attrMode || (st.statBonuses?.attrVal ? 'bonus' : 'advantage'),
+                    bonusAttrVal: st.statBonuses?.attrVal || 0,
+                    saveType: st.statBonuses?.saveType || '',
+                    saveMode: st.statBonuses?.saveMode || (st.statBonuses?.saveVal ? 'bonus' : 'advantage'),
+                    saveVal: st.statBonuses?.saveVal || 0,
+                    advantageSkills: Array.isArray(st.advantageSkills) ? [...st.advantageSkills] : []
                 };
             } else {
-                this.storyItemForm = { name: '', desc: '', isSpecial: false, isMagic: true };
+                this.storyItemForm = {
+                    name: '',
+                    desc: '',
+                    isSpecial: false,
+                    isMagic: true,
+                    equipped: false,
+                    grantedSpells: [],
+                    resistances: [],
+                    bonusAttr: '',
+                    attrMode: 'bonus',
+                    bonusAttrVal: 0,
+                    saveType: '',
+                    saveMode: 'bonus',
+                    saveVal: 0,
+                    advantageSkills: []
+                };
             }
             this.modalStoryItemOpen = true;
+        },
+
+        addSpellToStoryForm() {
+            const sp = (this.storySpellToAdd || '').trim();
+            if (!sp) return;
+            if (!Array.isArray(this.storyItemForm.grantedSpells)) this.storyItemForm.grantedSpells = [];
+            if (!this.storyItemForm.grantedSpells.includes(sp)) {
+                this.storyItemForm.grantedSpells.push(sp);
+            }
+            this.storySpellToAdd = '';
+        },
+
+        removeSpellFromStoryForm(idx) {
+            if (Array.isArray(this.storyItemForm.grantedSpells)) {
+                this.storyItemForm.grantedSpells.splice(idx, 1);
+            }
+        },
+
+        addResToStoryForm() {
+            const res = (this.storyResToAdd || '').trim();
+            if (!res) return;
+            if (!Array.isArray(this.storyItemForm.resistances)) this.storyItemForm.resistances = [];
+            if (!this.storyItemForm.resistances.includes(res)) {
+                this.storyItemForm.resistances.push(res);
+            }
+            this.storyResToAdd = '';
+        },
+
+        removeResFromStoryForm(idx) {
+            if (Array.isArray(this.storyItemForm.resistances)) {
+                this.storyItemForm.resistances.splice(idx, 1);
+            }
+        },
+
+        addSkillAdvToStoryForm() {
+            const sk = (this.storySkillAdvToAdd || '').trim();
+            if (!sk) return;
+            if (!Array.isArray(this.storyItemForm.advantageSkills)) this.storyItemForm.advantageSkills = [];
+            if (!this.storyItemForm.advantageSkills.includes(sk)) {
+                this.storyItemForm.advantageSkills.push(sk);
+            }
+            this.storySkillAdvToAdd = '';
+        },
+
+        removeSkillAdvFromStoryForm(idx) {
+            if (Array.isArray(this.storyItemForm.advantageSkills)) {
+                this.storyItemForm.advantageSkills.splice(idx, 1);
+            }
         },
 
         handleSaveStoryItem() {
@@ -1858,21 +2626,64 @@ document.addEventListener('alpine:init', () => {
             if (!name) return;
             if (!Array.isArray(this.data.inventory.story)) this.data.inventory.story = [];
 
+            const isEdit = this.editingStoryItemIndex !== null && this.editingStoryItemIndex >= 0;
+            const existing = isEdit ? this.data.inventory.story[this.editingStoryItemIndex] : null;
+
+            const grantedSpells = [...(this.storyItemForm.grantedSpells || [])];
+            const resistances = [...(this.storyItemForm.resistances || [])];
+            const advantageSkills = [...(this.storyItemForm.advantageSkills || [])];
+
+            const statBonuses = {};
+            if (this.storyItemForm.bonusAttr) {
+                statBonuses.attr = this.storyItemForm.bonusAttr;
+                statBonuses.attrMode = this.storyItemForm.attrMode || 'bonus';
+                if (statBonuses.attrMode === 'bonus') {
+                    const val = parseInt(this.storyItemForm.bonusAttrVal, 10) || 0;
+                    if (val) {
+                        statBonuses[this.storyItemForm.bonusAttr] = val;
+                        statBonuses.attrVal = val;
+                    }
+                }
+            }
+            if (this.storyItemForm.saveType) {
+                statBonuses.saveType = this.storyItemForm.saveType;
+                statBonuses.saveMode = this.storyItemForm.saveMode || 'bonus';
+                if (statBonuses.saveMode === 'bonus') {
+                    const saveVal = parseInt(this.storyItemForm.saveVal, 10) || 0;
+                    if (saveVal) {
+                        statBonuses.saveVal = saveVal;
+                    }
+                }
+            }
+
             const item = {
                 name,
                 desc: this.storyItemForm.desc.trim(),
                 isSpecial: !!this.storyItemForm.isSpecial,
-                isMagic: !!this.storyItemForm.isMagic
+                isMagic: !!this.storyItemForm.isMagic,
+                equipped: existing ? !!existing.equipped : (this.storyItemForm.equipped || false),
+                grantedSpells,
+                resistances,
+                advantageSkills,
+                statBonuses
             };
 
-            if (this.editingStoryItemIndex !== null && this.editingStoryItemIndex >= 0) {
+            if (isEdit) {
                 this.data.inventory.story[this.editingStoryItemIndex] = item;
             } else {
                 this.data.inventory.story.push(item);
             }
+            this.equipRevision++;
             this.saveState();
             this.modalStoryItemOpen = false;
             this.editingStoryItemIndex = null;
+        },
+
+        toggleEquipItem(item) {
+            if (!item) return;
+            item.equipped = !item.equipped;
+            this.equipRevision++;
+            this.saveState();
         },
 
         async removeStoryItem(target) {
@@ -1947,7 +2758,8 @@ document.addEventListener('alpine:init', () => {
             this.spellCompendiumSearch = '';
             this.spellCompendiumLevelFilter = 'all';
             this.selectedCompendiumSpell = null;
-            this.spellCompendiumSource = this.data.identity?.classes?.[0]?.name || 'bard';
+            const defaultSource = this.data.identity?.classes?.[0]?.name || 'Class';
+            this.spellCompendiumSource = defaultSource;
             this.spellManualForm = {
                 name: '',
                 level: 1,
@@ -1957,7 +2769,7 @@ document.addEventListener('alpine:init', () => {
                 damage: '',
                 conc: false,
                 desc: '',
-                source: this.spellCompendiumSource
+                source: defaultSource
             };
             this.modalSpellAddOpen = true;
         },
@@ -2024,20 +2836,32 @@ document.addEventListener('alpine:init', () => {
         toggleSpellFavorite(spellName) {
             if (!spellName) return;
             const norm = normalizeKey(spellName);
+            if (!Array.isArray(this.data.magic.favorites)) this.data.magic.favorites = [];
+            const idx = this.data.magic.favorites.indexOf(norm);
+            if (idx >= 0) {
+                this.data.magic.favorites.splice(idx, 1);
+            } else {
+                this.data.magic.favorites.push(norm);
+            }
+
             const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
-            if (!sp) return;
-            sp.favorite = !sp.favorite;
+            if (sp) {
+                sp.favorite = this.data.magic.favorites.includes(norm);
+            }
             this.saveState();
         },
 
         isSpellFavorite(spellName) {
             if (!spellName) return false;
             const norm = normalizeKey(spellName);
+            if (Array.isArray(this.data.magic?.favorites) && this.data.magic.favorites.includes(norm)) {
+                return true;
+            }
             const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
             return !!sp?.favorite;
         },
 
-        // ================= SUBIDA DE NIVEL Y ATRIBUTOS =================
+        // ================= LEVEL UP & ATTRIBUTES =================
         openLevelUpModal() {
             this.levelUpForm.classes = JSON.parse(JSON.stringify(this.data.identity?.classes || []));
             this.levelUpForm.maxHp = this.data.vitals?.maxHp || 10;
@@ -2072,8 +2896,8 @@ document.addEventListener('alpine:init', () => {
             const name = this.levelUpForm.newClassName.trim();
             if (!name) return;
             this.levelUpForm.classes.push({
-                name,
-                subclass: this.levelUpForm.newClassSubclass.trim(),
+                name: capitalizeWord(name),
+                subclass: capitalizeWord(this.levelUpForm.newClassSubclass.trim()),
                 level: 1,
                 hitDie: this.levelUpForm.newClassHitDie || 'd8'
             });
@@ -2087,7 +2911,11 @@ document.addEventListener('alpine:init', () => {
         },
 
         handleSaveLevelUp() {
-            this.data.identity.classes = JSON.parse(JSON.stringify(this.levelUpForm.classes));
+            this.data.identity.classes = JSON.parse(JSON.stringify(this.levelUpForm.classes)).map(c => ({
+                ...c,
+                name: capitalizeWord(c.name),
+                subclass: c.subclass ? capitalizeWord(c.subclass) : ''
+            }));
             const newMaxHp = parseInt(this.levelUpForm.maxHp, 10) || this.data.vitals.maxHp;
             this.data.vitals.maxHp = newMaxHp;
             if (this.data.vitals.currentHp > newMaxHp) {
@@ -2251,7 +3079,7 @@ document.addEventListener('alpine:init', () => {
                     this.saveState();
                     await this.uiAlert("Character sheet imported and synchronized successfully.", "Character Loaded", "👤");
                 } catch (err) {
-                    await this.uiAlert("Invalid file format. You can import character.json or a legacy character.js file.", "Error", "❌");
+                    await this.uiAlert("Invalid file format. Please import a valid character.json file.", "Error", "❌");
                 }
             };
             reader.readAsText(file);

@@ -188,7 +188,7 @@
                 <div class="text-left">
                     <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase"
                         x-text="data.identity?.name || 'Character'"></h1>
-                    <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5" x-text="stats.classesSummary"></p>
+                    <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5 capitalize" x-text="stats.classesSummary"></p>
                     <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
                         <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
                         <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
@@ -213,10 +213,6 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
-                        <button @click="openLevelUpModal()"
-                            class="px-3.5 py-2 bg-amber-950/80 hover:bg-amber-900 border border-amber-500/70 text-amber-200 rounded-xl text-xs md:text-sm font-bold transition shadow active:scale-95 flex items-center gap-1.5">
-                            <span>⭐</span> Level Up
-                        </button>
                         <button @click="openShortRestModal()"
                             class="px-3.5 py-2 bg-blue-950/80 hover:bg-blue-900 border border-blue-500/60 text-blue-200 rounded-xl text-xs md:text-sm font-bold transition shadow active:scale-95 flex items-center gap-1.5">
                             <span>⛺</span> Short Rest
@@ -267,12 +263,27 @@
                 <!-- Active Tactical Reminders & Conditions -->
                 <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
 
-                    <!-- Character Damage Resistances Badges (Dynamic) -->
+                    <!-- Character Damage Resistances Badges (Dynamic with Styled Hover Tooltip) -->
                     <template x-for="res in stats.resistances" :key="res.id">
-                        <div class="flex items-center gap-1 bg-amber-950/60 border border-amber-600/60 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-200 shadow"
-                            :title="`${res.name} Resistance (${res.source}): Halves incoming ${res.name.toLowerCase()} damage!`">
+                        <div class="group relative flex items-center gap-1.5 bg-amber-950/70 border border-amber-600/70 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-200 shadow cursor-help transition hover:border-amber-400 hover:bg-amber-900/60"
+                            :title="`${res.name} Resistance • Source: ${res.source}`">
                             <span x-text="res.icon"></span>
                             <span x-text="`${res.name} Resist (÷2)`"></span>
+
+                            <!-- Floating Tooltip Card on Hover -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[220px]">
+                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.35)] text-center">
+                                    <div class="font-black text-amber-300 text-xs flex items-center justify-center gap-1">
+                                        <span x-text="res.icon"></span>
+                                        <span x-text="`${res.name} Resistance`"></span>
+                                    </div>
+                                    <div class="text-gray-300 mt-1">
+                                        Source: <strong class="text-brand-300 font-bold" x-text="res.source"></strong>
+                                    </div>
+                                    <div class="text-[10px] text-amber-200/80 mt-0.5">Halves incoming damage (÷2)</div>
+                                </div>
+                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-amber-500/80 rotate-45 -mt-1.5"></div>
+                            </div>
                         </div>
                     </template>
 
@@ -287,12 +298,28 @@
 
                     <!-- Active Conditions Pills -->
                     <template x-for="cond in activeConditionsList" :key="cond.id">
-                        <div class="flex items-center gap-1 bg-purple-950/80 border border-brand-500/70 px-2.5 py-1 rounded-lg text-xs shadow group">
+                        <div class="group relative flex items-center gap-1.5 bg-purple-950/80 border border-brand-500/70 px-2.5 py-1 rounded-lg text-xs shadow hover:border-brand-400 cursor-help"
+                            :title="`${cond.name} • Source: ${cond.source}`">
                             <span x-text="cond.icon"></span>
                             <button type="button" @click="showConditionDetail(cond)"
                                 class="font-bold text-purple-200 hover:text-white underline decoration-dotted" x-text="cond.name"></button>
                             <button type="button" @click="clearCondition(cond.id)"
-                                class="text-purple-400 hover:text-red-400 font-bold ml-1" title="Remove condition">✕</button>
+                                class="text-purple-400 hover:text-red-400 font-bold ml-0.5" title="Remove condition">✕</button>
+
+                            <!-- Floating Tooltip Card on Hover -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[240px]">
+                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-purple-500/80 shadow-[0_0_20px_rgba(168,85,247,0.35)] text-center">
+                                    <div class="font-black text-purple-300 text-xs flex items-center justify-center gap-1">
+                                        <span x-text="cond.icon"></span>
+                                        <span x-text="cond.name"></span>
+                                    </div>
+                                    <div class="text-gray-300 mt-1">
+                                        Source: <strong class="text-brand-300 font-bold" x-text="cond.source"></strong>
+                                    </div>
+                                    <div class="text-[10px] text-purple-200/80 mt-0.5 leading-snug" x-text="cond.summary"></div>
+                                </div>
+                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-purple-500/80 rotate-45 -mt-1.5"></div>
+                            </div>
                         </div>
                     </template>
 
@@ -447,11 +474,39 @@
                         <div class="grid grid-cols-3 gap-3">
                             <template x-for="(attr, k) in stats.computedAttrs" :key="k">
                                 <div class="bg-dark-900 border border-gray-700 rounded-xl p-3 text-center flex flex-col justify-between">
-                                    <span class="text-xs font-bold text-gray-400 uppercase" x-text="k"></span>
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-xs font-bold text-gray-400 uppercase" x-text="k"></span>
+                                        <div x-show="attr.hasAttrAdvantage" class="group relative inline-flex items-center">
+                                            <span class="text-[9px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 px-1 rounded font-bold cursor-help"
+                                                :title="`Advantage on ${k} checks (${(attr.attrAdvantageSources || []).join(', ')})`">🎲 Adv</span>
+                                            <!-- Floating Tooltip Card -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[210px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-lg px-2.5 py-1.5 border border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-center">
+                                                    <div class="font-bold text-emerald-300 text-xs" x-text="`Advantage: ${k} Checks`"></div>
+                                                    <div class="text-gray-300 text-[10px] mt-0.5" x-text="`Source: ${(attr.attrAdvantageSources || []).join(', ')}`"></div>
+                                                </div>
+                                                <div class="w-2 h-2 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="text-2xl font-black text-brand-300 my-1" x-text="attr.modStr"></div>
                                     <div class="text-xs text-gray-400">Score: <strong class="text-white" x-text="attr.score"></strong></div>
                                     <div class="mt-2 pt-1 border-t border-gray-800 text-xs flex justify-between items-center">
-                                        <span class="text-gray-400">Save</span>
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-gray-400">Save</span>
+                                            <div x-show="attr.hasSaveAdvantage" class="group relative inline-flex items-center">
+                                                <span class="text-[9px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 px-1 rounded font-bold cursor-help"
+                                                    :title="`Advantage on ${k} saves (${(attr.saveAdvantageSources || []).join(', ')})`">🎲 Adv</span>
+                                                <!-- Floating Tooltip Card -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[210px]">
+                                                    <div class="bg-dark-950 text-white text-[11px] rounded-lg px-2.5 py-1.5 border border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-center">
+                                                        <div class="font-bold text-emerald-300 text-xs" x-text="`Advantage: ${k} Saves`"></div>
+                                                        <div class="text-gray-300 text-[10px] mt-0.5" x-text="`Source: ${(attr.saveAdvantageSources || []).join(', ')}`"></div>
+                                                    </div>
+                                                    <div class="w-2 h-2 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1"></div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <span class="font-bold" :class="attr.profSave ? 'text-brand-300' : 'text-gray-200'" x-text="attr.saveStr"></span>
                                     </div>
                                 </div>
@@ -471,15 +526,55 @@
                         <div class="overflow-y-auto flex-grow pr-1 space-y-1 text-xs md:text-sm max-h-[380px]">
                             <template x-for="s in stats.computedSkills" :key="s.id">
                                 <div class="flex justify-between items-center p-2 rounded-lg bg-dark-900 border border-gray-800">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <span class="font-bold text-white" x-text="s.name"></span>
                                         <span class="text-xs text-gray-400" x-text="`(${s.attr})`"></span>
-                                        <span class="text-xs ml-1">
+                                        <span class="text-xs ml-0.5">
                                             <span x-show="s.profType === 'P'" class="text-brand-400 font-bold">★ Expertise</span>
                                             <span x-show="s.profType === 'C'" class="text-purple-400">● Proficient</span>
                                             <span x-show="s.profType !== 'P' && s.profType !== 'C' && stats.hasJackOfAllTrades" class="text-gray-600">Jack of All Trades</span>
                                         </span>
-                                        <span x-show="s.minVal" class="text-xs bg-amber-950/60 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-bold">Min 10</span>
+                                        <!-- Minimum 10 Badge & Floating Tooltip -->
+                                        <div x-show="s.minVal" class="group relative inline-flex items-center">
+                                            <span class="text-xs bg-amber-950/60 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-bold cursor-help"
+                                                :title="`${s.minTenSource || 'Minimum 10'}: ${s.minTenDesc}`">
+                                                Min 10
+                                            </span>
+                                            <!-- Floating Tooltip Card on Hover -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[260px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.35)] text-center">
+                                                    <div class="font-black text-amber-300 text-xs flex items-center justify-center gap-1">
+                                                        <span>🎯</span>
+                                                        <span x-text="s.minTenSource || 'Minimum 10'"></span>
+                                                    </div>
+                                                    <div class="text-gray-300 mt-1 leading-snug" x-text="s.minTenDesc"></div>
+                                                    <div class="text-[10px] text-amber-200/80 mt-1 font-mono" x-text="`Guaranteed roll: at least ${s.minVal}`"></div>
+                                                </div>
+                                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-amber-500/80 rotate-45 -mt-1.5"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Advantage Badge & Floating Tooltip -->
+                                        <div x-show="s.hasAdvantage" class="group relative inline-flex items-center">
+                                            <span class="text-xs bg-emerald-950/70 text-emerald-300 border border-emerald-500/50 px-1.5 py-0.2 rounded font-bold cursor-help"
+                                                :title="`Advantage on ${s.name} checks (${(s.advantageSources || []).join(', ')})`">
+                                                🎲 Adv
+                                            </span>
+                                            <!-- Floating Tooltip Card on Hover -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[260px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.35)] text-center">
+                                                    <div class="font-black text-emerald-300 text-xs flex items-center justify-center gap-1">
+                                                        <span>🎲</span>
+                                                        <span x-text="`Advantage: ${s.name}`"></span>
+                                                    </div>
+                                                    <div class="text-gray-300 mt-1 leading-snug">
+                                                        Source: <strong class="text-emerald-300 font-bold" x-text="(s.advantageSources || []).join(', ') || 'Equipment / Trait'"></strong>
+                                                    </div>
+                                                    <div class="text-[10px] text-emerald-200/80 mt-1">Roll 2d20 and take the higher result.</div>
+                                                </div>
+                                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1.5"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="font-black text-brand-300" x-text="s.valStr"></div>
                                 </div>
@@ -521,12 +616,12 @@
                                 <span>🔮</span> Spell Slots & Focus
                             </span>
                             <div class="flex items-center gap-3 text-xs sm:text-sm">
-                                <div>DC: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellSaveDC"></strong></div>
+                                <div>DC <span class="text-gray-400 text-xs font-normal" x-show="stats.spellStat">(<span x-text="stats.spellStat"></span>)</span>: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellDC"></strong></div>
                                 <div class="text-gray-600">•</div>
-                                <div>Atk: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellAtkStr"></strong></div>
-                                <template x-if="stats.genieDamage">
-                                    <div class="flex items-center gap-1 bg-brand-950/70 border border-brand-500/40 px-2 py-0.5 rounded text-xs text-brand-200">
-                                        <span>🌩️</span> <strong x-text="stats.genieDamage"></strong>
+                                <div>Atk <span class="text-gray-400 text-xs font-normal" x-show="stats.spellStat">(<span x-text="stats.spellStat"></span>)</span>: <strong class="text-brand-300 font-black text-sm sm:text-base" x-text="stats.spellAtkStr"></strong></div>
+                                <template x-for="badge in (stats.combatBadges || [])" :key="badge.text">
+                                    <div class="flex items-center gap-1 bg-brand-950/70 border border-brand-500/40 px-2 py-0.5 rounded text-xs text-brand-200" :title="badge.title">
+                                        <span x-text="badge.icon"></span> <strong x-text="badge.text"></strong>
                                     </div>
                                 </template>
                             </div>
@@ -712,7 +807,7 @@
                                                         <span class="text-emerald-400 font-bold text-xs sm:text-sm">💚 Heal</span>
                                                     </template>
                                                     <template x-if="!sp.isHealing && sp.useSpellDc">
-                                                        <span class="text-amber-300 text-xs sm:text-sm" x-text="`DC ${stats.spellSaveDC} ${sp.saveStat}`"></span>
+                                                        <span class="text-amber-300 text-xs sm:text-sm" x-text="`DC ${stats.spellDC} ${sp.saveStat}`"></span>
                                                     </template>
                                                     <template x-if="!sp.isHealing && !sp.useSpellDc && sp.damage && sp.damage !== '—'">
                                                         <span class="text-brand-300 text-sm sm:text-base" x-text="stats.spellAtkStr"></span>
@@ -874,20 +969,13 @@
                             <div>
                                 <strong class="text-brand-300 block font-bold text-sm sm:text-base border-b border-purple-900/60 pb-1.5 mb-2.5">✨ Bonus Action (max 1 per turn)</strong>
                                 <div class="space-y-3 text-sm sm:text-base text-gray-200 leading-relaxed">
-                                    <div>
-                                        <strong class="text-purple-300">• Bardic Inspiration:</strong>
-                                        <span class="text-gray-200"> Within 60 ft, give 1d8 to an ally to add to 1 attack roll, ability check, or saving throw in the next 10 min (spends 1 use).</span>
-                                    </div>
-                                    <div>
-                                        <strong class="text-purple-300">• Unsettling Words:</strong>
-                                        <span class="text-gray-200"> Within 60 ft, spend 1 Inspiration to subtract 1d8 from an enemy's next saving throw before the start of your next turn.</span>
-                                    </div>
-                                    <template x-for="r in bonusResourcesAndTraits.filter(n => !n.includes('Inspiración') && !n.includes('Inquietantes') && !n.includes('Inspiration') && !n.includes('Unsettling'))" :key="r">
+                                    <template x-for="act in dynamicBonusActions" :key="act.name">
                                         <div>
-                                            <strong class="text-brand-200" x-text="`• ${r}:`"></strong>
-                                            <span class="text-gray-300"> Bonus action feature.</span>
+                                            <strong class="text-purple-300" x-text="`• ${act.name}:`"></strong>
+                                            <span class="text-gray-200" x-text="` ${act.desc}`"></span>
                                         </div>
                                     </template>
+                                    <div x-show="dynamicBonusActions.length === 0" class="text-gray-500 italic text-xs sm:text-sm">No bonus action features available.</div>
                                 </div>
                             </div>
                             <div class="pt-3 border-t border-gray-800">
@@ -912,6 +1000,12 @@
                                     <li>
                                         <strong class="text-amber-200">• Opportunity Attack:</strong> You can make 1 melee attack when a hostile creature you can see leaves your reach (5 ft) without disengaging.
                                     </li>
+                                    <template x-for="act in dynamicReactionActions" :key="act.name">
+                                        <li>
+                                            <strong class="text-amber-200" x-text="`• ${act.name}:`"></strong>
+                                            <span class="text-gray-200" x-text="` ${act.desc}`"></span>
+                                        </li>
+                                    </template>
                                 </ul>
                             </div>
                             <div class="pt-3 border-t border-gray-800">
@@ -981,12 +1075,29 @@
                                             <span x-show="a.stealthDisadv" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-950/70 border border-red-800/60 text-red-300">
                                                 Stealth Disadv.
                                             </span>
+                                            <template x-for="sp in (a.grantedSpells || [])" :key="sp">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-950/70 border border-purple-800/60 text-purple-300" x-text="`✨ ${sp}`"></span>
+                                            </template>
+                                            <template x-for="res in (a.resistances || [])" :key="res">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-950/70 border border-amber-800/60 text-amber-300" x-text="`🛡️ ${res} Res.`"></span>
+                                            </template>
+                                            <template x-if="a.statBonuses && a.statBonuses.attr">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-950/70 border border-blue-800/60 text-blue-300"
+                                                    x-text="a.statBonuses.attrMode === 'advantage' ? `🎲 Adv: ${a.statBonuses.attr}` : `${a.statBonuses.attrVal >= 0 ? '+' : ''}${a.statBonuses.attrVal} ${a.statBonuses.attr}`"></span>
+                                            </template>
+                                            <template x-if="a.statBonuses && (a.statBonuses.saveVal || a.statBonuses.saveMode === 'advantage')">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300"
+                                                    x-text="a.statBonuses.saveMode === 'advantage' ? `🎲 Adv: ${(a.statBonuses.saveType && a.statBonuses.saveType.toUpperCase() !== 'ALL') ? a.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves` : `+${a.statBonuses.saveVal} ${(a.statBonuses.saveType && a.statBonuses.saveType.toUpperCase() !== 'ALL') ? a.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves`"></span>
+                                            </template>
+                                            <template x-for="sk in (a.advantageSkills || [])" :key="sk">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300" x-text="`🎲 Adv: ${sk}`"></span>
+                                            </template>
                                         </div>
                                         <p class="text-xs text-gray-400 mt-1" x-text="a.special || ''"></p>
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <label class="flex items-center gap-1.5 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
-                                            <input type="checkbox" class="cb-custom w-4 h-4" x-model="a.equipped" @change="saveState()">
+                                            <input type="checkbox" class="cb-custom w-4 h-4" :checked="!!a.equipped" @change="toggleEquipItem(a)">
                                             <span :class="a.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
                                         </label>
                                         <button @click="openArmorModal(idx)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit armor">✏️</button>
@@ -1045,7 +1156,8 @@
                         </div>
                         <div class="space-y-2 text-xs md:text-sm">
                             <template x-for="st in sortedStoryItems" :key="st.name">
-                                <div class="bg-dark-900 p-3 rounded-lg border border-gray-800 text-xs flex justify-between items-start gap-3 hover:border-gray-700 transition">
+                                <div class="p-3 rounded-lg border text-xs flex justify-between items-start gap-3 transition"
+                                    :class="st.equipped ? 'border-brand-500/60 bg-brand-950/20' : 'bg-dark-900 border-gray-800 hover:border-gray-700'">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <span x-show="st.isSpecial" class="text-amber-400 text-base shrink-0">🪙</span>
@@ -1053,10 +1165,31 @@
                                             <strong class="font-bold text-sm" :class="st.isSpecial ? 'text-amber-300' : 'text-gray-100'" x-text="st.name"></strong>
                                             <span x-show="st.isSpecial" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-800/50">Key Item</span>
                                             <span x-show="st.isMagic" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-950/60 text-purple-300 border border-purple-800/50">Magic Item</span>
+                                            <template x-for="sp in (st.grantedSpells || [])" :key="sp">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-950/70 border border-purple-800/60 text-purple-300" x-text="`✨ ${sp}`"></span>
+                                            </template>
+                                            <template x-for="res in (st.resistances || [])" :key="res">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-950/70 border border-amber-800/60 text-amber-300" x-text="`🛡️ ${res} Res.`"></span>
+                                            </template>
+                                            <template x-if="st.statBonuses && st.statBonuses.attr">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-950/70 border border-blue-800/60 text-blue-300"
+                                                    x-text="st.statBonuses.attrMode === 'advantage' ? `🎲 Adv: ${st.statBonuses.attr}` : `${st.statBonuses.attrVal >= 0 ? '+' : ''}${st.statBonuses.attrVal} ${st.statBonuses.attr}`"></span>
+                                            </template>
+                                            <template x-if="st.statBonuses && (st.statBonuses.saveVal || st.statBonuses.saveMode === 'advantage')">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300"
+                                                    x-text="st.statBonuses.saveMode === 'advantage' ? `🎲 Adv: ${(st.statBonuses.saveType && st.statBonuses.saveType.toUpperCase() !== 'ALL') ? st.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves` : `+${st.statBonuses.saveVal} ${(st.statBonuses.saveType && st.statBonuses.saveType.toUpperCase() !== 'ALL') ? st.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves`"></span>
+                                            </template>
+                                            <template x-for="sk in (st.advantageSkills || [])" :key="sk">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300" x-text="`🎲 Adv: ${sk}`"></span>
+                                            </template>
                                         </div>
                                         <p class="text-gray-300 text-xs mt-1.5 leading-relaxed" x-text="st.desc || 'No description provided.'"></p>
                                     </div>
-                                    <div class="flex items-center gap-1 shrink-0 mt-0.5">
+                                    <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
+                                        <label class="flex items-center gap-1 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
+                                            <input type="checkbox" class="cb-custom w-3.5 h-3.5" :checked="!!st.equipped" @change="toggleEquipItem(st)">
+                                            <span :class="st.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
+                                        </label>
                                         <button @click="openStoryItemModal(st)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
                                         <button @click="removeStoryItem(st)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete">🗑️</button>
                                     </div>
@@ -1117,7 +1250,7 @@
                         <span class="text-xs sm:text-sm text-gray-300">Review unlocked features and class milestones.</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button @click="modalBackgroundsOpen = true; if (!backgroundDetailItem) backgroundDetailItem = allBackgrounds['criminal'] || Object.values(allBackgrounds)[0];"
+                        <button @click="showCurrentBackgroundDetail()"
                             class="px-3.5 py-2.5 bg-dark-800 hover:bg-dark-700 border border-brand-500/50 text-brand-300 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow active:scale-95">
                             <span>📚</span> Backgrounds
                         </button>
@@ -1133,11 +1266,9 @@
                         <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow flex flex-col">
                             <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-3.5">
                                 <div>
-                                    <h3 class="text-lg sm:text-xl font-black text-brand-300" x-text="`${cls.name} ${cls.subclass ? '(' + cls.subclass + ')' : ''}`"></h3>
+                                    <h3 class="text-lg sm:text-xl font-black text-brand-300 capitalize" x-text="`${cls.name} ${cls.subclass ? '(' + cls.subclass + ')' : ''}`"></h3>
                                     <span class="text-xs sm:text-sm text-gray-300">Current Level: <strong class="text-amber-400 font-bold" x-text="cls.currentLevel"></strong> of 20</span>
                                 </div>
-                                <button @click="openLevelUpModal()"
-                                    class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs sm:text-sm font-bold transition">⭐ Level Up</button>
                             </div>
                             <div class="space-y-3 max-h-[550px] overflow-y-auto pr-1">
                                 <template x-for="lvl in cls.tree" :key="lvl.level">
@@ -1197,16 +1328,22 @@
                 <span class="text-2xl" x-text="modalDialog.icon"></span>
                 <h3 class="text-base font-bold text-white" x-text="modalDialog.title"></h3>
             </div>
-            <div class="text-xs md:text-sm text-gray-300 leading-relaxed mb-4 whitespace-pre-line overflow-y-auto pr-1 flex-1" x-text="modalDialog.message"></div>
-            <div class="flex justify-end gap-2.5 pt-2 border-t border-gray-800 shrink-0">
-                <button x-show="modalDialog.showCancel" @click="resolveDialog(false)"
-                    class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-xl text-xs font-bold text-gray-300 transition"
-                    x-text="modalDialog.cancelText"></button>
-                <button @click="resolveDialog(true)"
-                    class="px-4 py-2 rounded-xl text-xs font-bold text-white shadow transition"
-                    :class="modalDialog.confirmClass"
-                    x-text="modalDialog.confirmText"></button>
-            </div>
+            <form @submit.prevent="resolveDialog(true)" class="flex flex-col flex-1 min-h-0">
+                <div class="text-xs md:text-sm text-gray-300 leading-relaxed mb-3 whitespace-pre-line overflow-y-auto pr-1 flex-1" x-text="modalDialog.message"></div>
+                <div x-show="modalDialog.showInput" class="mb-4">
+                    <input type="text" x-model="modalDialog.inputValue" :placeholder="modalDialog.inputPlaceholder || 'Enter value...'"
+                        class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2.5 text-white outline-none focus:border-brand-500 text-xs sm:text-sm">
+                </div>
+                <div class="flex justify-end gap-2.5 pt-2 border-t border-gray-800 shrink-0">
+                    <button type="button" x-show="modalDialog.showCancel" @click="resolveDialog(false)"
+                        class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-xl text-xs font-bold text-gray-300 transition"
+                        x-text="modalDialog.cancelText"></button>
+                    <button type="submit"
+                        class="px-4 py-2 rounded-xl text-xs font-bold text-white shadow transition"
+                        :class="modalDialog.confirmClass"
+                        x-text="modalDialog.confirmText"></button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1241,7 +1378,9 @@
             </div>
             <p class="text-xs md:text-sm text-gray-300 mb-3 leading-relaxed">
                 Spend hit dice to heal <strong>1<span x-text="primaryHitDie"></span> + CON (<span x-text="stats.computedAttrs.CON.modStr"></span>)</strong> per die.
-                <span x-show="hasSongOfRest" class="text-brand-300 block mt-1"><strong>Song of Rest:</strong> +<span x-text="songOfRestDie"></span> extra to total healing.</span>
+                <template x-if="shortRestHealingBonus">
+                    <span class="text-brand-300 block mt-1"><strong x-text="`${shortRestHealingBonus.name}:`"></strong> +<span x-text="shortRestHealingBonus.die"></span> extra to total healing.</span>
+                </template>
             </p>
 
             <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 mb-4 text-xs md:text-sm space-y-2">
@@ -1333,7 +1472,7 @@
     <!-- MODAL: ARMOR & PROTECTION MANAGEMENT -->
     <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         x-show="modalArmorOpen">
-        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-md w-full p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)]">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(168,85,247,0.35)]">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-4">
                 <h3 class="text-base font-bold text-white" x-text="editingArmorIndex !== null ? '✏️ Edit Armor / Protection' : '🛡️ Add Armor / Protection'"></h3>
                 <button @click="modalArmorOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
@@ -1341,7 +1480,7 @@
             <form @submit.prevent="handleSaveArmor()" class="space-y-3.5 text-xs md:text-sm">
                 <div>
                     <label class="block text-gray-300 font-semibold mb-1">Armor / Item Name *</label>
-                    <input type="text" x-model="armorForm.name" required placeholder="e.g. Studded Leather, Shield, Chain Shirt..."
+                    <input type="text" x-model="armorForm.name" required placeholder="e.g. Studded Leather, Shield, Cloak of Protection..."
                         class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -1369,6 +1508,137 @@
                         Imposes Stealth Disadvantage
                     </label>
                 </div>
+
+                <!-- GRANTED SPELLS (DYNAMIC SELECT FROM COMPENDIUM) -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>✨ Granted Spells</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select from Compendium</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="selectedSpellToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose a Spell --</option>
+                            <template x-for="sp in allCompendiumSpellsList" :key="sp.name">
+                                <option :value="sp.name" x-text="`${sp.name} (Lvl ${sp.level === 0 ? 'Cantrip' : sp.level})`"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addSpellToArmorForm()" class="px-3 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="armorForm.grantedSpells && armorForm.grantedSpells.length > 0">
+                        <template x-for="(sp, sIdx) in armorForm.grantedSpells" :key="sp">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-purple-950/80 border border-purple-800 text-purple-200">
+                                <span x-text="`✨ ${sp}`"></span>
+                                <button type="button" @click="removeSpellFromArmorForm(sIdx)" class="text-purple-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- DAMAGE RESISTANCES (DYNAMIC SELECT FROM DAMAGE TYPES) -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>🛡️ Damage Resistances</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select Damage Type</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="selectedResToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose Resistance --</option>
+                            <template x-for="dt in allDamageTypesList" :key="dt.id">
+                                <option :value="dt.name" x-text="`${dt.icon} ${dt.name}`"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addResToArmorForm()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="armorForm.resistances && armorForm.resistances.length > 0">
+                        <template x-for="(res, rIdx) in armorForm.resistances" :key="res">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-950/80 border border-amber-800 text-amber-200">
+                                <span x-text="`🛡️ ${res}`"></span>
+                                <button type="button" @click="removeResFromArmorForm(rIdx)" class="text-amber-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ATTRIBUTE & SAVING THROW BONUSES -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1">Attribute Bonus / Advantage</label>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select x-model="armorForm.bonusAttr" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                                    <option value="">None</option>
+                                    <option value="STR">STR</option>
+                                    <option value="DEX">DEX</option>
+                                    <option value="CON">CON</option>
+                                    <option value="INT">INT</option>
+                                    <option value="WIS">WIS</option>
+                                    <option value="CHA">CHA</option>
+                                </select>
+                                <select x-model="armorForm.attrMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!armorForm.bonusAttr">
+                                    <option value="bonus">+ / - Bonus</option>
+                                    <option value="advantage">🎲 Advantage</option>
+                                </select>
+                            </div>
+                            <input x-show="armorForm.attrMode === 'bonus'" type="number" x-model.number="armorForm.bonusAttrVal" placeholder="+/- Bonus value"
+                                class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1">Saving Throw Bonus / Advantage</label>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select x-model="armorForm.saveType" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                                    <option value="">None</option>
+                                    <option value="all">All Saves</option>
+                                    <option value="STR">STR Save</option>
+                                    <option value="DEX">DEX Save</option>
+                                    <option value="CON">CON Save</option>
+                                    <option value="INT">INT Save</option>
+                                    <option value="WIS">WIS Save</option>
+                                    <option value="CHA">CHA Save</option>
+                                </select>
+                                <select x-model="armorForm.saveMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!armorForm.saveType">
+                                    <option value="bonus">+ / - Bonus</option>
+                                    <option value="advantage">🎲 Advantage</option>
+                                </select>
+                            </div>
+                            <input x-show="armorForm.saveMode === 'bonus'" type="number" x-model.number="armorForm.saveVal" placeholder="+/- Bonus value"
+                                class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SKILL ADVANTAGES -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>🎲 Skill Advantage</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select Skill</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="selectedSkillAdvToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose Skill --</option>
+                            <template x-for="sk in allSkillsList" :key="sk">
+                                <option :value="sk" x-text="sk"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addSkillAdvToArmorForm()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="armorForm.advantageSkills && armorForm.advantageSkills.length > 0">
+                        <template x-for="(sk, kIdx) in armorForm.advantageSkills" :key="sk">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-950/80 border border-emerald-800 text-emerald-200">
+                                <span x-text="`🎲 Adv: ${sk}`"></span>
+                                <button type="button" @click="removeSkillAdvFromArmorForm(kIdx)" class="text-emerald-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-gray-300 font-semibold mb-1">Special / Notes</label>
                     <input type="text" x-model="armorForm.special" placeholder="e.g. Light armor. Add your full Dexterity modifier to AC."
@@ -1528,6 +1798,9 @@
                                     <strong class="text-white text-sm" x-text="cond.name"></strong>
                                     <span x-show="hasCondition(cond.id)"
                                         class="bg-brand-600 text-white text-[10px] font-black uppercase px-1.5 py-0.2 rounded-full">Active</span>
+                                </div>
+                                <div x-show="hasCondition(cond.id) && getConditionSource(cond.id)" class="text-[11px] text-brand-300 font-medium mt-0.5">
+                                    Source: <strong class="text-white" x-text="getConditionSource(cond.id)"></strong>
                                 </div>
                                 <p class="text-xs text-gray-300 mt-0.5 leading-relaxed" x-text="cond.summary"></p>
                             </div>
@@ -1701,12 +1974,7 @@
             </div>
 
             <!-- Footer / Action Buttons -->
-            <div class="flex justify-between items-center pt-3 border-t border-gray-800 shrink-0 mt-3">
-                <button type="button" x-show="backgroundDetailItem" @click="applyBackgroundToCharacter(backgroundDetailItem)"
-                    class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition shadow">
-                    Set as Character Background
-                </button>
-                <div x-show="!backgroundDetailItem"></div>
+            <div class="flex justify-end items-center pt-3 border-t border-gray-800 shrink-0 mt-3">
                 <button type="button" @click="modalBackgroundsOpen = false"
                     class="px-5 py-2 bg-dark-800 hover:bg-dark-700 text-gray-200 rounded-lg text-xs font-bold transition">Close</button>
             </div>
@@ -1743,7 +2011,7 @@
     <!-- MODAL: STORY ITEMS MANAGEMENT -->
     <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         x-show="modalStoryItemOpen">
-        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-md w-full p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)]">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-[0_0_50px_rgba(168,85,247,0.35)]">
             <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
                 <h3 class="text-base font-bold text-white" x-text="editingStoryItemIndex !== null ? '✏️ Edit Story Item' : '✨ Add Story Item'"></h3>
                 <button @click="modalStoryItemOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
@@ -1751,7 +2019,7 @@
             <form @submit.prevent="handleSaveStoryItem()" class="space-y-3 text-xs md:text-sm">
                 <div>
                     <label class="block text-gray-300 font-semibold mb-1">Item Name *</label>
-                    <input type="text" x-model="storyItemForm.name" required placeholder="e.g. Family Relic, Sealed Letter..."
+                    <input type="text" x-model="storyItemForm.name" required placeholder="e.g. Family Relic, Sealed Letter, Cloak of the Mountebank..."
                         class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
                 </div>
                 <div>
@@ -1759,7 +2027,7 @@
                     <textarea x-model="storyItemForm.desc" rows="3" placeholder="Details, clues, magical effects..."
                         class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500"></textarea>
                 </div>
-                <div class="flex gap-4 items-center">
+                <div class="flex flex-wrap gap-4 items-center bg-dark-950/60 p-2.5 rounded-lg border border-gray-800">
                     <label class="flex items-center gap-1.5 cursor-pointer">
                         <input type="checkbox" class="cb-custom w-4 h-4" x-model="storyItemForm.isSpecial">
                         <span class="text-amber-300 font-bold text-xs">🪙 Key Item</span>
@@ -1768,7 +2036,142 @@
                         <input type="checkbox" class="cb-custom w-4 h-4" x-model="storyItemForm.isMagic">
                         <span class="text-purple-300 font-bold text-xs">✨ Magic Item</span>
                     </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="checkbox" class="cb-custom w-4 h-4" x-model="storyItemForm.equipped">
+                        <span class="text-brand-300 font-bold text-xs">🛡️ Equipped</span>
+                    </label>
                 </div>
+
+                <!-- GRANTED SPELLS -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>✨ Granted Spells</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select from Compendium</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="storySpellToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose a Spell --</option>
+                            <template x-for="sp in allCompendiumSpellsList" :key="sp.name">
+                                <option :value="sp.name" x-text="`${sp.name} (Lvl ${sp.level === 0 ? 'Cantrip' : sp.level})`"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addSpellToStoryForm()" class="px-3 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="storyItemForm.grantedSpells && storyItemForm.grantedSpells.length > 0">
+                        <template x-for="(sp, sIdx) in storyItemForm.grantedSpells" :key="sp">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-purple-950/80 border border-purple-800 text-purple-200">
+                                <span x-text="`✨ ${sp}`"></span>
+                                <button type="button" @click="removeSpellFromStoryForm(sIdx)" class="text-purple-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- DAMAGE RESISTANCES -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>🛡️ Damage Resistances</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select Damage Type</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="storyResToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose Resistance --</option>
+                            <template x-for="dt in allDamageTypesList" :key="dt.id">
+                                <option :value="dt.name" x-text="`${dt.icon} ${dt.name}`"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addResToStoryForm()" class="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="storyItemForm.resistances && storyItemForm.resistances.length > 0">
+                        <template x-for="(res, rIdx) in storyItemForm.resistances" :key="res">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-950/80 border border-amber-800 text-amber-200">
+                                <span x-text="`🛡️ ${res}`"></span>
+                                <button type="button" @click="removeResFromStoryForm(rIdx)" class="text-amber-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- ATTRIBUTE & SAVING THROW BONUSES -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1">Attribute Bonus / Advantage</label>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select x-model="storyItemForm.bonusAttr" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                                    <option value="">None</option>
+                                    <option value="STR">STR</option>
+                                    <option value="DEX">DEX</option>
+                                    <option value="CON">CON</option>
+                                    <option value="INT">INT</option>
+                                    <option value="WIS">WIS</option>
+                                    <option value="CHA">CHA</option>
+                                </select>
+                                <select x-model="storyItemForm.attrMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.bonusAttr">
+                                    <option value="bonus">+ / - Bonus</option>
+                                    <option value="advantage">🎲 Advantage</option>
+                                </select>
+                            </div>
+                            <input x-show="storyItemForm.attrMode === 'bonus'" type="number" x-model.number="storyItemForm.bonusAttrVal" placeholder="+/- Bonus value"
+                                class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-300 font-semibold mb-1">Saving Throw Bonus / Advantage</label>
+                        <div class="space-y-2">
+                            <div class="grid grid-cols-2 gap-2">
+                                <select x-model="storyItemForm.saveType" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                                    <option value="">None</option>
+                                    <option value="all">All Saves</option>
+                                    <option value="STR">STR Save</option>
+                                    <option value="DEX">DEX Save</option>
+                                    <option value="CON">CON Save</option>
+                                    <option value="INT">INT Save</option>
+                                    <option value="WIS">WIS Save</option>
+                                    <option value="CHA">CHA Save</option>
+                                </select>
+                                <select x-model="storyItemForm.saveMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.saveType">
+                                    <option value="bonus">+ / - Bonus</option>
+                                    <option value="advantage">🎲 Advantage</option>
+                                </select>
+                            </div>
+                            <input x-show="storyItemForm.saveMode === 'bonus'" type="number" x-model.number="storyItemForm.saveVal" placeholder="+/- Bonus value"
+                                class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SKILL ADVANTAGES -->
+                <div class="bg-dark-950/60 p-3 rounded-xl border border-gray-800">
+                    <label class="block text-gray-300 font-semibold mb-1 flex items-center justify-between">
+                        <span>🎲 Skill Advantage</span>
+                        <span class="text-[11px] text-gray-400 font-normal">Select Skill</span>
+                    </label>
+                    <div class="flex gap-2">
+                        <select x-model="storySkillAdvToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
+                            <option value="">-- Choose Skill --</option>
+                            <template x-for="sk in allSkillsList" :key="sk">
+                                <option :value="sk" x-text="sk"></option>
+                            </template>
+                        </select>
+                        <button type="button" @click="addSkillAdvToStoryForm()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0">
+                            ➕ Add
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 mt-2" x-show="storyItemForm.advantageSkills && storyItemForm.advantageSkills.length > 0">
+                        <template x-for="(sk, kIdx) in storyItemForm.advantageSkills" :key="sk">
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-950/80 border border-emerald-800 text-emerald-200">
+                                <span x-text="`🎲 Adv: ${sk}`"></span>
+                                <button type="button" @click="removeSkillAdvFromStoryForm(kIdx)" class="text-emerald-300 hover:text-white font-bold ml-1 text-sm leading-none">&times;</button>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-2 pt-2 border-t border-gray-800">
                     <button type="button" @click="modalStoryItemOpen = false" class="px-3.5 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-xs font-bold text-gray-300">Cancel</button>
                     <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Save</button>
@@ -1999,7 +2402,7 @@
             </div>
 
             <form @submit.prevent="handleSaveLevelUp()" class="space-y-4 text-xs md:text-sm overflow-y-auto pr-1 flex-1">
-                <!-- Clases y Niveles -->
+                <!-- Classes and Levels -->
                 <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 space-y-2.5">
                     <h4 class="font-bold text-gray-200 border-b border-gray-800 pb-1 flex items-center justify-between">
                         <span>📜 Character Classes</span>
