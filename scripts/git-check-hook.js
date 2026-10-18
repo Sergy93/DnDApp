@@ -53,6 +53,18 @@ function main() {
         return;
     }
 
+    // 1. Verify unit tests pass when code was modified
+    try {
+        execSync('npm test', { cwd: repoRoot, stdio: 'pipe' });
+    } catch (err) {
+        process.stdout.write(JSON.stringify({
+            decision: 'continue',
+            reason: 'Unit tests failed (npm test). Per AGENTS.md Section 6, please fix all failing unit tests, rebuild the bundle, and commit/push to origin main before finishing.'
+        }));
+        return;
+    }
+
+    // 2. Verify all changes are committed and pushed to GitHub
     try {
         const status = execSync('git status --porcelain', { cwd: repoRoot, encoding: 'utf-8' }).trim();
         let unpushedCount = 0;
@@ -66,7 +78,7 @@ function main() {
         if (status.length > 0 || unpushedCount > 0) {
             process.stdout.write(JSON.stringify({
                 decision: 'continue',
-                reason: 'Uncommitted changes or unpushed commits detected in the repository. Per AGENTS.md Section 6, please stage all changes, commit with a descriptive English message, and push to origin main before finishing.'
+                reason: 'Uncommitted changes or unpushed commits detected in the repository. Per AGENTS.md Section 6, please run npm test, npm run build, stage all changes, commit with a descriptive English message, and push to origin main before finishing.'
             }));
             return;
         }

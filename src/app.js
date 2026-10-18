@@ -5,11 +5,11 @@ const SafeFileReader = (typeof window !== 'undefined' && window.FileReader)
 
 const STORAGE_KEY = 'character_dnd_v21';
 
-import DND_RULES from "./dnd-data/dnd-rules.json";
-import CHARACTER_DATA from "./character.json";
-import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json";
-import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json";
-import SPELL_COMPENDIUM_RAW from "./dnd-data/spell-compendium.json";
+import DND_RULES from "./dnd-data/dnd-rules.json" with { type: "json" };
+import CHARACTER_DATA from "./character.json" with { type: "json" };
+import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json" with { type: "json" };
+import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json" with { type: "json" };
+import SPELL_COMPENDIUM_RAW from "./dnd-data/spell-compendium.json" with { type: "json" };
 
 const DND_CONDITIONS = DND_RULES.conditions;
 const DAMAGE_TYPES = DND_RULES.damageTypes;
@@ -21,7 +21,42 @@ const CLASS_FEATURES_SYNC = Object.fromEntries(
     Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
 );
 
-export { DND_CONDITIONS, DAMAGE_TYPES };
+export {
+    DND_CONDITIONS,
+    DAMAGE_TYPES,
+    DND_5E_SKILLS,
+    normalizeKey,
+    capitalizeWord,
+    findCompendiumClass,
+    resolveSubclassInfo,
+    findCompendiumSubclass,
+    generateProgressionTree,
+    resolveAttributeMod,
+    calculateExpectedSlots,
+    syncCharacterSpellSlots,
+    resolveDiceScale,
+    resolveBardicDie,
+    detectClassFeaturesToSync,
+    getResourceMaxUses,
+    sanitizeTracking,
+    parseCharacterFileContent,
+    hasCharacterFeature,
+    resolveGenieDamage,
+    getAllEquippedItems,
+    resolveCharacterResistances,
+    resolveClassHitDie,
+    resolveSpellcastingAttrKey,
+    resolveSongOfRestDie,
+    computeStats,
+    clean5eToolsText,
+    parse5eToolsSpell,
+    buildSpellsCompendium,
+    findSpellInCompendium,
+    getCantripScalingTier,
+    resolveScaledSpellDamage,
+    calculateSlotDamage,
+    resolveSpellData
+};
 
 const SPELL_SOURCES = [SPELL_COMPENDIUM_RAW];
 
@@ -304,7 +339,7 @@ function syncCharacterSpellSlots(d) {
         const max = exp.max;
         const spent = [];
         for (let i = 0; i < max; i++) {
-            spent.push(exist && Array.isArray(exist.spent) && exist.spent[i] === true);
+            spent.push(Boolean(exist && Array.isArray(exist.spent) && exist.spent[i] === true));
         }
         newSlots.push({
             id: exp.id,
@@ -1118,9 +1153,11 @@ let spellsCompendium = [];
 function buildSpellsCompendium() {
     const rawSources = [];
     if (Array.isArray(SPELL_SOURCES)) rawSources.push(...SPELL_SOURCES);
-    ['SPELLS_PHB', 'SPELLS_TCE', 'SPELLS_XGE'].forEach(v => {
-        if (window[v] && !rawSources.includes(window[v])) rawSources.push(window[v]);
-    });
+    if (typeof window !== 'undefined') {
+        ['SPELLS_PHB', 'SPELLS_TCE', 'SPELLS_XGE'].forEach(v => {
+            if (window[v] && !rawSources.includes(window[v])) rawSources.push(window[v]);
+        });
+    }
 
     const flatSpells = rawSources.flatMap(source => {
         if (Array.isArray(source)) return source;
@@ -1261,6 +1298,7 @@ function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttr
 }
 
 // ================= COMPONENTE ALPINE.JS =================
+if (typeof document !== 'undefined') {
 document.addEventListener('alpine:init', () => {
     Alpine.data('characterSheet', () => ({
         data: loadInitialData(),
@@ -1351,7 +1389,18 @@ document.addEventListener('alpine:init', () => {
         backgroundSearchQuery: '',
         backgroundDetailItem: null,
 
-        // Modales de Inventario
+        // Inventory & Wealth Modals
+        modalWealthOpen: false,
+        wealthManagerMode: 'add', // 'add' | 'spend'
+        wealthForm: { gp: 0, sp: 0, ep: 0, cp: 0, reason: '' },
+
+        modalCastSpellOpen: false,
+        castSpellForm: {
+            spellName: '',
+            selectedSlotKey: '',
+            note: ''
+        },
+
         modalConsumableOpen: false,
         editingConsumableIndex: null,
         consumableForm: { name: '', qty: '1' },
@@ -1589,6 +1638,141 @@ document.addEventListener('alpine:init', () => {
 
         get combatSpells() {
             return this.favoriteSpells;
+        },
+
+        get castableSpellsList() {
+            return [...this.allResolvedSpells].sort((a, b) => {
+                if (a.level !== b.level) return a.level - b.level;
+                return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
+            });
+        },
+
+        get selectedCastSpell() {
+            const list = this.castableSpellsList;
+            if (list.length === 0) return null;
+            if (this.castSpellForm.spellName) {
+                const found = list.find(s => normalizeKey(s.name) === normalizeKey(this.castSpellForm.spellName));
+                if (found) return found;
+            }
+            return list[0];
+        },
+
+        resolveSlotNumericLevel(slot) {
+            if (!slot) return 1;
+            const idStr = String(slot.id || '').toLowerCase();
+            const lvlStr = String(slot.level || '').toLowerCase();
+            if (idStr === 'pact' || lvlStr.includes('pact')) {
+                const classes = this.data.identity?.classes || [];
+                const warlock = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'warlock');
+                const wLvl = Math.min(20, Math.max(1, parseInt(warlock?.level, 10) || 1));
+                return SPELL_SLOTS_TABLES.warlockPactSlots?.[wLvl]?.level || 1;
+            }
+            const idMatch = idStr.match(/lvl(\d+)/);
+            if (idMatch) return parseInt(idMatch[1], 10) || 1;
+            const lvlMatch = lvlStr.match(/(\d+)(?:st|nd|rd|th)/);
+            if (lvlMatch) return parseInt(lvlMatch[1], 10) || 1;
+            return 1;
+        },
+
+        get castSpellSlotOptions() {
+            const sp = this.selectedCastSpell;
+            if (!sp) return [];
+
+            if (sp.level === 0) {
+                return [{
+                    key: 'cantrip',
+                    type: 'cantrip',
+                    label: '✨ Cantrip — At Will (0 Slots Required)',
+                    available: 1,
+                    max: 1,
+                    canCast: true,
+                    castLevel: 0,
+                    scaledDamage: sp.damage
+                }];
+            }
+
+            const options = [];
+            const normSpell = normalizeKey(sp.name);
+
+            // 1. Check matching combat resources (Item / Feat / Racial innate uses)
+            (this.computedCombatResources || []).forEach(r => {
+                if (!r || !r.name) return;
+                const resetLower = String(r.reset || '').toLowerCase();
+                if (resetLower.includes('cantrip')) return;
+                if (normalizeKey(r.name).includes(normSpell)) {
+                    const spentArr = this.data.combat?.resources?.[r.originalIndex]?.spent || [];
+                    const avail = spentArr.filter(s => !s).length;
+                    const max = spentArr.length || 1;
+                    options.push({
+                        key: `res:${r.originalIndex}`,
+                        type: 'resource',
+                        resIndex: r.originalIndex,
+                        resourceName: r.displayName || r.name,
+                        label: `${r.displayName || r.name} (${avail}/${max} available)${avail === 0 ? ' — ❌ No charges remaining' : ' — Free Cast (Item/Feat)'}`,
+                        available: avail,
+                        max,
+                        canCast: avail > 0,
+                        castLevel: sp.level,
+                        scaledDamage: sp.damage
+                    });
+                }
+            });
+
+            // 2. Check all spell slots of level >= spell.level (never hidden when 0 available)
+            (this.data.magic?.slots || []).forEach((slot, sIdx) => {
+                const slotLvl = this.resolveSlotNumericLevel(slot);
+                if (slotLvl >= sp.level) {
+                    const spentArr = Array.isArray(slot.spent) ? slot.spent : [];
+                    const avail = spentArr.filter(s => !s).length;
+                    const max = spentArr.length || slot.max || 0;
+                    const isUpcast = slotLvl > sp.level;
+                    const scaledDmg = (isUpcast && sp.higherLevelScale && sp.damage && sp.damage !== '—')
+                        ? calculateSlotDamage(sp.damage, sp.higherLevelScale, sp.level, slotLvl)
+                        : sp.damage;
+                    const upcastTag = isUpcast
+                        ? ` [Upcast Lvl ${slotLvl}${scaledDmg && scaledDmg !== sp.damage ? ` → ${scaledDmg}` : ''}]`
+                        : '';
+                    const statusTag = avail === 0 ? ' — ❌ No slots remaining' : '';
+                    options.push({
+                        key: `slot:${sIdx}`,
+                        type: 'slot',
+                        slotIndex: sIdx,
+                        slotName: slot.level,
+                        slotLevel: slotLvl,
+                        label: `${slot.level}${upcastTag} (${avail}/${max} available)${statusTag}`,
+                        available: avail,
+                        max,
+                        canCast: avail > 0,
+                        castLevel: slotLvl,
+                        scaledDamage: scaledDmg
+                    });
+                }
+            });
+
+            if (options.length === 0) {
+                options.push({
+                    key: 'none',
+                    type: 'none',
+                    label: `❌ No Level ${sp.level}+ spell slots or item charges available`,
+                    available: 0,
+                    max: 0,
+                    canCast: false,
+                    castLevel: sp.level,
+                    scaledDamage: sp.damage
+                });
+            }
+
+            return options;
+        },
+
+        get selectedCastSlotOption() {
+            const opts = this.castSpellSlotOptions;
+            if (opts.length === 0) return null;
+            if (this.castSpellForm.selectedSlotKey) {
+                const found = opts.find(o => o.key === this.castSpellForm.selectedSlotKey);
+                if (found) return found;
+            }
+            return opts.find(o => o.canCast) || opts[0];
         },
 
         get sortedTools() {
@@ -1993,7 +2177,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         // Session Event Log
-        logEvent(icon, title, text) {
+        logEvent(icon, title, text, comment = '') {
             if (!Array.isArray(this.data.sessionLog)) this.data.sessionLog = [];
             const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             this.data.sessionLog.unshift({
@@ -2001,12 +2185,71 @@ document.addEventListener('alpine:init', () => {
                 time,
                 icon: icon || '📜',
                 title: title || 'Event',
-                text: text || ''
+                text: text || '',
+                comment: (comment || '').trim()
             });
-            if (this.data.sessionLog.length > 30) {
-                this.data.sessionLog.length = 30;
+            if (this.data.sessionLog.length > 60) {
+                this.data.sessionLog.length = 60;
             }
             this.saveState();
+        },
+
+        async editLogComment(id) {
+            if (!Array.isArray(this.data.sessionLog)) return;
+            const entry = this.data.sessionLog.find(e => e.id === id);
+            if (!entry) return;
+            const res = await this.uiPrompt(
+                `Add or edit a note/clarification for "${entry.title}":`,
+                "Event Comment / Note",
+                entry.comment || '',
+                "e.g. Crit roll, Boss fight, Tavern purchase...",
+                "💬",
+                "Save Note"
+            );
+            if (res === null) return;
+            entry.comment = res.trim();
+            this.saveState();
+        },
+
+        onToggleResourceSlot(resIndex, slotIndex) {
+            const r = this.data.combat?.resources?.[resIndex];
+            if (!r || !Array.isArray(r.spent)) {
+                this.saveState();
+                return;
+            }
+            const spent = !!r.spent[slotIndex];
+            const rem = r.spent.filter(s => !s).length;
+            const max = r.spent.length;
+            this.logEvent(
+                spent ? '🔥' : '♻️',
+                spent ? 'Resource Used' : 'Resource Restored',
+                `${spent ? 'Used' : 'Restored'} 1 charge of "${r.name}" (${rem}/${max} available).`
+            );
+        },
+
+        onToggleSpellSlot(slotIndex, boxIndex) {
+            const s = this.data.magic?.slots?.[slotIndex];
+            if (!s || !Array.isArray(s.spent)) {
+                this.saveState();
+                return;
+            }
+            const spent = !!s.spent[boxIndex];
+            const rem = s.spent.filter(x => !x).length;
+            const max = s.spent.length;
+            this.logEvent(
+                spent ? '🔮' : '♻️',
+                spent ? 'Spell Slot Spent' : 'Spell Slot Restored',
+                `${spent ? 'Marked' : 'Restored'} 1 slot of ${s.level} (${rem}/${max} available).`
+            );
+        },
+
+        onToggleHitDie(index) {
+            const spent = !!this.data.vitals?.hitDiceSpent?.[index];
+            this.logEvent(
+                '🎲',
+                spent ? 'Hit Die Spent' : 'Hit Die Restored',
+                `${spent ? 'Marked' : 'Restored'} 1 Hit Die (${this.availableHitDiceCount}/${this.totalHitDiceCount} available).`
+            );
         },
 
         async clearSessionLog() {
@@ -2109,10 +2352,13 @@ document.addEventListener('alpine:init', () => {
                 properties
             };
 
-            if (this.editingWeaponIndex !== null) {
+            const isEdit = this.editingWeaponIndex !== null;
+            if (isEdit) {
                 this.data.inventory.weapons[this.editingWeaponIndex] = weaponObj;
+                this.logEvent('⚔️', 'Weapon Edited', `Updated weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
             } else {
                 this.data.inventory.weapons.push(weaponObj);
+                this.logEvent('⚔️', 'Weapon Added', `Added weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
             }
 
             this.saveState();
@@ -2126,6 +2372,7 @@ document.addEventListener('alpine:init', () => {
             if (!ok) return;
 
             this.data.inventory.weapons.splice(index, 1);
+            this.logEvent('🗑️', 'Weapon Removed', `Removed weapon "${w.name}".`);
             this.saveState();
         },
 
@@ -2277,8 +2524,10 @@ document.addEventListener('alpine:init', () => {
 
             if (isEdit) {
                 this.data.inventory.armors[this.editingArmorIndex] = armorObj;
+                this.logEvent('🛡️', 'Armor/Item Edited', `Updated "${name}" (${armorObj.type}).`);
             } else {
                 this.data.inventory.armors.push(armorObj);
+                this.logEvent('🛡️', 'Armor/Item Added', `Added "${name}" (${armorObj.type}).`);
             }
 
             this.equipRevision++;
@@ -2294,6 +2543,7 @@ document.addEventListener('alpine:init', () => {
             if (!ok) return;
 
             this.data.inventory.armors.splice(index, 1);
+            this.logEvent('🗑️', 'Armor/Item Removed', `Removed "${a.name}".`);
             this.saveState();
         },
 
@@ -2507,10 +2757,18 @@ document.addEventListener('alpine:init', () => {
             this.modalHpManagerOpen = false;
         },
 
-        onDeathSaveChange() {
+        onDeathSaveChange(type = '', index = 0) {
             this.saveState();
             const fails = (this.data.deathSaves?.failures || []).filter(Boolean).length;
             const succs = (this.data.deathSaves?.successes || []).filter(Boolean).length;
+
+            if (type === 'success') {
+                const marked = !!this.data.deathSaves?.successes?.[index];
+                this.logEvent('💚', 'Death Save', `${marked ? 'Marked' : 'Cleared'} Death Save Success (${succs}/3 successes, ${fails}/3 failures).`);
+            } else if (type === 'failure') {
+                const marked = !!this.data.deathSaves?.failures?.[index];
+                this.logEvent('💀', 'Death Save', `${marked ? 'Marked' : 'Cleared'} Death Save Failure (${succs}/3 successes, ${fails}/3 failures).`);
+            }
 
             if (fails >= 3) {
                 this.logEvent('☠️', 'Character Died', 'Accumulated 3 death saving throw failures. Character is deceased.');
@@ -2519,6 +2777,68 @@ document.addEventListener('alpine:init', () => {
                 this.logEvent('✨', 'Stabilized', 'Accumulated 3 death saving throw successes. Character is stable.');
                 this.uiAlert('You have accumulated 3 Death Saving Throw Successes! Your character is now stable at 0 HP.', 'Stabilized!', '✨');
             }
+        },
+
+        // ================= WEALTH / COINS MANAGEMENT =================
+        openWealthModal(mode = 'add') {
+            this.wealthManagerMode = mode === 'spend' ? 'spend' : 'add';
+            this.wealthForm = { gp: 0, sp: 0, ep: 0, cp: 0, reason: '' };
+            this.modalWealthOpen = true;
+        },
+
+        async applyWealthChange() {
+            if (!this.data.inventory) this.data.inventory = {};
+            if (!this.data.inventory.wealth) {
+                this.data.inventory.wealth = { gp: 0, sp: 0, ep: 0, cp: 0 };
+            }
+            const w = this.data.inventory.wealth;
+            const dGp = Math.max(0, parseInt(this.wealthForm.gp, 10) || 0);
+            const dSp = Math.max(0, parseInt(this.wealthForm.sp, 10) || 0);
+            const dEp = Math.max(0, parseInt(this.wealthForm.ep, 10) || 0);
+            const dCp = Math.max(0, parseInt(this.wealthForm.cp, 10) || 0);
+
+            if (dGp === 0 && dSp === 0 && dEp === 0 && dCp === 0) {
+                await this.uiAlert("Please enter at least 1 coin to add or spend.", "No Amount Entered", "🪙");
+                return;
+            }
+
+            if (this.wealthManagerMode === 'spend') {
+                if (dGp > (w.gp || 0) || dSp > (w.sp || 0) || dEp > (w.ep || 0) || dCp > (w.cp || 0)) {
+                    await this.uiAlert(
+                        `Insufficient coins for this transaction.\nCurrent balance: ${w.gp || 0} GP, ${w.sp || 0} SP, ${w.ep || 0} EP, ${w.cp || 0} CP.`,
+                        "Insufficient Funds",
+                        "⚠️"
+                    );
+                    return;
+                }
+                w.gp = (w.gp || 0) - dGp;
+                w.sp = (w.sp || 0) - dSp;
+                w.ep = (w.ep || 0) - dEp;
+                w.cp = (w.cp || 0) - dCp;
+            } else {
+                w.gp = (w.gp || 0) + dGp;
+                w.sp = (w.sp || 0) + dSp;
+                w.ep = (w.ep || 0) + dEp;
+                w.cp = (w.cp || 0) + dCp;
+            }
+
+            const parts = [];
+            if (dGp > 0) parts.push(`${dGp} GP`);
+            if (dSp > 0) parts.push(`${dSp} SP`);
+            if (dEp > 0) parts.push(`${dEp} EP`);
+            if (dCp > 0) parts.push(`${dCp} CP`);
+
+            const reason = (this.wealthForm.reason || '').trim();
+            const isSpend = this.wealthManagerMode === 'spend';
+            this.logEvent(
+                '🪙',
+                isSpend ? 'Coins Spent' : 'Coins Gained',
+                `${isSpend ? 'Spent' : 'Gained'} ${parts.join(', ')}. Balance: ${w.gp} GP, ${w.sp} SP, ${w.ep} EP, ${w.cp} CP.`,
+                reason
+            );
+
+            this.saveState();
+            this.modalWealthOpen = false;
         },
 
         // ================= CONSUMABLES MANAGEMENT =================
@@ -2539,10 +2859,13 @@ document.addEventListener('alpine:init', () => {
             if (!Array.isArray(this.data.inventory.consumables)) this.data.inventory.consumables = [];
 
             const item = { name, qty: this.consumableForm.qty.trim() || '1' };
-            if (this.editingConsumableIndex !== null) {
+            const isEdit = this.editingConsumableIndex !== null;
+            if (isEdit) {
                 this.data.inventory.consumables[this.editingConsumableIndex] = item;
+                this.logEvent('🧪', 'Consumable Edited', `Updated "${name}" (Qty: ${item.qty}).`);
             } else {
                 this.data.inventory.consumables.push(item);
+                this.logEvent('🧪', 'Consumable Added', `Added "${name}" (Qty: ${item.qty}).`);
             }
             this.saveState();
             this.modalConsumableOpen = false;
@@ -2555,21 +2878,31 @@ document.addEventListener('alpine:init', () => {
             const ok = await this.uiConfirm(`Do you want to remove "${c.name}" from your consumables?`, "Remove Consumable", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.consumables.splice(index, 1);
+            this.logEvent('🗑️', 'Consumable Removed', `Removed consumable "${c.name}".`);
             this.saveState();
         },
 
         adjustConsumableQty(index, delta) {
             const c = this.data.inventory?.consumables?.[index];
             if (!c) return;
+            const prevQty = c.qty;
             const match = String(c.qty || '').match(/^(\d+)(.*)$/);
             if (match) {
                 const num = parseInt(match[1], 10);
                 const suffix = match[2];
                 const newNum = Math.max(0, num + delta);
+                if (newNum === num) return;
                 c.qty = `${newNum}${suffix}`;
             } else {
                 const num = parseInt(c.qty, 10) || 0;
-                c.qty = String(Math.max(0, num + delta));
+                const newNum = Math.max(0, num + delta);
+                if (newNum === num) return;
+                c.qty = String(newNum);
+            }
+            if (delta < 0) {
+                this.logEvent('🧪', 'Consumable Used', `Used "${c.name}" (${prevQty} → ${c.qty} remaining).`);
+            } else if (delta > 0) {
+                this.logEvent('🧪', 'Consumable Restocked', `Increased "${c.name}" (${prevQty} → ${c.qty}).`);
             }
             this.saveState();
         },
@@ -2722,8 +3055,10 @@ document.addEventListener('alpine:init', () => {
 
             if (isEdit) {
                 this.data.inventory.story[this.editingStoryItemIndex] = item;
+                this.logEvent('✨', 'Item Edited', `Updated item "${name}".`);
             } else {
                 this.data.inventory.story.push(item);
+                this.logEvent('✨', 'Item Added', `Added item "${name}".`);
             }
             this.equipRevision++;
             this.saveState();
@@ -2752,6 +3087,7 @@ document.addEventListener('alpine:init', () => {
             const ok = await this.uiConfirm(`Do you want to remove "${st.name}"?`, "Remove Item", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.story.splice(index, 1);
+            this.logEvent('🗑️', 'Item Removed', `Removed item "${st.name}".`);
             this.saveState();
         },
 
@@ -2790,10 +3126,13 @@ document.addEventListener('alpine:init', () => {
                 isInstrument: !!this.toolForm.isInstrument
             };
 
-            if (this.editingToolIndex !== null && this.editingToolIndex >= 0) {
+            const isEdit = this.editingToolIndex !== null && this.editingToolIndex >= 0;
+            if (isEdit) {
                 this.data.inventory.tools[this.editingToolIndex] = item;
+                this.logEvent('🎒', 'Tool Edited', `Updated tool/equipment "${name}".`);
             } else {
                 this.data.inventory.tools.push(item);
+                this.logEvent('🎒', 'Tool Added', `Added tool/equipment "${name}".`);
             }
             this.saveState();
             this.modalToolOpen = false;
@@ -2808,7 +3147,101 @@ document.addEventListener('alpine:init', () => {
             const ok = await this.uiConfirm(`Do you want to remove "${t.name}" from your tools & equipment?`, "Remove Tool", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.tools.splice(index, 1);
+            this.logEvent('🗑️', 'Tool Removed', `Removed tool/equipment "${t.name}".`);
             this.saveState();
+        },
+
+        // ================= CAST SPELL MODAL =================
+        openCastSpellModal(preselectedSpellName = null) {
+            const list = this.castableSpellsList;
+            let chosenName = '';
+            if (preselectedSpellName) {
+                const found = list.find(s => normalizeKey(s.name) === normalizeKey(preselectedSpellName));
+                if (found) chosenName = found.name;
+            }
+            if (!chosenName && list.length > 0) {
+                chosenName = list[0].name;
+            }
+            this.castSpellForm = {
+                spellName: chosenName,
+                selectedSlotKey: '',
+                note: ''
+            };
+            this.onCastSpellSelectionChange();
+            this.modalCastSpellOpen = true;
+        },
+
+        onCastSpellSelectionChange() {
+            const opts = this.castSpellSlotOptions;
+            const firstAvailable = opts.find(o => o.canCast);
+            this.castSpellForm.selectedSlotKey = firstAvailable ? firstAvailable.key : (opts[0]?.key || '');
+        },
+
+        async executeCastSpell() {
+            const sp = this.selectedCastSpell;
+            const opt = this.selectedCastSlotOption;
+            if (!sp || !opt) return;
+
+            if (!opt.canCast) {
+                await this.uiAlert(
+                    `Cannot cast "${sp.name}": the selected slot or resource (${opt.label}) has 0 uses remaining.`,
+                    "No Slots Available",
+                    "⚠️"
+                );
+                return;
+            }
+
+            let slotSummary = 'as a Cantrip (0 slots)';
+            if (opt.type === 'slot') {
+                const slotObj = this.data.magic?.slots?.[opt.slotIndex];
+                if (slotObj && Array.isArray(slotObj.spent)) {
+                    const freeIdx = slotObj.spent.findIndex(s => !s);
+                    if (freeIdx === -1) {
+                        await this.uiAlert(`No available slots remaining in ${slotObj.level}.`, "No Slots Available", "⚠️");
+                        return;
+                    }
+                    slotObj.spent[freeIdx] = true;
+                    const rem = slotObj.spent.filter(s => !s).length;
+                    slotSummary = `using ${slotObj.level}${opt.castLevel > sp.level ? ` [Upcast Lvl ${opt.castLevel}]` : ''} (${rem}/${slotObj.spent.length} slots left)`;
+                }
+            } else if (opt.type === 'resource') {
+                const resObj = this.data.combat?.resources?.[opt.resIndex];
+                if (resObj && Array.isArray(resObj.spent)) {
+                    const freeIdx = resObj.spent.findIndex(s => !s);
+                    if (freeIdx === -1) {
+                        await this.uiAlert(`No charges remaining for ${opt.resourceName}.`, "No Charges Available", "⚠️");
+                        return;
+                    }
+                    resObj.spent[freeIdx] = true;
+                    const rem = resObj.spent.filter(s => !s).length;
+                    slotSummary = `using "${opt.resourceName}" (${rem}/${resObj.spent.length} charges left)`;
+                }
+            }
+
+            const effectParts = [];
+            if (opt.scaledDamage && opt.scaledDamage !== '—') {
+                effectParts.push(sp.isHealing ? `Heal: ${opt.scaledDamage}` : `Dmg: ${opt.scaledDamage}`);
+            }
+            if (sp.useSpellDc) {
+                effectParts.push(`Save: DC ${this.stats.spellDC} ${sp.saveStat}`);
+            } else if (!sp.isHealing && opt.scaledDamage && opt.scaledDamage !== '—') {
+                effectParts.push(`Atk: ${this.stats.spellAtkStr}`);
+            }
+            const effectStr = effectParts.length > 0 ? ` [${effectParts.join(' • ')}]` : '';
+
+            this.logEvent(
+                '✨',
+                `Spell Cast: ${sp.name}`,
+                `Cast "${sp.name}" ${slotSummary}${effectStr}.`,
+                this.castSpellForm.note
+            );
+
+            if (sp.conc) {
+                this.setConcentration(sp.name);
+            }
+
+            this.saveState();
+            this.modalCastSpellOpen = false;
         },
 
         // ================= SPELLS MANAGEMENT =================
@@ -2848,6 +3281,7 @@ document.addEventListener('alpine:init', () => {
                 source: this.spellCompendiumSource,
                 sourceType: this.spellCompendiumSource.toLowerCase()
             });
+            this.logEvent('📖', 'Spell Learned', `Added "${compSpell.name}" to spellbook (Source: ${this.spellCompendiumSource}).`);
             this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Added "${compSpell.name}" to your spellbook.`, "Spell Added", "✨");
@@ -2864,9 +3298,10 @@ document.addEventListener('alpine:init', () => {
                 return;
             }
 
+            const lvl = parseInt(this.spellManualForm.level, 10) || 0;
             this.data.magic.spells.push({
                 name,
-                level: parseInt(this.spellManualForm.level, 10) || 0,
+                level: lvl,
                 actionType: this.spellManualForm.actionType,
                 range: this.spellManualForm.range.trim(),
                 duration: this.spellManualForm.duration.trim(),
@@ -2877,6 +3312,7 @@ document.addEventListener('alpine:init', () => {
                 sourceType: 'custom'
             });
 
+            this.logEvent('📖', 'Custom Spell Created', `Created custom spell "${name}" (Level ${lvl}).`);
             this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Custom spell "${name}" created.`, "Spell Created", "✨");
@@ -2895,6 +3331,7 @@ document.addEventListener('alpine:init', () => {
             if (!ok) return;
 
             this.data.magic.spells = (this.data.magic.spells || []).filter(s => normalizeKey(s.name) !== normalizeKey(spellName));
+            this.logEvent('🗑️', 'Spell Removed', `Removed spell "${spellName}" from spellbook.`);
             this.saveState();
         },
 
@@ -3187,3 +3624,4 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 });
+}
