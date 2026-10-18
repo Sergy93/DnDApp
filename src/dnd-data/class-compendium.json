@@ -115,6 +115,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d8",
+    "spellcasting": {
+      "ability": "INT",
+      "casterType": "artificer"
     }
   },
   "barbarian": {
@@ -302,7 +307,9 @@
           ]
         }
       }
-    }
+    },
+    "hitDie": "d12",
+    "spellcasting": null
   },
   "bard": {
     "name": "Bard",
@@ -478,6 +485,25 @@
             "Infectious Inspiration: 14th-level College of Eloquence feature When you successfully inspire someone, the power of your eloquence can now spread to someone else. When a creature within 60 feet of you adds one of your Bardic Inspiration dice to its ability check, attack roll, or saving throw and the roll succeeds, you can use your reaction to encourage a different creature (other than yourself) that can hear you within 60 feet of you, giving it a Bardic Inspiration die without expending any of your Bardic Inspiration uses. You can use this reaction a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a long rest."
           ]
         }
+      }
+    },
+    "hitDie": "d8",
+    "spellcasting": {
+      "ability": "CHA",
+      "casterType": "full"
+    },
+    "diceScales": {
+      "bardicDie": {
+        "1": "1d6",
+        "5": "1d8",
+        "10": "1d10",
+        "15": "1d12"
+      },
+      "songOfRestDie": {
+        "2": "1d6",
+        "9": "1d8",
+        "13": "1d10",
+        "17": "1d12"
       }
     }
   },
@@ -802,6 +828,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d8",
+    "spellcasting": {
+      "ability": "WIS",
+      "casterType": "full"
     }
   },
   "druid": {
@@ -980,6 +1011,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d8",
+    "spellcasting": {
+      "ability": "WIS",
+      "casterType": "full"
     }
   },
   "fighter": {
@@ -1107,6 +1143,10 @@
           "18": [
             "Improved War Magic: Starting at 18th level, when you use your action to cast a spell, you can make one weapon attack as a bonus action."
           ]
+        },
+        "spellcasting": {
+          "ability": "INT",
+          "casterType": "third"
         }
       },
       "arcanearcher": {
@@ -1222,7 +1262,9 @@
           ]
         }
       }
-    }
+    },
+    "hitDie": "d10",
+    "spellcasting": null
   },
   "monk": {
     "name": "Monk",
@@ -1435,6 +1477,16 @@
           ]
         }
       }
+    },
+    "hitDie": "d8",
+    "spellcasting": null,
+    "diceScales": {
+      "martialArtsDie": {
+        "1": "1d4",
+        "5": "1d6",
+        "11": "1d8",
+        "17": "1d10"
+      }
     }
   },
   "paladin": {
@@ -1627,6 +1679,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d10",
+    "spellcasting": {
+      "ability": "CHA",
+      "casterType": "half"
     }
   },
   "ranger": {
@@ -1824,6 +1881,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d10",
+    "spellcasting": {
+      "ability": "WIS",
+      "casterType": "half"
     }
   },
   "rogue": {
@@ -1903,6 +1965,10 @@
           "17": [
             "Spell Thief: At 17th level, you gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster. Immediately after a creature casts a spell that targets you or includes you in its area of effect, you can use your reaction to force the creature to make a saving throw with its spellcasting ability modifier. The DC equals your spell save DC. On a failed save, you negate the spell's effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast (it doesn't need to be a wizard spell). For the next 8 hours, you know the spell and can cast it using your spell slots. The creature can't cast that spell until the 8 hours have passed. Once you use this feature, you can't use it again until you finish a long rest."
           ]
+        },
+        "spellcasting": {
+          "ability": "INT",
+          "casterType": "third"
         }
       },
       "assassin": {
@@ -2050,7 +2116,9 @@
           ]
         }
       }
-    }
+    },
+    "hitDie": "d8",
+    "spellcasting": null
   },
   "sorcerer": {
     "name": "Sorcerer",
@@ -2231,6 +2299,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d6",
+    "spellcasting": {
+      "ability": "CHA",
+      "casterType": "full"
     }
   },
   "warlock": {
@@ -2408,6 +2481,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d8",
+    "spellcasting": {
+      "ability": "CHA",
+      "casterType": "pact"
     }
   },
   "wizard": {
@@ -2653,6 +2731,11 @@
           ]
         }
       }
+    },
+    "hitDie": "d6",
+    "spellcasting": {
+      "ability": "INT",
+      "casterType": "full"
     }
   }
 }

@@ -202,42 +202,42 @@ function resolveAttributeMod(attributes, attrKey) {
 
 function calculateExpectedSlots(classes = []) {
     const list = [];
-    const warlock = classes.find(c => normalizeKey(c?.name) === 'warlock');
-    if (warlock) {
-        const wLvl = Math.min(20, Math.max(1, parseInt(warlock.level, 10) || 1));
-        const pInfo = SPELL_SLOTS_TABLES.warlockPactSlots?.[wLvl];
+    const pactCasters = [];
+    const nonPactCasters = [];
+
+    classes.forEach(c => {
+        const lvl = parseInt(c?.level, 10) || 0;
+        if (lvl <= 0) return;
+        const found = findCompendiumClass(c?.name);
+        let casterType = found?.obj?.spellcasting?.casterType;
+        if (!casterType && c?.subclass) {
+            const foundSub = findCompendiumSubclass(found?.obj, c.subclass, c.name);
+            casterType = foundSub?.spellcasting?.casterType;
+        }
+
+        if (casterType === 'pact') {
+            pactCasters.push({ name: c.name, level: lvl });
+        } else if (casterType) {
+            nonPactCasters.push({ type: casterType, name: c.name, level: lvl });
+        }
+    });
+
+    pactCasters.forEach(pc => {
+        const pLvl = Math.min(20, Math.max(1, pc.level));
+        const pInfo = SPELL_SLOTS_TABLES.warlockPactSlots?.[pLvl];
         if (pInfo) {
             list.push({
                 id: 'pact',
-                level: `Pact (Warlock ${wLvl})`,
+                level: `Pact (${capitalizeWord(pc.name)} ${pLvl})`,
                 max: pInfo.count,
                 reset: 'short'
             });
         }
-    }
-
-    const nonWarlock = [];
-    classes.forEach(c => {
-        const n = normalizeKey(c?.name || '');
-        const sub = normalizeKey(c?.subclass || '');
-        const lvl = parseInt(c?.level, 10) || 0;
-        if (lvl <= 0) return;
-        if (['bard', 'cleric', 'druid', 'sorcerer', 'wizard'].includes(n)) {
-            nonWarlock.push({ type: 'full', name: c.name, level: lvl });
-        } else if (['paladin', 'ranger'].includes(n)) {
-            nonWarlock.push({ type: 'half', name: c.name, level: lvl });
-        } else if (n === 'artificer') {
-            nonWarlock.push({ type: 'artificer', name: c.name, level: lvl });
-        } else if (n === 'fighter' && (sub.includes('eldritch') || sub.includes('knight'))) {
-            nonWarlock.push({ type: 'third', name: c.name, level: lvl });
-        } else if (n === 'rogue' && (sub.includes('trickster') || sub.includes('arcane'))) {
-            nonWarlock.push({ type: 'third', name: c.name, level: lvl });
-        }
     });
 
     const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
-    if (nonWarlock.length === 1) {
-        const caster = nonWarlock[0];
+    if (nonPactCasters.length === 1) {
+        const caster = nonPactCasters[0];
         const lvl = Math.min(20, Math.max(1, caster.level));
         const tableMap = {
             full: SPELL_SLOTS_TABLES.fullCaster,
@@ -257,9 +257,9 @@ function calculateExpectedSlots(classes = []) {
                 });
             }
         });
-    } else if (nonWarlock.length > 1) {
+    } else if (nonPactCasters.length > 1) {
         let combinedLvl = 0;
-        nonWarlock.forEach(c => {
+        nonPactCasters.forEach(c => {
             if (c.type === 'full') combinedLvl += c.level;
             else if (c.type === 'half') combinedLvl += Math.floor(c.level / 2);
             else if (c.type === 'artificer') combinedLvl += Math.ceil(c.level / 2);
@@ -321,15 +321,24 @@ function syncCharacterSpellSlots(d) {
     d.magic.slots = newSlots;
 }
 
+function resolveDiceScale(className, scaleName, level) {
+    const found = findCompendiumClass(className);
+    const scale = found?.obj?.diceScales?.[scaleName];
+    if (!scale || level <= 0) return null;
+
+    let currentDie = null;
+    const thresholds = Object.keys(scale).map(Number).sort((a, b) => a - b);
+    for (const threshold of thresholds) {
+        if (level >= threshold) currentDie = scale[threshold];
+    }
+    return currentDie;
+}
+
 function resolveBardicDie(d) {
     const classes = d?.identity?.classes || [];
-    const bard = classes.find(c => normalizeKey(c?.name) === 'bard');
+    const bard = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'bard');
     const lvl = bard ? (parseInt(bard.level, 10) || 0) : 0;
-    if (lvl >= 15) return '1d12';
-    if (lvl >= 10) return '1d10';
-    if (lvl >= 5) return '1d8';
-    if (lvl >= 1) return '1d6';
-    return '1d6';
+    return resolveDiceScale('bard', 'bardicDie', lvl) || '1d6';
 }
 
 function detectClassFeaturesToSync(d) {
@@ -393,11 +402,11 @@ function detectClassFeaturesToSync(d) {
     return { newResources, newTraits };
 }
 
-function getResourceMaxUses(res, attributes, profBonus = 2) {
+function getResourceMaxUses(res, attributes, pb = 2) {
     if (typeof res?.uses === 'number' && res.uses > 0) return res.uses;
     if (res?.usesKey) {
         const u = String(res.usesKey).toUpperCase();
-        if (u === 'PB') return Math.max(1, profBonus);
+        if (u === 'PB') return Math.max(1, pb);
         return Math.max(1, resolveAttributeMod(attributes, res.usesKey));
     }
     if (Array.isArray(res?.spent) && res.spent.length > 0) return res.spent.length;
@@ -421,7 +430,7 @@ function sanitizeTracking(d) {
     }));
 
     const totalHd = d.identity.classes.reduce((a, b) => a + (b.level || 0), 0) || 1;
-    const profBonus = Math.floor((totalHd - 1) / 4) + 2;
+    const pb = Math.floor((totalHd - 1) / 4) + 2;
 
     if (!Array.isArray(d.vitals.hitDiceSpent)) d.vitals.hitDiceSpent = [];
     while (d.vitals.hitDiceSpent.length < totalHd) d.vitals.hitDiceSpent.push(false);
@@ -442,7 +451,7 @@ function sanitizeTracking(d) {
     if (!Array.isArray(d.combat.traits)) d.combat.traits = [];
 
     d.combat.resources.forEach(r => {
-        const uses = getResourceMaxUses(r, d.attributes, profBonus);
+        const uses = getResourceMaxUses(r, d.attributes, pb);
         if (!Array.isArray(r.spent)) r.spent = [];
         while (r.spent.length < uses) r.spent.push(false);
         if (r.spent.length > uses) r.spent = r.spent.slice(0, uses);
@@ -527,30 +536,25 @@ function hasCharacterFeature(d, keywords = []) {
     return false;
 }
 
-function resolveGenieDamage(d, profBonus) {
+function resolveGenieDamage(d, pb) {
     const traits = d?.combat?.traits || [];
-    const genieTrait = traits.find(t => {
-        const n = normalizeKey(t.name);
-        return n.includes('genieswrath');
-    });
+    const genieTrait = traits.find(t => normalizeKey(t.name).includes('genieswrath'));
 
     const classes = d?.identity?.classes || [];
-    const genieClass = classes.find(c => {
-        const foundClass = findCompendiumClass(c.name);
-        const foundSub = findCompendiumSubclass(foundClass?.obj, c.subclass);
-        return foundSub?.key === 'genie';
-    });
+    const warlockClass = classes.find(c => normalizeKey(c.name) === 'warlock');
+    const resolvedSub = warlockClass ? resolveSubclassInfo('warlock', warlockClass.subclass) : null;
 
-    if (!genieTrait && !genieClass) return null;
+    if (!genieTrait && (!resolvedSub || resolvedSub.key !== 'genie')) return null;
 
-    const subNorm = normalizeKey(genieClass?.subclass || genieTrait?.name || genieTrait?.desc || '');
-    let dmgType = 'Elemental';
-    if (subNorm.includes('djinni') || subNorm.includes('thunder')) dmgType = 'Thunder';
-    else if (subNorm.includes('efreeti') || subNorm.includes('fire')) dmgType = 'Fire';
-    else if (subNorm.includes('dao') || subNorm.includes('bludgeoning')) dmgType = 'Bludgeoning';
-    else if (subNorm.includes('marid') || subNorm.includes('cold')) dmgType = 'Cold';
+    let dmgType = resolvedSub?.specInfo?.damageType;
+    if (!dmgType && genieTrait) {
+        const text = `${genieTrait.badge || ''} ${genieTrait.desc || ''}`;
+        const foundDt = DAMAGE_TYPES.find(dt => new RegExp(`\\b${dt.name}\\b`, 'i').test(text));
+        dmgType = foundDt ? foundDt.name : 'Elemental';
+    }
+    if (!dmgType) dmgType = 'Elemental';
 
-    return `+${profBonus} ${dmgType} damage`;
+    return `+${pb} ${dmgType} damage`;
 }
 
 
@@ -621,11 +625,7 @@ function resolveCharacterResistances(d) {
 function resolveClassHitDie(cls) {
     if (cls?.hitDie) return cls.hitDie;
     const found = findCompendiumClass(cls?.name);
-    const key = found?.key || normalizeKey(cls?.name);
-    if (key === 'barbarian') return 'd12';
-    if (['fighter', 'paladin', 'ranger'].includes(key)) return 'd10';
-    if (['wizard', 'sorcerer'].includes(key)) return 'd6';
-    return 'd8';
+    return found?.obj?.hitDie || 'd8';
 }
 
 function resolveSpellcastingAttrKey(d) {
@@ -634,13 +634,14 @@ function resolveSpellcastingAttrKey(d) {
     const classes = d?.identity?.classes || [];
     for (const cls of classes) {
         const found = findCompendiumClass(cls?.name);
-        const key = found?.key || normalizeKey(cls?.name);
-        if (['wizard', 'artificer'].includes(key)) return 'INT';
-        if (['cleric', 'druid', 'ranger'].includes(key)) return 'WIS';
-        if (['bard', 'warlock', 'sorcerer', 'paladin'].includes(key)) return 'CHA';
-        if (key === 'fighter' || key === 'rogue') {
-            const sub = normalizeKey(cls?.subclass || '');
-            if (sub.includes('eldritchknight') || sub.includes('arcanetrickster')) return 'INT';
+        if (found?.obj?.spellcasting?.ability) {
+            return String(found.obj.spellcasting.ability).toUpperCase();
+        }
+        if (cls?.subclass) {
+            const sub = findCompendiumSubclass(found?.obj, cls.subclass, cls.name);
+            if (sub?.spellcasting?.ability) {
+                return String(sub.spellcasting.ability).toUpperCase();
+            }
         }
     }
     return 'CHA';
@@ -650,11 +651,8 @@ function resolveSongOfRestDie(d) {
     const classes = d?.identity?.classes || [];
     const bardClass = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'bard');
     const bardLevel = bardClass ? (parseInt(bardClass.level, 10) || 0) : 0;
-
-    if (bardLevel >= 17) return '1d12';
-    if (bardLevel >= 13) return '1d10';
-    if (bardLevel >= 9) return '1d8';
-    if (bardLevel >= 2) return '1d6';
+    const die = resolveDiceScale('bard', 'songOfRestDie', bardLevel);
+    if (die) return die;
 
     if (hasCharacterFeature(d, ['songofrest'])) {
         return '1d6';
@@ -665,10 +663,10 @@ function resolveSongOfRestDie(d) {
 function computeStats(d) {
     const classes = d?.identity?.classes || [];
     const totalLevel = classes.reduce((acc, c) => acc + (c.level || 0), 0) || 1;
-    const profBonus = Math.floor((totalLevel - 1) / 4) + 2;
+    const pb = Math.floor((totalLevel - 1) / 4) + 2;
 
     const hasJackOfAllTrades = hasCharacterFeature(d, ['jackofalltrades']);
-    const jackOfAllTrades = hasJackOfAllTrades ? Math.floor(profBonus / 2) : 0;
+    const jackOfAllTrades = hasJackOfAllTrades ? Math.floor(pb / 2) : 0;
 
     const allEquipped = getAllEquippedItems(d);
 
@@ -733,7 +731,7 @@ function computeStats(d) {
 
         const score = baseScore + bonusFromItems;
         const mod = Math.floor((score - 10) / 2);
-        const save = mod + (raw.profSave ? profBonus : 0) + itemSaveBonus;
+        const save = mod + (raw.profSave ? pb : 0) + itemSaveBonus;
         computedAttrs[k] = {
             score,
             baseScore,
@@ -757,8 +755,8 @@ function computeStats(d) {
     const computedSkills = (d?.skills || []).map(s => {
         const attrObj = computedAttrs[s.attr] || { mod: 0 };
         let bonus = attrObj.mod;
-        if (s.profType === 'P') bonus += profBonus * 2;
-        else if (s.profType === 'C') bonus += profBonus;
+        if (s.profType === 'P') bonus += pb * 2;
+        else if (s.profType === 'C') bonus += pb;
         else bonus += jackOfAllTrades;
 
         const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception');
@@ -888,7 +886,7 @@ function computeStats(d) {
         const nameBonusMatch = (w.name || '').match(/\+(\d+)/);
         const nameBonus = nameBonusMatch ? parseInt(nameBonusMatch[1], 10) : 0;
         const magicBonus = parseInt(w.magicBonus !== undefined ? w.magicBonus : nameBonus, 10) || 0;
-        const atkBonus = attrMod + (w.proficient !== false ? profBonus : 0) + magicBonus;
+        const atkBonus = attrMod + (w.proficient !== false ? pb : 0) + magicBonus;
         const dmgMod = attrMod + magicBonus;
         const dmgStr = `${w.dice} ${dmgMod >= 0 ? '+' + dmgMod : '-' + Math.abs(dmgMod)} ${w.damageType || ''}`.trim();
 
@@ -906,22 +904,23 @@ function computeStats(d) {
     let itemSpellDcBonus = 0;
     let itemSpellAtkBonus = 0;
     allEquipped.forEach(item => {
-        if (item.statBonuses?.spellDc) itemSpellDcBonus += parseInt(item.statBonuses.spellDc, 10) || 0;
+        const dcBonus = item.statBonuses?.spellDC !== undefined ? item.statBonuses.spellDC : item.statBonuses?.spellDc;
+        if (dcBonus) itemSpellDcBonus += parseInt(dcBonus, 10) || 0;
         if (item.statBonuses?.spellAtk) itemSpellAtkBonus += parseInt(item.statBonuses.spellAtk, 10) || 0;
     });
-    const spellAtkNum = spellAttrMod + profBonus + itemSpellAtkBonus;
-    const spellDC = 8 + profBonus + spellAttrMod + itemSpellDcBonus;
+    const spellAtkNum = spellAttrMod + pb + itemSpellAtkBonus;
+    const spellDC = 8 + pb + spellAttrMod + itemSpellDcBonus;
     const bardicUses = Math.max(1, computedAttrs.CHA.mod);
     const hitDiceList = classes.map(c => `${c.level} ${resolveClassHitDie(c)}`).join(' + ');
     const songOfRestDie = resolveSongOfRestDie(d);
     const bardicDie = resolveBardicDie(d);
 
-    const genieDamage = resolveGenieDamage(d, profBonus);
+    const genieDamage = resolveGenieDamage(d, pb);
     const combatBadges = [];
     (d?.combat?.traits || []).forEach(t => {
         if (t.badge) {
             let badgeText = t.badge;
-            badgeText = badgeText.replace(/\{\{PB\}\}/g, `+${profBonus}`);
+            badgeText = badgeText.replace(/\{\{PB\}\}/g, `+${pb}`);
             combatBadges.push({
                 icon: t.badgeIcon || '⚡',
                 text: badgeText,
@@ -939,8 +938,8 @@ function computeStats(d) {
 
     return {
         totalLevel,
-        pb: profBonus,
-        pbStr: `+${profBonus}`,
+        pb,
+        pbStr: `+${pb}`,
         hasJackOfAllTrades,
         jackOfAllTrades,
         computedAttrs,
@@ -1459,21 +1458,6 @@ document.addEventListener('alpine:init', () => {
                     .replace(/\{\{songOfRestDie\}\}/g, songOfRestDie)
                     .replace(/\{\{vesselHours\}\}/g, `${vesselHours}`);
 
-                const norm = normalizeKey(t.name || '');
-
-                if (norm.includes('unsettlingwords')) {
-                    displayDesc = displayDesc.replace(/\b1d\d+\b/g, bardicDie);
-                    if (!displayDesc.includes(bardicDie)) {
-                        displayDesc = displayDesc.replace(/(?:bardic inspiration die)/i, `Bardic Inspiration die (${bardicDie})`);
-                    }
-                }
-                if (norm.includes('songofrest')) {
-                    displayDesc = displayDesc.replace(/\b1d\d+\b/g, songOfRestDie);
-                }
-                if (norm.includes('genieswrath')) {
-                    displayDesc = displayDesc.replace(/\(\+\d+\)/g, `(+${pb})`);
-                }
-
                 return {
                     ...t,
                     originalIndex: idx,
@@ -1556,10 +1540,6 @@ document.addEventListener('alpine:init', () => {
 
         get combatSpells() {
             return this.favoriteSpells;
-        },
-
-        get offensiveSpells() {
-            return this.combatSpells;
         },
 
         get sortedTools() {
