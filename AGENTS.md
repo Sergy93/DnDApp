@@ -32,7 +32,7 @@ This document serves as the persistent system prompt and architectural contract 
   - **PWA Service Worker** (`src/sw.js`) with cache busting.
 * **Development Phase**: **Active Development**.
   - **Zero backward compatibility shims**. Do not write migration layers or fallback code for deprecated data structures.
-  - If a schema or contract changes, update the source data files (`src/character.json`, `src/character-template.json`) directly.
+  - If a schema or contract changes, update the source data files (`src/character.json`, `db/schema.sql`) directly.
 
 ---
 
@@ -69,17 +69,17 @@ This document serves as the persistent system prompt and architectural contract 
      }
      ```
 2. **Dynamic UI Selections**:
-   - Spells granted by items or feats must come dynamically from the spell compendium via UI dropdowns/selects, never manual free-text inputs.
-   - Resistances and advantage targets must be chosen from canonical lists (`src/dnd-data/damage-types.json`, `DND_5E_SKILLS`, attributes list).
+   - Spells granted by items or feats must come dynamically from the spell compendium (`src/dnd-data/spell-compendium.json`) via UI dropdowns/selects, never manual free-text inputs.
+   - Resistances and advantage targets must be chosen from canonical lists (`src/dnd-data/dnd-rules.json` -> `damageTypes`, `DND_5E_SKILLS`, attributes list).
 3. **Source Tagging & Tooltips**:
    - Every computed bonus, resistance, or advantage must preserve its origin (`source`: item, class, race, feat, condition) so the UI can display clean, informative hover tooltips.
 4. **Hierarchical Subclass & Feature Schema**:
-   - Subclass mappings in `src/dnd-data/subclass-aliases.json` must follow:
-     `classKey -> subclassKey -> { name, specializations: { specKey: { displayName, ... } } }`
-   - Class feature synchronization in `src/dnd-data/class-features-sync.json` must follow:
-     `classKey -> base: { traits, resources }` and `subclasses -> subclassKey: { traits, resources }`.
+   - Subclass mappings in `src/dnd-data/class-compendium.json` (`classKey -> subclassAliases`) must follow:
+     `subclassKey -> { name, specializations: { specKey: { displayName, ... } } }`
+   - Class feature synchronization in `src/dnd-data/class-compendium.json` (`classKey -> featuresSync`) must follow:
+     `base: { traits, resources }` and `subclasses -> subclassKey: { traits, resources }`.
 5. **Complete Spell Slots Progression**:
-   - Spell slots must be resolved using official 5e tables in `src/dnd-data/spell-slots-tables.json`:
+   - Spell slots must be resolved using official 5e tables in `src/dnd-data/dnd-rules.json` (`spellSlotsTables`):
      - Single casters: `fullCaster`, `halfCaster`, `artificer`, `thirdCaster`.
      - Multiclass casters: `multiclassSpellSlots`.
      - Warlock: `warlockPactSlots` (independent short-rest recovery).
@@ -107,5 +107,7 @@ This document serves as the persistent system prompt and architectural contract 
 Before considering any task complete:
 1. **Bundle Compilation**: Run `npm run build` using `esbuild` and verify zero compilation errors.
 2. **Service Worker Versioning**: When asset lists or cache behaviors change, bump the cache version in `src/sw.js` (e.g. `dorian-dnd-cache-vXX`).
-3. **Schema Parity**: Ensure `src/character.json` and `src/character-template.json` adhere to updated schema changes.
+3. **Schema Parity**: Ensure `src/character.json` and `DorianDndApp.db` (`npm run db:build`) adhere to updated schema changes.
 4. **Verification**: Verify that runtime imports, JSON structures, and computations execute without exceptions.
+5. **Git Commit & Push**: Whenever project files are modified, stage all changes (`git add -A`), create a commit with a descriptive message in English (`git commit -m "..."`), and push to the remote GitHub repository (`git push origin main`).
+

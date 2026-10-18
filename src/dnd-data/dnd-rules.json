@@ -1,0 +1,829 @@
+{
+  "conditions": [
+    {
+      "id": "blinded",
+      "name": "Blinded",
+      "icon": "🙈",
+      "summary": "Cannot see (fails sight checks). Attacks against have advantage, attacks have disadvantage."
+    },
+    {
+      "id": "charmed",
+      "name": "Charmed",
+      "icon": "💖",
+      "summary": "Cannot attack charmer. Charmer has advantage on social ability checks against you."
+    },
+    {
+      "id": "deafened",
+      "name": "Deafened",
+      "icon": "🙉",
+      "summary": "Cannot hear and automatically fails ability checks that require hearing."
+    },
+    {
+      "id": "exhaustion",
+      "name": "Exhaustion",
+      "icon": "⌛",
+      "summary": "Cumulative penalties (1: Disadv. checks, 2: Speed halved, 3: Disadv. attacks/saves, 4: Max HP halved, 5: Speed 0, 6: Death)."
+    },
+    {
+      "id": "frightened",
+      "name": "Frightened",
+      "icon": "😨",
+      "summary": "Disadvantage on ability checks & attack rolls while source of fear is in line of sight. Cannot willingly move closer."
+    },
+    {
+      "id": "grappled",
+      "name": "Grappled",
+      "icon": "🤼",
+      "summary": "Speed becomes 0, cannot benefit from speed bonuses. Ends if grappler is incapacitated."
+    },
+    {
+      "id": "incapacitated",
+      "name": "Incapacitated",
+      "icon": "💫",
+      "summary": "Cannot take actions or reactions. Breaks concentration immediately."
+    },
+    {
+      "id": "invisible",
+      "name": "Invisible",
+      "icon": "👻",
+      "summary": "Impossible to see without aid. Attack rolls against have disadvantage, attacks have advantage."
+    },
+    {
+      "id": "paralyzed",
+      "name": "Paralyzed",
+      "icon": "⚡",
+      "summary": "Incapacitated, cannot move or speak. Auto-fail STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits!"
+    },
+    {
+      "id": "petrified",
+      "name": "Petrified",
+      "icon": "🗿",
+      "summary": "Transformed into solid stone. Incapacitated, weight x10. Auto-fail STR/DEX saves. Resistance to all damage, immune to poison/disease."
+    },
+    {
+      "id": "poisoned",
+      "name": "Poisoned",
+      "icon": "🤢",
+      "summary": "Disadvantage on attack rolls and ability checks."
+    },
+    {
+      "id": "prone",
+      "name": "Prone",
+      "icon": "🧎",
+      "summary": "Can crawl (costs double movement) or spend half speed to stand. Attacks have disadv. Attacks within 5 ft have adv; >5 ft have disadv."
+    },
+    {
+      "id": "restrained",
+      "name": "Restrained",
+      "icon": "🕸️",
+      "summary": "Speed 0. Attack rolls against have adv, attacks have disadv. Disadvantage on DEX saving throws."
+    },
+    {
+      "id": "stunned",
+      "name": "Stunned",
+      "icon": "🌀",
+      "summary": "Incapacitated, cannot move, speaks falteringly. Auto-fail STR/DEX saves. Attacks against have advantage."
+    },
+    {
+      "id": "unconscious",
+      "name": "Unconscious",
+      "icon": "💤",
+      "summary": "Incapacitated, drops what holding, falls prone. Auto-fails STR/DEX saves. Attacks against have adv; melee within 5 ft are auto-crits."
+    }
+  ],
+  "damageTypes": [
+    {
+      "id": "fire",
+      "name": "Fire",
+      "icon": "🔥"
+    },
+    {
+      "id": "cold",
+      "name": "Cold",
+      "icon": "❄️"
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning",
+      "icon": "⚡"
+    },
+    {
+      "id": "thunder",
+      "name": "Thunder",
+      "icon": "🔊"
+    },
+    {
+      "id": "acid",
+      "name": "Acid",
+      "icon": "🧪"
+    },
+    {
+      "id": "poison",
+      "name": "Poison",
+      "icon": "🤢"
+    },
+    {
+      "id": "necrotic",
+      "name": "Necrotic",
+      "icon": "💀"
+    },
+    {
+      "id": "radiant",
+      "name": "Radiant",
+      "icon": "☀️"
+    },
+    {
+      "id": "force",
+      "name": "Force",
+      "icon": "✨"
+    },
+    {
+      "id": "psychic",
+      "name": "Psychic",
+      "icon": "🧠"
+    },
+    {
+      "id": "bludgeoning",
+      "name": "Bludgeoning",
+      "icon": "🔨"
+    },
+    {
+      "id": "piercing",
+      "name": "Piercing",
+      "icon": "🗡️"
+    },
+    {
+      "id": "slashing",
+      "name": "Slashing",
+      "icon": "⚔️"
+    }
+  ],
+  "spellSlotsTables": {
+    "fullCaster": {
+      "1": [
+        2
+      ],
+      "2": [
+        3
+      ],
+      "3": [
+        4,
+        2
+      ],
+      "4": [
+        4,
+        3
+      ],
+      "5": [
+        4,
+        3,
+        2
+      ],
+      "6": [
+        4,
+        3,
+        3
+      ],
+      "7": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "8": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "9": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "10": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ],
+      "11": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      "12": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      "13": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1
+      ],
+      "14": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1
+      ],
+      "15": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "16": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "17": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "18": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        1,
+        1
+      ]
+    },
+    "halfCaster": {
+      "1": [],
+      "2": [
+        2
+      ],
+      "3": [
+        3
+      ],
+      "4": [
+        3
+      ],
+      "5": [
+        4,
+        2
+      ],
+      "6": [
+        4,
+        2
+      ],
+      "7": [
+        4,
+        3
+      ],
+      "8": [
+        4,
+        3
+      ],
+      "9": [
+        4,
+        3,
+        2
+      ],
+      "10": [
+        4,
+        3,
+        2
+      ],
+      "11": [
+        4,
+        3,
+        3
+      ],
+      "12": [
+        4,
+        3,
+        3
+      ],
+      "13": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "14": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "15": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "16": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "17": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "18": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ]
+    },
+    "artificer": {
+      "1": [
+        2
+      ],
+      "2": [
+        2
+      ],
+      "3": [
+        3
+      ],
+      "4": [
+        3
+      ],
+      "5": [
+        4,
+        2
+      ],
+      "6": [
+        4,
+        2
+      ],
+      "7": [
+        4,
+        3
+      ],
+      "8": [
+        4,
+        3
+      ],
+      "9": [
+        4,
+        3,
+        2
+      ],
+      "10": [
+        4,
+        3,
+        2
+      ],
+      "11": [
+        4,
+        3,
+        3
+      ],
+      "12": [
+        4,
+        3,
+        3
+      ],
+      "13": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "14": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "15": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "16": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "17": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "18": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ]
+    },
+    "thirdCaster": {
+      "1": [],
+      "2": [],
+      "3": [
+        2
+      ],
+      "4": [
+        3
+      ],
+      "5": [
+        3
+      ],
+      "6": [
+        3
+      ],
+      "7": [
+        4,
+        2
+      ],
+      "8": [
+        4,
+        2
+      ],
+      "9": [
+        4,
+        2
+      ],
+      "10": [
+        4,
+        3
+      ],
+      "11": [
+        4,
+        3
+      ],
+      "12": [
+        4,
+        3
+      ],
+      "13": [
+        4,
+        3,
+        2
+      ],
+      "14": [
+        4,
+        3,
+        2
+      ],
+      "15": [
+        4,
+        3,
+        2
+      ],
+      "16": [
+        4,
+        3,
+        3
+      ],
+      "17": [
+        4,
+        3,
+        3
+      ],
+      "18": [
+        4,
+        3,
+        3
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        1
+      ]
+    },
+    "warlockPactSlots": {
+      "1": {
+        "count": 1,
+        "level": 1
+      },
+      "2": {
+        "count": 2,
+        "level": 1
+      },
+      "3": {
+        "count": 2,
+        "level": 2
+      },
+      "4": {
+        "count": 2,
+        "level": 2
+      },
+      "5": {
+        "count": 2,
+        "level": 3
+      },
+      "6": {
+        "count": 2,
+        "level": 3
+      },
+      "7": {
+        "count": 2,
+        "level": 4
+      },
+      "8": {
+        "count": 2,
+        "level": 4
+      },
+      "9": {
+        "count": 2,
+        "level": 5
+      },
+      "10": {
+        "count": 2,
+        "level": 5
+      },
+      "11": {
+        "count": 3,
+        "level": 5
+      },
+      "12": {
+        "count": 3,
+        "level": 5
+      },
+      "13": {
+        "count": 3,
+        "level": 5
+      },
+      "14": {
+        "count": 3,
+        "level": 5
+      },
+      "15": {
+        "count": 3,
+        "level": 5
+      },
+      "16": {
+        "count": 3,
+        "level": 5
+      },
+      "17": {
+        "count": 4,
+        "level": 5
+      },
+      "18": {
+        "count": 4,
+        "level": 5
+      },
+      "19": {
+        "count": 4,
+        "level": 5
+      },
+      "20": {
+        "count": 4,
+        "level": 5
+      }
+    },
+    "multiclassSpellSlots": {
+      "1": [
+        2
+      ],
+      "2": [
+        3
+      ],
+      "3": [
+        4,
+        2
+      ],
+      "4": [
+        4,
+        3
+      ],
+      "5": [
+        4,
+        3,
+        2
+      ],
+      "6": [
+        4,
+        3,
+        3
+      ],
+      "7": [
+        4,
+        3,
+        3,
+        1
+      ],
+      "8": [
+        4,
+        3,
+        3,
+        2
+      ],
+      "9": [
+        4,
+        3,
+        3,
+        3,
+        1
+      ],
+      "10": [
+        4,
+        3,
+        3,
+        3,
+        2
+      ],
+      "11": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      "12": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1
+      ],
+      "13": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1
+      ],
+      "14": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1
+      ],
+      "15": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "16": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "17": [
+        4,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1,
+        1
+      ],
+      "18": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        1,
+        1,
+        1,
+        1
+      ],
+      "19": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        1
+      ],
+      "20": [
+        4,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        1,
+        1
+      ]
+    }
+  }
+}

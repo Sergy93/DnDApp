@@ -1,0 +1,12 @@
+{
+  "git-auto-push-check": {
+    "enabled": true,
+    "Stop": [
+      {
+        "type": "command",
+        "command": "node ../scripts/git-check-hook.js",
+        "timeout": 15
+      }
+    ]
+  }
+}

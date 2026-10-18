@@ -398,7 +398,7 @@
                                     <span class="text-xs text-green-400 font-black">SUCCESS</span>
                                     <div class="flex gap-1.5">
                                         <template x-for="(val, i) in data.deathSaves.successes" :key="i">
-                                            <input type="checkbox" class="cb-custom cb-success" x-model="data.deathSaves.successes[i]" @change="saveState()">
+                                            <input type="checkbox" class="cb-custom cb-success" x-model="data.deathSaves.successes[i]" @change="onDeathSaveChange()">
                                         </template>
                                     </div>
                                 </div>
@@ -406,7 +406,7 @@
                                     <span class="text-xs text-red-400 font-black">FAILURE</span>
                                     <div class="flex gap-1.5">
                                         <template x-for="(val, i) in data.deathSaves.failures" :key="i">
-                                            <input type="checkbox" class="cb-custom cb-danger" x-model="data.deathSaves.failures[i]" @change="saveState()">
+                                            <input type="checkbox" class="cb-custom cb-danger" x-model="data.deathSaves.failures[i]" @change="onDeathSaveChange()">
                                         </template>
                                     </div>
                                 </div>
@@ -473,7 +473,7 @@
                         <h3 class="text-base font-bold text-gray-100 border-b border-gray-700 pb-2 mb-4">💪 Ability Scores & Saves</h3>
                         <div class="grid grid-cols-3 gap-3">
                             <template x-for="(attr, k) in stats.computedAttrs" :key="k">
-                                <div class="bg-dark-900 border border-gray-700 rounded-xl p-3 text-center flex flex-col justify-between">
+                                <div class="bg-dark-900 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-700 rounded-xl p-3 text-center flex flex-col justify-between">
                                     <div class="flex items-center justify-center gap-1">
                                         <span class="text-xs font-bold text-gray-400 uppercase" x-text="k"></span>
                                         <div x-show="attr.hasAttrAdvantage" class="group relative inline-flex items-center">
@@ -525,7 +525,7 @@
                         </div>
                         <div class="overflow-y-auto flex-grow pr-1 space-y-1 text-xs md:text-sm max-h-[380px]">
                             <template x-for="s in stats.computedSkills" :key="s.id">
-                                <div class="flex justify-between items-center p-2 rounded-lg bg-dark-900 border border-gray-800">
+                                <div class="flex justify-between items-center p-2 rounded-lg bg-dark-900 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-800">
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <span class="font-bold text-white" x-text="s.name"></span>
                                         <span class="text-xs text-gray-400" x-text="`(${s.attr})`"></span>
@@ -593,7 +593,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                         <template x-for="trait in computedTraits" :key="trait.name || trait.originalIndex">
-                            <div class="bg-dark-900/90 border border-gray-800 p-3.5 rounded-xl shadow-inner">
+                            <div class="bg-dark-900/90 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-800 p-3.5 rounded-xl shadow-inner">
                                 <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.displayName || trait.name"></strong>
                                 <p class="text-xs sm:text-sm text-gray-300 leading-relaxed" x-text="trait.displayDesc || trait.desc"></p>
                             </div>
@@ -856,7 +856,7 @@
                                         <span>📖</span> Full Spellbook & Utility
                                     </h3>
                                     <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-dark-900 border border-gray-700 text-gray-300"
-                                        x-text="`${(data.magic?.spells || []).length} spells`"></span>
+                                        x-text="`${allResolvedSpells.length} spells`"></span>
                                 </div>
                                 <span class="text-xs text-brand-300 hover:underline font-semibold"
                                     x-text="showFullSpellbook ? 'Hide Spells' : 'Show All Spells (Pin / Manage)'"></span>
@@ -920,8 +920,11 @@
                                                     x-text="isConcentratingOn(spell.name) ? '🧠 Active' : '🧠 Conc'"></button>
                                                 <button @click="openSpellDetail(spell)"
                                                     class="px-2 py-0.5 rounded bg-dark-950 hover:bg-dark-850 text-gray-300 border border-gray-700 text-xs" title="View details">👁️</button>
-                                                <button @click="removeSpell(spell.name)"
+                                                <button x-show="!spell.isItemGranted" @click="removeSpell(spell.name)"
                                                     class="px-2 py-0.5 rounded bg-dark-950 hover:bg-red-950 text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-500/50 text-xs transition" title="Delete spell">🗑️</button>
+                                                <span x-show="spell.isItemGranted"
+                                                    class="px-2 py-0.5 rounded bg-purple-950/70 border border-purple-800 text-purple-300 text-[10px] font-bold select-none cursor-help"
+                                                    :title="`Granted by item: ${spell.source}. Unequip this item to remove.`">📦 Item</span>
                                             </div>
                                         </div>
                                     </template>
@@ -1097,7 +1100,7 @@
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <label class="flex items-center gap-1.5 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
-                                            <input type="checkbox" class="cb-custom w-4 h-4" :checked="!!a.equipped" @change="toggleEquipItem(a)">
+                                            <input type="checkbox" class="cb-custom w-4 h-4" x-model="a.equipped" @change="onEquipChange(a)">
                                             <span :class="a.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
                                         </label>
                                         <button @click="openArmorModal(idx)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit armor">✏️</button>
@@ -1187,7 +1190,7 @@
                                     </div>
                                     <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
                                         <label class="flex items-center gap-1 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
-                                            <input type="checkbox" class="cb-custom w-3.5 h-3.5" :checked="!!st.equipped" @change="toggleEquipItem(st)">
+                                            <input type="checkbox" class="cb-custom w-3.5 h-3.5" x-model="st.equipped" @change="onEquipChange(st)">
                                             <span :class="st.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
                                         </label>
                                         <button @click="openStoryItemModal(st)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
@@ -1377,7 +1380,7 @@
                 <button @click="modalShortRestOpen = false" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
             <p class="text-xs md:text-sm text-gray-300 mb-3 leading-relaxed">
-                Spend hit dice to heal <strong>1<span x-text="primaryHitDie"></span> + CON (<span x-text="stats.computedAttrs.CON.modStr"></span>)</strong> per die.
+                Spend hit dice to heal <strong>1<span x-text="shortRestSelectedHitDie"></span> + CON (<span x-text="stats.computedAttrs.CON.modStr"></span>)</strong> per die.
                 <template x-if="shortRestHealingBonus">
                     <span class="text-brand-300 block mt-1"><strong x-text="`${shortRestHealingBonus.name}:`"></strong> +<span x-text="shortRestHealingBonus.die"></span> extra to total healing.</span>
                 </template>
@@ -1399,13 +1402,25 @@
                 <div class="text-green-400 font-bold">✓ Death saving throws are always cleared.</div>
             </div>
 
+            <template x-if="(data.identity?.classes || []).length > 1">
+                <div class="mb-4">
+                    <label class="block text-xs md:text-sm font-bold text-gray-200 mb-1.5">Class Hit Die to spend:</label>
+                    <select x-model.number="shortRestClassIndex"
+                        class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs md:text-sm outline-none focus:border-blue-500">
+                        <template x-for="(cls, idx) in data.identity?.classes || []" :key="idx">
+                            <option :value="idx" x-text="`${cls.name} (${getClassHitDie(cls)}, Lvl ${cls.level})`"></option>
+                        </template>
+                    </select>
+                </div>
+            </template>
+
             <div class="mb-5">
                 <label class="block text-xs md:text-sm font-bold text-gray-200 mb-1.5">How many hit dice do you want to spend?</label>
                 <select x-model.number="shortRestDiceSelected"
                     class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white text-xs md:text-sm outline-none focus:border-blue-500">
                     <option value="0">0 dice (Only rest and recharge pact/traits)</option>
                     <template x-for="i in availableHitDiceCount" :key="i">
-                        <option :value="i" x-text="`${i} die${i > 1 ? 's' : ''} (${i}${primaryHitDie} ${stats.computedAttrs.CON.mod * i >= 0 ? '+' + (stats.computedAttrs.CON.mod * i) : (stats.computedAttrs.CON.mod * i)}${hasSongOfRest ? ' + ' + songOfRestDie + ' extra' : ''})`"></option>
+                        <option :value="i" x-text="`${i} die${i > 1 ? 's' : ''} (${i}${shortRestSelectedHitDie} ${stats.computedAttrs.CON.mod * i >= 0 ? '+' + (stats.computedAttrs.CON.mod * i) : (stats.computedAttrs.CON.mod * i)}${hasSongOfRest ? ' + ' + songOfRestDie + ' extra' : ''})`"></option>
                     </template>
                 </select>
             </div>
@@ -2458,19 +2473,22 @@
                 <!-- Add Multiclass -->
                 <div class="border border-gray-800 p-2.5 rounded-xl space-y-2">
                     <span class="text-xs font-bold text-gray-300 block">➕ Add New Class (Multiclass)</span>
-                    <div class="grid grid-cols-3 gap-2">
-                        <input type="text" x-model="levelUpForm.newClassName" placeholder="Class (e.g. Paladin)"
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <select x-model="levelUpForm.newClassName" @change="onNewClassSelected()"
                             class="bg-dark-950 border border-gray-700 rounded p-1.5 text-xs text-white outline-none">
+                            <option value="">-- Select Class --</option>
+                            <template x-for="c in availableCompendiumClasses" :key="c.key">
+                                <option :value="c.name" x-text="`${c.name} (${c.hitDie})`"></option>
+                            </template>
+                        </select>
                         <input type="text" x-model="levelUpForm.newClassSubclass" placeholder="Subclass (optional)"
                             class="bg-dark-950 border border-gray-700 rounded p-1.5 text-xs text-white outline-none">
-                        <div class="flex gap-1.5">
-                            <select x-model="levelUpForm.newClassHitDie" class="bg-dark-950 border border-gray-700 rounded p-1.5 text-xs text-white outline-none flex-1">
-                                <option value="d6">d6</option>
-                                <option value="d8">d8</option>
-                                <option value="d10">d10</option>
-                                <option value="d12">d12</option>
-                            </select>
-                            <button type="button" @click="addNewClassToLevelUpForm()" class="px-2 py-1 bg-dark-800 hover:bg-dark-700 text-xs font-bold rounded border border-gray-700 text-gray-200">Add</button>
+                        <div class="flex gap-1.5 items-center">
+                            <span class="px-2.5 py-1.5 rounded bg-dark-900 border border-gray-700 text-amber-300 font-mono text-xs font-bold shrink-0"
+                                x-text="levelUpForm.newClassHitDie || 'd8'" title="Hit Die auto-resolved from compendium"></span>
+                            <button type="button" @click="addNewClassToLevelUpForm()"
+                                :disabled="!levelUpForm.newClassName"
+                                class="flex-1 py-1.5 bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-xs font-bold rounded text-white transition shadow">Add</button>
                         </div>
                     </div>
                 </div>

@@ -211,7 +211,7 @@
       },
       {
         "id": "genie_vessel",
-        "name": "Genie's Vessel (6h)",
+        "name": "Genie's Vessel",
         "uses": 1,
         "actionCost": "Action",
         "reset": "Long Rest",
@@ -267,6 +267,7 @@
       {
         "id": "cloak_dim_door",
         "name": "Cloak of the Mountebank: Dimension Door",
+        "sourceItem": "Cloak of the Mountebank",
         "uses": 1,
         "actionCost": "Action",
         "reset": "Long Rest",

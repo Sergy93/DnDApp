@@ -5,21 +5,25 @@ const SafeFileReader = (typeof window !== 'undefined' && window.FileReader)
 
 const STORAGE_KEY = 'character_dnd_v21';
 
-import DND_CONDITIONS from "./dnd-data/conditions.json";
-import DAMAGE_TYPES from "./dnd-data/damage-types.json";
-import SPELL_SLOTS_TABLES from "./dnd-data/spell-slots-tables.json";
-import CLASS_FEATURES_SYNC from "./dnd-data/class-features-sync.json";
-import SUBCLASS_ALIASES from "./dnd-data/subclass-aliases.json";
+import DND_RULES from "./dnd-data/dnd-rules.json";
 import CHARACTER_DATA from "./character.json";
 import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json";
 import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json";
-import PHB_SPELLS from "./dnd-data/spells/spells-phb.json";
-import TCE_SPELLS from "./dnd-data/spells/spells-tce.json";
-import XGE_SPELLS from "./dnd-data/spells/spells-xge.json";
+import SPELL_COMPENDIUM_RAW from "./dnd-data/spell-compendium.json";
+
+const DND_CONDITIONS = DND_RULES.conditions;
+const DAMAGE_TYPES = DND_RULES.damageTypes;
+const SPELL_SLOTS_TABLES = DND_RULES.spellSlotsTables;
+const SUBCLASS_ALIASES = Object.fromEntries(
+    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.subclassAliases).map(([k, v]) => [k, v.subclassAliases])
+);
+const CLASS_FEATURES_SYNC = Object.fromEntries(
+    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
+);
 
 export { DND_CONDITIONS, DAMAGE_TYPES };
 
-const SPELL_SOURCES = [PHB_SPELLS, TCE_SPELLS, XGE_SPELLS];
+const SPELL_SOURCES = [SPELL_COMPENDIUM_RAW];
 
 const DND_5E_SKILLS = [
     { id: 'acrobatics', name: 'Acrobatics', attr: 'DEX' },
@@ -345,6 +349,8 @@ function detectClassFeaturesToSync(d) {
     const classes = d?.identity?.classes || [];
     const newResources = [];
     const newTraits = [];
+    const staleResourceIds = new Set();
+    const staleTraitNames = new Set();
     const existingResourceIds = new Set((d.combat?.resources || []).map(r => r.id));
     const existingTraitNames = new Set((d.combat?.traits || []).map(t => normalizeKey(t.name)));
 
@@ -359,15 +365,22 @@ function detectClassFeaturesToSync(d) {
         // 1. Base class features
         if (classRules.base) {
             (classRules.base.traits || []).forEach(trait => {
-                if (currentLvl >= (trait.minLevel || 1) && !existingTraitNames.has(normalizeKey(trait.name))) {
+                const reqLvl = trait.minLevel || 1;
+                const traitNorm = normalizeKey(trait.name);
+                if (currentLvl >= reqLvl && !existingTraitNames.has(traitNorm)) {
                     newTraits.push(JSON.parse(JSON.stringify(trait)));
-                    existingTraitNames.add(normalizeKey(trait.name));
+                    existingTraitNames.add(traitNorm);
+                } else if (currentLvl < reqLvl && existingTraitNames.has(traitNorm)) {
+                    staleTraitNames.add(traitNorm);
                 }
             });
             (classRules.base.resources || []).forEach(res => {
-                if (currentLvl >= (res.minLevel || 1) && !existingResourceIds.has(res.id)) {
+                const reqLvl = res.minLevel || 1;
+                if (currentLvl >= reqLvl && !existingResourceIds.has(res.id)) {
                     newResources.push(JSON.parse(JSON.stringify(res)));
                     existingResourceIds.add(res.id);
+                } else if (currentLvl < reqLvl && existingResourceIds.has(res.id)) {
+                    staleResourceIds.add(res.id);
                 }
             });
         }
@@ -384,22 +397,29 @@ function detectClassFeaturesToSync(d) {
             if (matchingSubKey && classRules.subclasses[matchingSubKey]) {
                 const subData = classRules.subclasses[matchingSubKey];
                 (subData.traits || []).forEach(trait => {
-                    if (currentLvl >= (trait.minLevel || 1) && !existingTraitNames.has(normalizeKey(trait.name))) {
+                    const reqLvl = trait.minLevel || 1;
+                    const traitNorm = normalizeKey(trait.name);
+                    if (currentLvl >= reqLvl && !existingTraitNames.has(traitNorm)) {
                         newTraits.push(JSON.parse(JSON.stringify(trait)));
-                        existingTraitNames.add(normalizeKey(trait.name));
+                        existingTraitNames.add(traitNorm);
+                    } else if (currentLvl < reqLvl && existingTraitNames.has(traitNorm)) {
+                        staleTraitNames.add(traitNorm);
                     }
                 });
                 (subData.resources || []).forEach(res => {
-                    if (currentLvl >= (res.minLevel || 1) && !existingResourceIds.has(res.id)) {
+                    const reqLvl = res.minLevel || 1;
+                    if (currentLvl >= reqLvl && !existingResourceIds.has(res.id)) {
                         newResources.push(JSON.parse(JSON.stringify(res)));
                         existingResourceIds.add(res.id);
+                    } else if (currentLvl < reqLvl && existingResourceIds.has(res.id)) {
+                        staleResourceIds.add(res.id);
                     }
                 });
             }
         }
     });
 
-    return { newResources, newTraits };
+    return { newResources, newTraits, staleResourceIds, staleTraitNames };
 }
 
 function getResourceMaxUses(res, attributes, pb = 2) {
@@ -826,7 +846,8 @@ function computeStats(d) {
     });
 
     const percSkill = computedSkills.find(s => s.id === 'perception');
-    const passivePerception = 10 + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades));
+    const percAdvBonus = percSkill?.hasAdvantage ? 5 : 0;
+    const passivePerception = 10 + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades)) + percAdvBonus;
     const initNum = computedAttrs.DEX.mod + jackOfAllTrades;
     const initDesc = hasJackOfAllTrades
         ? `DEX (${computedAttrs.DEX.modStr}) + Jack of All Trades (+${jackOfAllTrades})`
@@ -888,7 +909,10 @@ function computeStats(d) {
         const magicBonus = parseInt(w.magicBonus !== undefined ? w.magicBonus : nameBonus, 10) || 0;
         const atkBonus = attrMod + (w.proficient !== false ? pb : 0) + magicBonus;
         const dmgMod = attrMod + magicBonus;
-        const dmgStr = `${w.dice} ${dmgMod >= 0 ? '+' + dmgMod : '-' + Math.abs(dmgMod)} ${w.damageType || ''}`.trim();
+        let dmgModStr = '';
+        if (dmgMod > 0) dmgModStr = `+${dmgMod}`;
+        else if (dmgMod < 0) dmgModStr = `-${Math.abs(dmgMod)}`;
+        const dmgStr = `${w.dice || ''} ${dmgModStr} ${w.damageType || ''}`.replace(/\s+/g, ' ').trim();
 
         return {
             ...w,
@@ -951,6 +975,7 @@ function computeStats(d) {
         ac: calculatedAc,
         armorDesc,
         spellStat: spellcastingAttrKey,
+        spellcastingAttrKey,
         spellAtkStr: spellAtkNum >= 0 ? `+${spellAtkNum}` : `${spellAtkNum}`,
         spellDC,
         genieDamage,
@@ -1230,6 +1255,7 @@ function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttr
         higherLevelScale,
         slotScaling,
         isFavorite: !!charSpell.favorite,
+        isItemGranted: !!charSpell.isItemGranted || charSpell.sourceType === 'item',
         desc: finalDesc
     };
 }
@@ -1284,6 +1310,7 @@ document.addEventListener('alpine:init', () => {
 
         modalShortRestOpen: false,
         shortRestDiceSelected: 0,
+        shortRestClassIndex: 0,
 
         modalConcOverrideOpen: false,
         pendingConcentrationSpell: null,
@@ -1409,9 +1436,26 @@ document.addEventListener('alpine:init', () => {
             return DND_5E_SKILLS;
         },
 
+        get availableCompendiumClasses() {
+            return Object.keys(CLASS_COMPENDIUM || {}).map(k => ({
+                key: k,
+                name: CLASS_COMPENDIUM[k].name,
+                hitDie: CLASS_COMPENDIUM[k].hitDie || 'd8'
+            })).sort((a, b) => a.name.localeCompare(b.name));
+        },
+
         get computedCombatResources() {
+            const _rev = this.equipRevision;
             const bardicDie = this.stats.bardicDie || '1d8';
+            const pb = this.stats.pb || 2;
+            const vesselHours = pb * 2;
+            const equippedItemNames = new Set((this.allEquipped || []).map(i => normalizeKey(i.name)));
+
             return (this.data.combat?.resources || []).map((r, idx) => {
+                if (r.sourceItem && !equippedItemNames.has(normalizeKey(r.sourceItem))) {
+                    return null;
+                }
+
                 let displayName = r.name || 'Resource';
                 let displayReset = r.reset || 'Rest';
                 const norm = normalizeKey(r.name || '');
@@ -1423,14 +1467,17 @@ document.addEventListener('alpine:init', () => {
                     if (bardLvl >= 5) {
                         displayReset = 'Short/Long Rest';
                     }
+                } else if (r.id === 'genie_vessel' || norm.includes('geniesvessel')) {
+                    displayName = `Genie's Vessel (${vesselHours}h)`;
                 }
+
                 return {
                     ...r,
                     originalIndex: idx,
                     displayName,
                     displayReset
                 };
-            });
+            }).filter(Boolean);
         },
 
         get allEquipped() {
@@ -1484,7 +1531,8 @@ document.addEventListener('alpine:init', () => {
             const _rev = this.equipRevision;
             const totalLevel = this.stats.totalLevel;
             const maxSlot = this.maxSlotLevel;
-            const spellAttrMod = (this.stats.computedAttrs?.[this.stats.spellcastingAttrKey] || this.stats.computedAttrs?.CHA)?.mod ?? 0;
+            const spellAttrKey = this.stats.spellStat || this.stats.spellcastingAttrKey || 'CHA';
+            const spellAttrMod = (this.stats.computedAttrs?.[spellAttrKey] || this.stats.computedAttrs?.CHA)?.mod ?? 0;
 
             // 1. Spells defined on the character (exclude any static sourceType === 'item')
             const list = (this.data.magic?.spells || []).filter(sp => sp && sp.sourceType !== 'item');
@@ -1513,6 +1561,7 @@ document.addEventListener('alpine:init', () => {
             return list.map(sp => {
                 const resolved = resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod);
                 resolved.isFavorite = this.isSpellFavorite(sp.name);
+                resolved.isItemGranted = !!sp.isItemGranted || sp.sourceType === 'item';
                 return resolved;
             });
         },
@@ -1781,6 +1830,15 @@ document.addEventListener('alpine:init', () => {
 
         get primaryHitDie() {
             return resolveClassHitDie(this.data.identity?.classes?.[0]);
+        },
+
+        get shortRestSelectedHitDie() {
+            const cls = this.data.identity?.classes?.[this.shortRestClassIndex] || this.data.identity?.classes?.[0];
+            return resolveClassHitDie(cls) || 'd8';
+        },
+
+        getClassHitDie(cls) {
+            return resolveClassHitDie(cls) || 'd8';
         },
 
         get songOfRestDie() {
@@ -2449,6 +2507,20 @@ document.addEventListener('alpine:init', () => {
             this.modalHpManagerOpen = false;
         },
 
+        onDeathSaveChange() {
+            this.saveState();
+            const fails = (this.data.deathSaves?.failures || []).filter(Boolean).length;
+            const succs = (this.data.deathSaves?.successes || []).filter(Boolean).length;
+
+            if (fails >= 3) {
+                this.logEvent('☠️', 'Character Died', 'Accumulated 3 death saving throw failures. Character is deceased.');
+                this.uiAlert('You have accumulated 3 Death Saving Throw Failures. Under D&D 5e rules, your character has died.', 'Character Deceased', '☠️');
+            } else if (succs >= 3) {
+                this.logEvent('✨', 'Stabilized', 'Accumulated 3 death saving throw successes. Character is stable.');
+                this.uiAlert('You have accumulated 3 Death Saving Throw Successes! Your character is now stable at 0 HP.', 'Stabilized!', '✨');
+            }
+        },
+
         // ================= CONSUMABLES MANAGEMENT =================
         openConsumableModal(index = null) {
             this.editingConsumableIndex = index;
@@ -2666,6 +2738,12 @@ document.addEventListener('alpine:init', () => {
             this.saveState();
         },
 
+        onEquipChange(item) {
+            if (!item) return;
+            this.equipRevision++;
+            this.saveState();
+        },
+
         async removeStoryItem(target) {
             const index = typeof target === 'number' ? target : this.data.inventory?.story?.indexOf(target);
             if (index === null || index === undefined || index < 0) return;
@@ -2806,6 +2884,13 @@ document.addEventListener('alpine:init', () => {
 
         async removeSpell(spellName) {
             if (!spellName) return;
+            const isGrantedByItem = this.allEquipped.some(item =>
+                (item.grantedSpells || []).some(s => normalizeKey(s) === normalizeKey(spellName))
+            );
+            if (isGrantedByItem) {
+                await this.uiAlert(`"${spellName}" is granted by an equipped item. To remove it, unequip the item.`, "Item Spell", "📦");
+                return;
+            }
             const ok = await this.uiConfirm(`Do you want to remove "${spellName}" from your spellbook?`, "Remove Spell", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
 
@@ -2860,29 +2945,42 @@ document.addEventListener('alpine:init', () => {
             if (!cls) return;
             const current = cls.level || 1;
             const target = Math.max(1, Math.min(20, current + delta));
+            if (target === current) return;
             cls.level = target;
 
+            const hitDieFaces = parseInt(String(cls.hitDie || resolveClassHitDie(cls)).replace('d', ''), 10) || 8;
+            const avgRoll = Math.floor(hitDieFaces / 2) + 1;
+            const conMod = Math.floor(((this.levelUpForm.attributes.CON || 10) - 10) / 2);
+            const hpChange = Math.max(1, avgRoll + conMod);
+
             if (delta > 0) {
-                // Auto HP suggestion: hit die average + CON mod
-                const hitDieFaces = parseInt(String(cls.hitDie || 'd8').replace('d', ''), 10) || 8;
-                const avgRoll = Math.floor(hitDieFaces / 2) + 1;
-                const conMod = Math.floor(((this.levelUpForm.attributes.CON || 10) - 10) / 2);
-                const hpGain = Math.max(1, avgRoll + conMod);
-                this.levelUpForm.maxHp = (parseInt(this.levelUpForm.maxHp, 10) || 0) + hpGain;
+                this.levelUpForm.maxHp = (parseInt(this.levelUpForm.maxHp, 10) || 0) + hpChange;
+            } else if (delta < 0) {
+                this.levelUpForm.maxHp = Math.max(1, (parseInt(this.levelUpForm.maxHp, 10) || 0) - hpChange);
+            }
+        },
+
+        onNewClassSelected() {
+            const found = findCompendiumClass(this.levelUpForm.newClassName);
+            if (found?.obj?.hitDie) {
+                this.levelUpForm.newClassHitDie = found.obj.hitDie;
             }
         },
 
         addNewClassToLevelUpForm() {
             const name = this.levelUpForm.newClassName.trim();
             if (!name) return;
+            const compClass = findCompendiumClass(name);
+            const resolvedHitDie = compClass?.obj?.hitDie || this.levelUpForm.newClassHitDie || 'd8';
             this.levelUpForm.classes.push({
                 name: capitalizeWord(name),
                 subclass: capitalizeWord(this.levelUpForm.newClassSubclass.trim()),
                 level: 1,
-                hitDie: this.levelUpForm.newClassHitDie || 'd8'
+                hitDie: resolvedHitDie
             });
             this.levelUpForm.newClassName = '';
             this.levelUpForm.newClassSubclass = '';
+            this.levelUpForm.newClassHitDie = 'd8';
         },
 
         removeClassFromLevelUpForm(cIdx) {
@@ -2911,8 +3009,14 @@ document.addEventListener('alpine:init', () => {
             // 1. Sync Spell Slots according to official class tables
             syncCharacterSpellSlots(this.data);
 
-            // 2. Detect & auto-add newly unlocked class features
-            const { newResources, newTraits } = detectClassFeaturesToSync(this.data);
+            // 2. Detect & auto-add newly unlocked class features / clean stale
+            const { newResources, newTraits, staleResourceIds, staleTraitNames } = detectClassFeaturesToSync(this.data);
+            if (staleResourceIds.size > 0) {
+                this.data.combat.resources = (this.data.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
+            }
+            if (staleTraitNames.size > 0) {
+                this.data.combat.traits = (this.data.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
+            }
             if (newResources.length > 0) {
                 this.data.combat.resources.push(...newResources);
             }
@@ -2936,8 +3040,14 @@ document.addEventListener('alpine:init', () => {
 
         syncClassFeatures() {
             syncCharacterSpellSlots(this.data);
-            const { newResources, newTraits } = detectClassFeaturesToSync(this.data);
+            const { newResources, newTraits, staleResourceIds, staleTraitNames } = detectClassFeaturesToSync(this.data);
             let addedCount = 0;
+            if (staleResourceIds.size > 0) {
+                this.data.combat.resources = (this.data.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
+            }
+            if (staleTraitNames.size > 0) {
+                this.data.combat.traits = (this.data.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
+            }
             if (newResources.length > 0) {
                 this.data.combat.resources.push(...newResources);
                 addedCount += newResources.length;
@@ -2960,6 +3070,7 @@ document.addEventListener('alpine:init', () => {
 
         // Rests
         openShortRestModal() {
+            this.shortRestClassIndex = 0;
             this.shortRestDiceSelected = 0;
             this.modalShortRestOpen = true;
         },
@@ -2976,7 +3087,7 @@ document.addEventListener('alpine:init', () => {
 
             let totalHealed = 0;
             const conMod = resolveAttributeMod(this.data.attributes, 'CON');
-            const hitDieFaces = parseInt(this.primaryHitDie.replace('d', ''), 10) || 8;
+            const hitDieFaces = parseInt(this.shortRestSelectedHitDie.replace('d', ''), 10) || 8;
 
             if (count > 0) {
                 for (let i = 0; i < count; i++) {

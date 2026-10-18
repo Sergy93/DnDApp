@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
+    "db:build": "node scripts/build-db.js",
     "predeploy": "npm run build",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
@@ -13,11 +14,6 @@
     "wrangler": "^4.151.0"
   },
   "type": "module",
-  "dependencies": {
-    "github-cli": "^0.0.5",
-    "typescript": "^7.0.2",
-    "xdg-utils": "^0.0.3"
-  },
   "assets": {
     "directory": "./src"
   }
