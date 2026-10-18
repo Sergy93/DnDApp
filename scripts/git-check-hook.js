@@ -48,6 +48,11 @@ function main() {
         return;
     }
 
+    if (payload.fullyIdle === false) {
+        process.stdout.write(JSON.stringify({}));
+        return;
+    }
+
     if (!didAgentModifyInCurrentTurn(payload.transcriptPath)) {
         process.stdout.write(JSON.stringify({}));
         return;

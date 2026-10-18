@@ -55,7 +55,9 @@ export {
     getCantripScalingTier,
     resolveScaledSpellDamage,
     calculateSlotDamage,
-    resolveSpellData
+    resolveSpellData,
+    loadInitialData,
+    createCharacterSheet
 };
 
 const SPELL_SOURCES = [SPELL_COMPENDIUM_RAW];
@@ -251,7 +253,7 @@ function calculateExpectedSlots(classes = []) {
         let casterType = found?.obj?.spellcasting?.casterType;
         if (!casterType && c?.subclass) {
             const foundSub = findCompendiumSubclass(found?.obj, c.subclass, c.name);
-            casterType = foundSub?.spellcasting?.casterType;
+            casterType = foundSub?.obj?.spellcasting?.casterType;
         }
 
         if (casterType === 'pact') {
@@ -544,7 +546,9 @@ function loadInitialData() {
     const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
     let raw = null;
     try {
-        raw = localStorage.getItem(STORAGE_KEY);
+        if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+            raw = localStorage.getItem(STORAGE_KEY);
+        }
     } catch (e) {
         console.warn("[Storage] Could not read localStorage:", e);
     }
@@ -694,8 +698,8 @@ function resolveSpellcastingAttrKey(d) {
         }
         if (cls?.subclass) {
             const sub = findCompendiumSubclass(found?.obj, cls.subclass, cls.name);
-            if (sub?.spellcasting?.ability) {
-                return String(sub.spellcasting.ability).toUpperCase();
+            if (sub?.obj?.spellcasting?.ability) {
+                return String(sub.obj.spellcasting.ability).toUpperCase();
             }
         }
     }
@@ -1298,9 +1302,8 @@ function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttr
 }
 
 // ================= COMPONENTE ALPINE.JS =================
-if (typeof document !== 'undefined') {
-document.addEventListener('alpine:init', () => {
-    Alpine.data('characterSheet', () => ({
+function createCharacterSheet() {
+    return {
         data: loadInitialData(),
         activeTab: 'profile',
         currentSpellFilter: 'all',
@@ -2080,7 +2083,9 @@ document.addEventListener('alpine:init', () => {
         // Persistence
         saveState() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                }
             } catch (e) {
                 console.error("[Storage] Error saving state:", e);
             }
@@ -3617,11 +3622,21 @@ document.addEventListener('alpine:init', () => {
         async resetDefaults() {
             const ok = await this.uiConfirm("Reset character sheet to default starting state? All current modifications will be lost.", "Reset Character", "⚠️", "Reset", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
-            try { localStorage.removeItem(STORAGE_KEY); } catch (e) { }
+            try {
+                if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            } catch (e) { }
             this.data = sanitizeTracking(JSON.parse(JSON.stringify(CHARACTER_DATA)));
             this.saveState();
             await this.uiAlert("Character sheet reset to defaults.", "Reset Done", "🔄");
         }
-    }));
-});
-}
+    };
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('characterSheet', createCharacterSheet);
+    });
+}
+
