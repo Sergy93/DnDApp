@@ -197,10 +197,10 @@
     "resources": [
       {
         "id": "insp_bard",
-        "name": "Bardic Inspiration (1d8)",
+        "name": "Bardic Inspiration ({{bardicDie}})",
         "usesKey": "CHA",
         "actionCost": "Bonus Action",
-        "reset": "Short/Long",
+        "reset": "Short/Long Rest",
         "color": "text-brand-300",
         "spent": [
           false,

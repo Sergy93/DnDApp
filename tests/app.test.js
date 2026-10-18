@@ -393,6 +393,12 @@ test('Alpine Component State & Lifecycle Actions (createCharacterSheet)', async 
     assert.ok(Array.isArray(sheet.bonusSpells));
     assert.ok(Array.isArray(sheet.reactionSpells));
     assert.ok(Array.isArray(sheet.dynamicBonusActions));
+    const bardicBonus = sheet.dynamicBonusActions.find(a => normalizeKey(a.name).includes('bardicinspiration'));
+    assert.ok(bardicBonus, 'Bardic Inspiration should be present in dynamicBonusActions');
+    assert.ok(!bardicBonus.name.includes('{{'), 'Bardic Inspiration name should interpolate {{bardicDie}}');
+    assert.ok(!bardicBonus.desc.includes('{{'), 'Bardic Inspiration desc should not contain {{');
+    assert.ok(bardicBonus.desc.includes('Short/Long Rest reset'), 'Bard level 5 should have Short/Long Rest reset');
+
     assert.ok(Array.isArray(sheet.dynamicReactionActions));
     assert.ok(Array.isArray(sheet.bonusResourcesAndTraits));
     assert.ok(sheet.shortRestHealingBonus !== undefined);

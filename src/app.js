@@ -1888,18 +1888,20 @@ function createCharacterSheet() {
         get dynamicBonusActions() {
             const list = [];
             const seen = new Set();
+            const bardicDie = this.stats.bardicDie || '1d8';
 
             // 1. From tactical resources
-            (this.data.combat?.resources || []).forEach(r => {
+            (this.computedCombatResources || []).forEach(r => {
                 const cost = (r.actionCost || '').toLowerCase();
                 if (cost.includes('bonus')) {
-                    const key = normalizeKey(r.name);
+                    const key = normalizeKey(r.displayName || r.name);
                     if (!seen.has(key)) {
                         seen.add(key);
-                        list.push({
-                            name: r.name,
-                            desc: r.desc || (r.usesKey ? `Expend 1 use (${r.reset} reset).` : 'Bonus action resource.')
-                        });
+                        let name = (r.displayName || r.name).replace(/\{\{bardicDie\}\}/g, bardicDie);
+                        let desc = r.desc
+                            ? r.desc.replace(/\{\{bardicDie\}\}/g, bardicDie)
+                            : (r.usesKey ? `Expend 1 use (${r.displayReset || r.reset} reset).` : 'Bonus action resource.');
+                        list.push({ name, desc });
                     }
                 }
             });
@@ -1941,18 +1943,20 @@ function createCharacterSheet() {
         get dynamicReactionActions() {
             const list = [];
             const seen = new Set();
+            const bardicDie = this.stats.bardicDie || '1d8';
 
             // 1. From tactical resources
-            (this.data.combat?.resources || []).forEach(r => {
+            (this.computedCombatResources || []).forEach(r => {
                 const cost = (r.actionCost || '').toLowerCase();
                 if (cost.includes('reaction')) {
-                    const key = normalizeKey(r.name);
+                    const key = normalizeKey(r.displayName || r.name);
                     if (!seen.has(key)) {
                         seen.add(key);
-                        list.push({
-                            name: r.name,
-                            desc: r.desc || (r.usesKey ? `Expend 1 use (${r.reset} reset).` : 'Reaction resource.')
-                        });
+                        let name = (r.displayName || r.name).replace(/\{\{bardicDie\}\}/g, bardicDie);
+                        let desc = r.desc
+                            ? r.desc.replace(/\{\{bardicDie\}\}/g, bardicDie)
+                            : (r.usesKey ? `Expend 1 use (${r.displayReset || r.reset} reset).` : 'Reaction resource.');
+                        list.push({ name, desc });
                     }
                 }
             });
