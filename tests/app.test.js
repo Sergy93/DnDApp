@@ -250,7 +250,7 @@ test('Class Feature Synchronization Detection', () => {
     };
     const sync = detectClassFeaturesToSync(d);
     assert.ok(sync.newTraits.some(t => normalizeKey(t.name).includes('genieswrath')));
-    assert.ok(sync.newResources.some(r => r.id === 'bottled_respite'));
+    assert.ok(sync.newResources.some(r => r.id === 'genie_vessel'));
 });
 
 test('Spell Parser, Compendium & Scaling', () => {

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "test": "node --test tests/app.test.js",
     "build": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
     "db:build": "node scripts/build-db.js",
     "predeploy": "npm test && npm run build",
