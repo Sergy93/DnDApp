@@ -11,6 +11,17 @@ import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json" with { type: "js
 import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json" with { type: "json" };
 import SPELL_COMPENDIUM_RAW from "./dnd-data/spell-compendium.json" with { type: "json" };
 
+import { normalizeKey, capitalizeWord } from "./helpers/string.helper.js";
+import { TemplateHelper } from "./helpers/template.helper.js";
+import { ItemBonusHelper } from "./helpers/item-bonus.helper.js";
+import { collectActionFeatures } from "./helpers/action-collector.helper.js";
+import { StorageService } from "./services/storage.service.js";
+import { calculateAttributes } from "./domain/calculators/attributes.calculator.js";
+import { calculateSkills } from "./domain/calculators/skills.calculator.js";
+import { calculateArmorClass } from "./domain/calculators/ac.calculator.js";
+import { calculateWeapons } from "./domain/calculators/weapons.calculator.js";
+import { calculateSpellStats } from "./domain/calculators/spell-stats.calculator.js";
+
 const DND_CONDITIONS = DND_RULES.conditions;
 const DAMAGE_TYPES = DND_RULES.damageTypes;
 const SPELL_SLOTS_TABLES = DND_RULES.spellSlotsTables;
@@ -37,6 +48,7 @@ export {
     resolveDiceScale,
     resolveBardicDie,
     detectClassFeaturesToSync,
+    applyClassFeaturesSync,
     getResourceMaxUses,
     sanitizeTracking,
     parseCharacterFileContent,
@@ -57,7 +69,10 @@ export {
     calculateSlotDamage,
     resolveSpellData,
     loadInitialData,
-    createCharacterSheet
+    createCharacterSheet,
+    TemplateHelper,
+    ItemBonusHelper,
+    StorageService
 };
 
 const SPELL_SOURCES = [SPELL_COMPENDIUM_RAW];
@@ -82,18 +97,6 @@ const DND_5E_SKILLS = [
     { id: 'stealth', name: 'Stealth', attr: 'DEX' },
     { id: 'survival', name: 'Survival', attr: 'WIS' }
 ];
-
-function normalizeKey(str) {
-    if (!str) return '';
-    return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
-}
-
-function capitalizeWord(str) {
-    if (!str) return '';
-    const s = String(str).trim();
-    if (!s) return '';
-    return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-}
 
 function findCompendiumClass(className) {
     const normClass = normalizeKey(className);
@@ -459,6 +462,28 @@ function detectClassFeaturesToSync(d) {
     return { newResources, newTraits, staleResourceIds, staleTraitNames };
 }
 
+function applyClassFeaturesSync(d) {
+    syncCharacterSpellSlots(d);
+    const syncResult = detectClassFeaturesToSync(d);
+    const { newResources, newTraits, staleResourceIds, staleTraitNames } = syncResult;
+
+    if (staleResourceIds.size > 0) {
+        d.combat.resources = (d.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
+    }
+    if (staleTraitNames.size > 0) {
+        d.combat.traits = (d.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
+    }
+    if (newResources.length > 0) {
+        d.combat.resources.push(...newResources);
+    }
+    if (newTraits.length > 0) {
+        d.combat.traits.push(...newTraits);
+    }
+
+    sanitizeTracking(d);
+    return syncResult;
+}
+
 function getResourceMaxUses(res, attributes, pb = 2) {
     if (typeof res?.uses === 'number' && res.uses > 0) return res.uses;
     if (res?.usesKey) {
@@ -544,23 +569,9 @@ function sanitizeTracking(d) {
 
 function loadInitialData() {
     const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
-    let raw = null;
-    try {
-        if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
-            raw = localStorage.getItem(STORAGE_KEY);
-        }
-    } catch (e) {
-        console.warn("[Storage] Could not read localStorage:", e);
-    }
-    if (!raw) return sanitizeTracking(base);
-
-    try {
-        const loaded = JSON.parse(raw);
-        return sanitizeTracking(loaded);
-    } catch (e) {
-        console.error("[Storage] Error parsing stored data:", e);
-        return sanitizeTracking(base);
-    }
+    const loaded = StorageService.load(STORAGE_KEY, null);
+    if (!loaded) return sanitizeTracking(base);
+    return sanitizeTracking(loaded);
 }
 
 function parseCharacterFileContent(rawText) {
@@ -729,160 +740,19 @@ function computeStats(d) {
 
     const allEquipped = getAllEquippedItems(d);
 
-    const attrKeys = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
-
-    const computedAttrs = {};
-    attrKeys.forEach(k => {
-        let raw = d?.attributes?.[k] || { score: 10, profSave: false };
-        let baseScore = typeof raw.score === 'number' ? raw.score : (parseInt(raw.score, 10) || 10);
-        let bonusFromItems = 0;
-        let itemSaveBonus = 0;
-        let hasAttrAdvantage = false;
-        let attrAdvantageSources = [];
-        let hasSaveAdvantage = false;
-        let saveAdvantageSources = [];
-
-        allEquipped.forEach(item => {
-            const sb = item.statBonuses;
-            if (sb) {
-                if (sb[k]) bonusFromItems += parseInt(sb[k], 10) || 0;
-                if (sb.attr === k) {
-                    if (sb.attrMode === 'advantage') {
-                        hasAttrAdvantage = true;
-                        attrAdvantageSources.push(item.name || 'Equipment');
-                    } else if (sb.attrVal) {
-                        bonusFromItems += parseInt(sb.attrVal, 10) || 0;
-                    }
-                }
-
-                const saveType = (sb.saveType || 'all').toUpperCase();
-                const saveVal = parseInt(sb.saveVal, 10) || 0;
-                const isTargetSave = saveType === 'ALL' || saveType === k;
-                if (isTargetSave) {
-                    if (sb.saveMode === 'advantage') {
-                        hasSaveAdvantage = true;
-                        saveAdvantageSources.push(item.name || 'Equipment');
-                    } else if (saveVal) {
-                        itemSaveBonus += saveVal;
-                    }
-                }
-            }
-
-            // Direct advantage arrays on items
-            if (Array.isArray(item.advantageAttrs)) {
-                item.advantageAttrs.forEach(a => {
-                    if (String(a).toUpperCase() === k) {
-                        hasAttrAdvantage = true;
-                        attrAdvantageSources.push(item.name || 'Equipment');
-                    }
-                });
-            }
-            if (Array.isArray(item.advantageSaves)) {
-                item.advantageSaves.forEach(s => {
-                    const su = String(s).toUpperCase();
-                    if (su === 'ALL' || su === k) {
-                        hasSaveAdvantage = true;
-                        saveAdvantageSources.push(item.name || 'Equipment');
-                    }
-                });
-            }
-        });
-
-        const score = baseScore + bonusFromItems;
-        const mod = Math.floor((score - 10) / 2);
-        const save = mod + (raw.profSave ? pb : 0) + itemSaveBonus;
-        computedAttrs[k] = {
-            score,
-            baseScore,
-            bonusFromItems,
-            mod,
-            modStr: mod >= 0 ? `+${mod}` : `${mod}`,
-            save,
-            saveStr: save >= 0 ? `+${save}` : `${save}`,
-            profSave: !!raw.profSave,
-            itemSaveBonus,
-            hasAttrAdvantage,
-            attrAdvantageSources: [...new Set(attrAdvantageSources)],
-            hasSaveAdvantage,
-            saveAdvantageSources: [...new Set(saveAdvantageSources)]
-        };
-    });
+    const computedAttrs = calculateAttributes(d?.attributes, allEquipped, pb);
 
     const hasSilverTongue = hasCharacterFeature(d, ['silvertongue']);
     const hasReliableTalent = hasCharacterFeature(d, ['reliabletalent', 'reliable talent']);
-
-    const computedSkills = (d?.skills || []).map(s => {
-        const attrObj = computedAttrs[s.attr] || { mod: 0 };
-        let bonus = attrObj.mod;
-        if (s.profType === 'P') bonus += pb * 2;
-        else if (s.profType === 'C') bonus += pb;
-        else bonus += jackOfAllTrades;
-
-        const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception');
-        const isReliableTalentSkill = hasReliableTalent && (s.profType === 'C' || s.profType === 'P');
-        const applyMinTen = s.minTen !== undefined ? !!s.minTen : (isSilverTongueSkill || isReliableTalentSkill);
-        let minTenSource = '';
-        let minTenDesc = '';
-        if (applyMinTen) {
-            if (isSilverTongueSkill) {
-                minTenSource = 'Silver Tongue (Eloquence Bard)';
-                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
-            } else if (isReliableTalentSkill) {
-                minTenSource = 'Reliable Talent (Rogue)';
-                minTenDesc = `Any d20 roll of 9 or lower on proficient checks becomes a 10 (Total roll: minimum ${10 + bonus}).`;
-            } else if (s.minTenSource) {
-                minTenSource = s.minTenSource;
-                minTenDesc = s.minTenDesc || `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
-            } else {
-                minTenSource = 'Reliable Talent / Feature';
-                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
-            }
-        }
-
-        // Advantage check:
-        let hasAdvantage = false;
-        let advantageSources = [];
-
-        // Check base skill note if not an unequipped item note
-        if (s.note && String(s.note).toLowerCase().includes('advantage')) {
-            hasAdvantage = true;
-            advantageSources.push(s.noteSource || 'Sheet Note');
-        }
-
-        // If parent ability check has advantage, all derived skill checks have advantage
-        if (attrObj.hasAttrAdvantage) {
-            hasAdvantage = true;
-            advantageSources.push(...attrObj.attrAdvantageSources);
-        }
-
-        // Check all equipped items granting advantage on this skill
-        allEquipped.forEach(item => {
-            const advSkills = Array.isArray(item.advantageSkills) ? item.advantageSkills : [];
-            const normSkillId = normalizeKey(s.id);
-            const normSkillName = normalizeKey(s.name);
-            const matches = advSkills.some(ask => {
-                const n = normalizeKey(ask);
-                return n === normSkillId || n === normSkillName;
-            });
-            if (matches) {
-                hasAdvantage = true;
-                if (!advantageSources.includes(item.name)) {
-                    advantageSources.push(item.name || 'Equipment');
-                }
-            }
-        });
-
-        return {
-            ...s,
-            valNum: bonus,
-            valStr: bonus >= 0 ? `+${bonus}` : `${bonus}`,
-            minVal: applyMinTen ? (10 + bonus) : null,
-            minTenSource,
-            minTenDesc,
-            hasAdvantage,
-            advantageSources: [...new Set(advantageSources)]
-        };
-    });
+    const computedSkills = calculateSkills(
+        d?.skills,
+        computedAttrs,
+        pb,
+        jackOfAllTrades,
+        hasSilverTongue,
+        hasReliableTalent,
+        allEquipped
+    );
 
     const percSkill = computedSkills.find(s => s.id === 'perception');
     const percAdvBonus = percSkill?.hasAdvantage ? 5 : 0;
@@ -892,87 +762,22 @@ function computeStats(d) {
         ? `DEX (${computedAttrs.DEX.modStr}) + Jack of All Trades (+${jackOfAllTrades})`
         : `DEX (${computedAttrs.DEX.modStr})`;
 
-    let calculatedAc = 10 + computedAttrs.DEX.mod;
-    let armorDesc = `10 + DEX (${computedAttrs.DEX.modStr})`;
+    const { ac: calculatedAc, armorDesc } = calculateArmorClass(
+        d?.inventory?.armors,
+        d?.inventory?.story,
+        computedAttrs
+    );
 
-    const equippedArmors = (d?.inventory?.armors || []).filter(a => a && a.equipped);
-    const equippedStory = (d?.inventory?.story || []).filter(s => s && s.equipped);
-
-    // Main armor must be light, medium, or heavy (or custom base body armor)
-    const mainArmor = equippedArmors.find(a => ['light', 'medium', 'heavy'].includes(a.type) || (a.type !== 'shield' && a.type !== 'accessory' && (parseInt(a.baseAc, 10) || 0) >= 10));
-    const equippedShield = equippedArmors.find(a => a.type === 'shield');
-    // Magic accessories (cloaks, rings, amulets, wondrous items) that grant bonus AC (or 0 AC)
-    const accessories = equippedArmors.filter(a => a !== mainArmor && a !== equippedShield);
-    accessories.push(...equippedStory);
-
-    if (mainArmor) {
-        const bAc = parseInt(mainArmor.baseAc, 10) || 10;
-        if (mainArmor.type === 'light') {
-            calculatedAc = bAc + computedAttrs.DEX.mod;
-            armorDesc = `${mainArmor.name} (${bAc} + DEX)`;
-        } else if (mainArmor.type === 'medium') {
-            calculatedAc = bAc + Math.min(2, computedAttrs.DEX.mod);
-            armorDesc = `${mainArmor.name} (${bAc} + max 2)`;
-        } else if (mainArmor.type === 'heavy') {
-            calculatedAc = bAc;
-            armorDesc = `${mainArmor.name} (${bAc})`;
-        } else {
-            // General custom armor base
-            calculatedAc = bAc + computedAttrs.DEX.mod;
-            armorDesc = `${mainArmor.name} (${bAc} + DEX)`;
-        }
-    }
-    if (equippedShield) {
-        const sBonus = parseInt(equippedShield.baseAc, 10) || 2;
-        calculatedAc += sBonus;
-        armorDesc += ` + ${equippedShield.name || 'Shield'} (+${sBonus})`;
-    }
-    accessories.forEach(acc => {
-        const bonus = parseInt(acc.baseAc, 10) || 0;
-        if (bonus > 0) {
-            calculatedAc += bonus;
-            armorDesc += ` + ${acc.name} (+${bonus})`;
-        }
-    });
-
-    const computedWeapons = (d?.inventory?.weapons || []).map((w, idx) => {
-        let usedAttr = 'STR';
-        if (w.attrMode === 'dex') usedAttr = 'DEX';
-        else if (w.attrMode === 'finesse') {
-            usedAttr = (computedAttrs.DEX.mod >= computedAttrs.STR.mod) ? 'DEX' : 'STR';
-        }
-
-        const attrMod = (computedAttrs[usedAttr] || computedAttrs.STR).mod;
-        const nameBonusMatch = (w.name || '').match(/\+(\d+)/);
-        const nameBonus = nameBonusMatch ? parseInt(nameBonusMatch[1], 10) : 0;
-        const magicBonus = parseInt(w.magicBonus !== undefined ? w.magicBonus : nameBonus, 10) || 0;
-        const atkBonus = attrMod + (w.proficient !== false ? pb : 0) + magicBonus;
-        const dmgMod = attrMod + magicBonus;
-        let dmgModStr = '';
-        if (dmgMod > 0) dmgModStr = `+${dmgMod}`;
-        else if (dmgMod < 0) dmgModStr = `-${Math.abs(dmgMod)}`;
-        const dmgStr = `${w.dice || ''} ${dmgModStr} ${w.damageType || ''}`.replace(/\s+/g, ' ').trim();
-
-        return {
-            ...w,
-            originalIndex: idx,
-            usedAttr,
-            atkStr: atkBonus >= 0 ? `+${atkBonus}` : `${atkBonus}`,
-            dmgStr
-        };
-    });
+    const computedWeapons = calculateWeapons(d?.inventory?.weapons, computedAttrs, pb);
 
     const spellcastingAttrKey = resolveSpellcastingAttrKey(d);
-    const spellAttrMod = (computedAttrs[spellcastingAttrKey] || computedAttrs.CHA).mod;
-    let itemSpellDcBonus = 0;
-    let itemSpellAtkBonus = 0;
-    allEquipped.forEach(item => {
-        const dcBonus = item.statBonuses?.spellDC !== undefined ? item.statBonuses.spellDC : item.statBonuses?.spellDc;
-        if (dcBonus) itemSpellDcBonus += parseInt(dcBonus, 10) || 0;
-        if (item.statBonuses?.spellAtk) itemSpellAtkBonus += parseInt(item.statBonuses.spellAtk, 10) || 0;
-    });
-    const spellAtkNum = spellAttrMod + pb + itemSpellAtkBonus;
-    const spellDC = 8 + pb + spellAttrMod + itemSpellDcBonus;
+    const { spellDC, spellAtkStr } = calculateSpellStats(
+        spellcastingAttrKey,
+        computedAttrs,
+        pb,
+        allEquipped
+    );
+
     const bardicUses = Math.max(1, computedAttrs.CHA.mod);
     const hitDiceList = classes.map(c => `${c.level} ${resolveClassHitDie(c)}`).join(' + ');
     const songOfRestDie = resolveSongOfRestDie(d);
@@ -982,8 +787,7 @@ function computeStats(d) {
     const combatBadges = [];
     (d?.combat?.traits || []).forEach(t => {
         if (t.badge) {
-            let badgeText = t.badge;
-            badgeText = badgeText.replace(/\{\{PB\}\}/g, `+${pb}`);
+            let badgeText = TemplateHelper.interpolate(t.badge, { pb });
             combatBadges.push({
                 icon: t.badgeIcon || '⚡',
                 text: badgeText,
@@ -1015,7 +819,7 @@ function computeStats(d) {
         armorDesc,
         spellStat: spellcastingAttrKey,
         spellcastingAttrKey,
-        spellAtkStr: spellAtkNum >= 0 ? `+${spellAtkNum}` : `${spellAtkNum}`,
+        spellAtkStr,
         spellDC,
         genieDamage,
         combatBadges,
@@ -1029,6 +833,7 @@ function computeStats(d) {
         resistances: resolveCharacterResistances(d)
     };
 }
+
 
 // ================= SPELL PARSER & COMPENDIUM =================
 
@@ -1545,17 +1350,15 @@ function createCharacterSheet() {
             const vesselHours = pb * 2;
 
             return (this.data.combat?.traits || []).map((t, idx) => {
-                let displayName = t.name || '';
-                let displayDesc = t.desc || '';
-
-                // Dynamic placeholder interpolation (strictly standardized canonical tokens)
-                displayDesc = displayDesc
-                    .replace(/\{\{PB\}\}/g, `+${pb}`)
-                    .replace(/\{\{DC\}\}/g, `${spellDC}`)
-                    .replace(/\{\{spellAtk\}\}/g, `${spellAtk}`)
-                    .replace(/\{\{bardicDie\}\}/g, bardicDie)
-                    .replace(/\{\{songOfRestDie\}\}/g, songOfRestDie)
-                    .replace(/\{\{vesselHours\}\}/g, `${vesselHours}`);
+                const displayName = t.name || '';
+                const displayDesc = TemplateHelper.interpolate(t.desc, {
+                    pb,
+                    spellDC,
+                    spellAtk,
+                    bardicDie,
+                    songOfRestDie,
+                    vesselHours
+                });
 
                 return {
                     ...t,
@@ -1886,113 +1689,21 @@ function createCharacterSheet() {
         },
 
         get dynamicBonusActions() {
-            const list = [];
-            const seen = new Set();
-            const bardicDie = this.stats.bardicDie || '1d8';
-
-            // 1. From tactical resources
-            (this.computedCombatResources || []).forEach(r => {
-                const cost = (r.actionCost || '').toLowerCase();
-                if (cost.includes('bonus')) {
-                    const key = normalizeKey(r.displayName || r.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        let name = (r.displayName || r.name).replace(/\{\{bardicDie\}\}/g, bardicDie);
-                        let desc = r.desc
-                            ? r.desc.replace(/\{\{bardicDie\}\}/g, bardicDie)
-                            : (r.usesKey ? `Expend 1 use (${r.displayReset || r.reset} reset).` : 'Bonus action resource.');
-                        list.push({ name, desc });
-                    }
-                }
+            return collectActionFeatures('bonus', {
+                resources: this.computedCombatResources,
+                traits: this.data.combat?.traits,
+                equipped: this.allEquipped,
+                bardicDie: this.stats.bardicDie || '1d8'
             });
-
-            // 2. From traits
-            (this.data.combat?.traits || []).forEach(t => {
-                const text = `${t.name || ''} ${t.desc || ''}`.toLowerCase();
-                if (text.includes('bonus action') || (t.actionCost && t.actionCost.toLowerCase().includes('bonus'))) {
-                    const key = normalizeKey(t.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        list.push({
-                            name: t.name,
-                            desc: t.desc || 'Bonus action feature.'
-                        });
-                    }
-                }
-            });
-
-            // 3. From equipped items
-            (this.allEquipped || []).forEach(item => {
-                const text = `${item.name || ''} ${item.desc || ''} ${item.notes || ''} ${item.properties || ''} ${item.special || ''}`.toLowerCase();
-                const cost = (item.actionCost || '').toLowerCase();
-                if (cost.includes('bonus') || text.includes('bonus action') || text.includes('as a bonus action')) {
-                    const key = normalizeKey(item.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        list.push({
-                            name: item.name,
-                            desc: item.desc || item.special || item.notes || 'Equipped item bonus action.'
-                        });
-                    }
-                }
-            });
-
-            return list;
         },
 
         get dynamicReactionActions() {
-            const list = [];
-            const seen = new Set();
-            const bardicDie = this.stats.bardicDie || '1d8';
-
-            // 1. From tactical resources
-            (this.computedCombatResources || []).forEach(r => {
-                const cost = (r.actionCost || '').toLowerCase();
-                if (cost.includes('reaction')) {
-                    const key = normalizeKey(r.displayName || r.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        let name = (r.displayName || r.name).replace(/\{\{bardicDie\}\}/g, bardicDie);
-                        let desc = r.desc
-                            ? r.desc.replace(/\{\{bardicDie\}\}/g, bardicDie)
-                            : (r.usesKey ? `Expend 1 use (${r.displayReset || r.reset} reset).` : 'Reaction resource.');
-                        list.push({ name, desc });
-                    }
-                }
+            return collectActionFeatures('reaction', {
+                resources: this.computedCombatResources,
+                traits: this.data.combat?.traits,
+                equipped: this.allEquipped,
+                bardicDie: this.stats.bardicDie || '1d8'
             });
-
-            // 2. From traits
-            (this.data.combat?.traits || []).forEach(t => {
-                const text = `${t.name || ''} ${t.desc || ''}`.toLowerCase();
-                if (text.includes('reaction:') || text.includes('as a reaction') || (t.actionCost && t.actionCost.toLowerCase().includes('reaction'))) {
-                    const key = normalizeKey(t.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        list.push({
-                            name: t.name,
-                            desc: t.desc || 'Reaction feature.'
-                        });
-                    }
-                }
-            });
-
-            // 3. From equipped items
-            (this.allEquipped || []).forEach(item => {
-                const text = `${item.name || ''} ${item.desc || ''} ${item.notes || ''} ${item.properties || ''} ${item.special || ''}`.toLowerCase();
-                const cost = (item.actionCost || '').toLowerCase();
-                if (cost.includes('reaction') || text.includes('reaction:') || text.includes('as a reaction')) {
-                    const key = normalizeKey(item.name);
-                    if (!seen.has(key)) {
-                        seen.add(key);
-                        list.push({
-                            name: item.name,
-                            desc: item.desc || item.special || item.notes || 'Equipped item reaction.'
-                        });
-                    }
-                }
-            });
-
-            return list;
         },
 
         get bonusResourcesAndTraits() {
@@ -2086,13 +1797,7 @@ function createCharacterSheet() {
 
         // Persistence
         saveState() {
-            try {
-                if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-                }
-            } catch (e) {
-                console.error("[Storage] Error saving state:", e);
-            }
+            StorageService.save(STORAGE_KEY, this.data);
         },
 
         // Dialogs / Alerts
@@ -2284,7 +1989,6 @@ function createCharacterSheet() {
             const prevSpell = this.data.concentration?.spellName;
             const wasActive = !!this.data.concentration?.active;
             this.data.concentration = name ? { active: true, spellName: name } : { active: false, spellName: "" };
-            this.saveState();
 
             if (name && (!wasActive || prevSpell !== name)) {
                 this.logEvent('🧠', 'Concentration Started', `Started concentrating on "${name}".`);
@@ -2292,6 +1996,8 @@ function createCharacterSheet() {
                 const title = reason ? 'Concentration Broken' : 'Concentration Dropped';
                 const desc = reason ? `Concentration on "${prevSpell}" was broken (${reason}).` : `Stopped concentrating on "${prevSpell}".`;
                 this.logEvent('🧠', title, desc);
+            } else {
+                this.saveState();
             }
         },
 
@@ -2370,7 +2076,6 @@ function createCharacterSheet() {
                 this.logEvent('⚔️', 'Weapon Added', `Added weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
             }
 
-            this.saveState();
             this.modalWeaponOpen = false;
             this.editingWeaponIndex = null;
         },
@@ -2382,7 +2087,6 @@ function createCharacterSheet() {
 
             this.data.inventory.weapons.splice(index, 1);
             this.logEvent('🗑️', 'Weapon Removed', `Removed weapon "${w.name}".`);
-            this.saveState();
         },
 
         // Armor, Protection & Magic Accessories
@@ -2433,51 +2137,30 @@ function createCharacterSheet() {
         },
 
         addSpellToArmorForm() {
-            const sp = (this.selectedSpellToAdd || '').trim();
-            if (!sp) return;
-            if (!Array.isArray(this.armorForm.grantedSpells)) this.armorForm.grantedSpells = [];
-            if (!this.armorForm.grantedSpells.includes(sp)) {
-                this.armorForm.grantedSpells.push(sp);
-            }
+            ItemBonusHelper.addUniqueItem(this.armorForm.grantedSpells, this.selectedSpellToAdd);
             this.selectedSpellToAdd = '';
         },
 
         removeSpellFromArmorForm(idx) {
-            if (Array.isArray(this.armorForm.grantedSpells)) {
-                this.armorForm.grantedSpells.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.armorForm.grantedSpells, idx);
         },
 
         addResToArmorForm() {
-            const res = (this.selectedResToAdd || '').trim();
-            if (!res) return;
-            if (!Array.isArray(this.armorForm.resistances)) this.armorForm.resistances = [];
-            if (!this.armorForm.resistances.includes(res)) {
-                this.armorForm.resistances.push(res);
-            }
+            ItemBonusHelper.addUniqueItem(this.armorForm.resistances, this.selectedResToAdd);
             this.selectedResToAdd = '';
         },
 
         removeResFromArmorForm(idx) {
-            if (Array.isArray(this.armorForm.resistances)) {
-                this.armorForm.resistances.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.armorForm.resistances, idx);
         },
 
         addSkillAdvToArmorForm() {
-            const sk = (this.selectedSkillAdvToAdd || '').trim();
-            if (!sk) return;
-            if (!Array.isArray(this.armorForm.advantageSkills)) this.armorForm.advantageSkills = [];
-            if (!this.armorForm.advantageSkills.includes(sk)) {
-                this.armorForm.advantageSkills.push(sk);
-            }
+            ItemBonusHelper.addUniqueItem(this.armorForm.advantageSkills, this.selectedSkillAdvToAdd);
             this.selectedSkillAdvToAdd = '';
         },
 
         removeSkillAdvFromArmorForm(idx) {
-            if (Array.isArray(this.armorForm.advantageSkills)) {
-                this.armorForm.advantageSkills.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.armorForm.advantageSkills, idx);
         },
 
         handleSaveArmor() {
@@ -2495,28 +2178,7 @@ function createCharacterSheet() {
             const resistances = [...(this.armorForm.resistances || [])];
             const advantageSkills = [...(this.armorForm.advantageSkills || [])];
 
-            const statBonuses = {};
-            if (this.armorForm.bonusAttr) {
-                statBonuses.attr = this.armorForm.bonusAttr;
-                statBonuses.attrMode = this.armorForm.attrMode || 'bonus';
-                if (statBonuses.attrMode === 'bonus') {
-                    const val = parseInt(this.armorForm.bonusAttrVal, 10) || 0;
-                    if (val) {
-                        statBonuses[this.armorForm.bonusAttr] = val;
-                        statBonuses.attrVal = val;
-                    }
-                }
-            }
-            if (this.armorForm.saveType) {
-                statBonuses.saveType = this.armorForm.saveType;
-                statBonuses.saveMode = this.armorForm.saveMode || 'bonus';
-                if (statBonuses.saveMode === 'bonus') {
-                    const saveVal = parseInt(this.armorForm.saveVal, 10) || 0;
-                    if (saveVal) {
-                        statBonuses.saveVal = saveVal;
-                    }
-                }
-            }
+            const statBonuses = ItemBonusHelper.parseStatBonuses(this.armorForm);
 
             const armorObj = {
                 name,
@@ -2531,6 +2193,7 @@ function createCharacterSheet() {
                 statBonuses
             };
 
+            this.equipRevision++;
             if (isEdit) {
                 this.data.inventory.armors[this.editingArmorIndex] = armorObj;
                 this.logEvent('🛡️', 'Armor/Item Edited', `Updated "${name}" (${armorObj.type}).`);
@@ -2539,8 +2202,6 @@ function createCharacterSheet() {
                 this.logEvent('🛡️', 'Armor/Item Added', `Added "${name}" (${armorObj.type}).`);
             }
 
-            this.equipRevision++;
-            this.saveState();
             this.modalArmorOpen = false;
             this.editingArmorIndex = null;
         },
@@ -2553,7 +2214,6 @@ function createCharacterSheet() {
 
             this.data.inventory.armors.splice(index, 1);
             this.logEvent('🗑️', 'Armor/Item Removed', `Removed "${a.name}".`);
-            this.saveState();
         },
 
         // ================= CONDITIONS =================
@@ -2710,8 +2370,6 @@ function createCharacterSheet() {
             const tempStr = curTemp > 0 ? ` (Temp HP: ${curTemp})` : '';
 
             this.logEvent('💥', 'Damage Taken', `Took ${amount} damage${note}. Current HP: ${curHp}/${maxHp}${tempStr}.`);
-
-            this.saveState();
             this.modalHpManagerOpen = false;
 
             if (this.data.vitals.currentHp === 0) {
@@ -2754,7 +2412,6 @@ function createCharacterSheet() {
             }
 
             this.logEvent('💚', 'Healing Received', `Restored ${amount} HP. Current HP: ${this.data.vitals.currentHp}/${max}.`);
-            this.saveState();
             this.modalHpManagerOpen = false;
         },
 
@@ -2762,7 +2419,6 @@ function createCharacterSheet() {
             amount = Math.max(0, parseInt(amount, 10) || 0);
             this.data.vitals.tempHp = amount;
             this.logEvent('🛡️', 'Temp HP', `Set Temporary HP to ${amount}.`);
-            this.saveState();
             this.modalHpManagerOpen = false;
         },
 
@@ -2876,7 +2532,6 @@ function createCharacterSheet() {
                 this.data.inventory.consumables.push(item);
                 this.logEvent('🧪', 'Consumable Added', `Added "${name}" (Qty: ${item.qty}).`);
             }
-            this.saveState();
             this.modalConsumableOpen = false;
             this.editingConsumableIndex = null;
         },
@@ -2888,7 +2543,6 @@ function createCharacterSheet() {
             if (!ok) return;
             this.data.inventory.consumables.splice(index, 1);
             this.logEvent('🗑️', 'Consumable Removed', `Removed consumable "${c.name}".`);
-            this.saveState();
         },
 
         adjustConsumableQty(index, delta) {
@@ -2913,7 +2567,6 @@ function createCharacterSheet() {
             } else if (delta > 0) {
                 this.logEvent('🧪', 'Consumable Restocked', `Increased "${c.name}" (${prevQty} → ${c.qty}).`);
             }
-            this.saveState();
         },
 
         // ================= STORY ITEMS MANAGEMENT =================
@@ -2968,51 +2621,30 @@ function createCharacterSheet() {
         },
 
         addSpellToStoryForm() {
-            const sp = (this.storySpellToAdd || '').trim();
-            if (!sp) return;
-            if (!Array.isArray(this.storyItemForm.grantedSpells)) this.storyItemForm.grantedSpells = [];
-            if (!this.storyItemForm.grantedSpells.includes(sp)) {
-                this.storyItemForm.grantedSpells.push(sp);
-            }
+            ItemBonusHelper.addUniqueItem(this.storyItemForm.grantedSpells, this.storySpellToAdd);
             this.storySpellToAdd = '';
         },
 
         removeSpellFromStoryForm(idx) {
-            if (Array.isArray(this.storyItemForm.grantedSpells)) {
-                this.storyItemForm.grantedSpells.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.storyItemForm.grantedSpells, idx);
         },
 
         addResToStoryForm() {
-            const res = (this.storyResToAdd || '').trim();
-            if (!res) return;
-            if (!Array.isArray(this.storyItemForm.resistances)) this.storyItemForm.resistances = [];
-            if (!this.storyItemForm.resistances.includes(res)) {
-                this.storyItemForm.resistances.push(res);
-            }
+            ItemBonusHelper.addUniqueItem(this.storyItemForm.resistances, this.storyResToAdd);
             this.storyResToAdd = '';
         },
 
         removeResFromStoryForm(idx) {
-            if (Array.isArray(this.storyItemForm.resistances)) {
-                this.storyItemForm.resistances.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.storyItemForm.resistances, idx);
         },
 
         addSkillAdvToStoryForm() {
-            const sk = (this.storySkillAdvToAdd || '').trim();
-            if (!sk) return;
-            if (!Array.isArray(this.storyItemForm.advantageSkills)) this.storyItemForm.advantageSkills = [];
-            if (!this.storyItemForm.advantageSkills.includes(sk)) {
-                this.storyItemForm.advantageSkills.push(sk);
-            }
+            ItemBonusHelper.addUniqueItem(this.storyItemForm.advantageSkills, this.storySkillAdvToAdd);
             this.storySkillAdvToAdd = '';
         },
 
         removeSkillAdvFromStoryForm(idx) {
-            if (Array.isArray(this.storyItemForm.advantageSkills)) {
-                this.storyItemForm.advantageSkills.splice(idx, 1);
-            }
+            ItemBonusHelper.removeIndex(this.storyItemForm.advantageSkills, idx);
         },
 
         handleSaveStoryItem() {
@@ -3027,28 +2659,7 @@ function createCharacterSheet() {
             const resistances = [...(this.storyItemForm.resistances || [])];
             const advantageSkills = [...(this.storyItemForm.advantageSkills || [])];
 
-            const statBonuses = {};
-            if (this.storyItemForm.bonusAttr) {
-                statBonuses.attr = this.storyItemForm.bonusAttr;
-                statBonuses.attrMode = this.storyItemForm.attrMode || 'bonus';
-                if (statBonuses.attrMode === 'bonus') {
-                    const val = parseInt(this.storyItemForm.bonusAttrVal, 10) || 0;
-                    if (val) {
-                        statBonuses[this.storyItemForm.bonusAttr] = val;
-                        statBonuses.attrVal = val;
-                    }
-                }
-            }
-            if (this.storyItemForm.saveType) {
-                statBonuses.saveType = this.storyItemForm.saveType;
-                statBonuses.saveMode = this.storyItemForm.saveMode || 'bonus';
-                if (statBonuses.saveMode === 'bonus') {
-                    const saveVal = parseInt(this.storyItemForm.saveVal, 10) || 0;
-                    if (saveVal) {
-                        statBonuses.saveVal = saveVal;
-                    }
-                }
-            }
+            const statBonuses = ItemBonusHelper.parseStatBonuses(this.storyItemForm);
 
             const item = {
                 name,
@@ -3062,6 +2673,7 @@ function createCharacterSheet() {
                 statBonuses
             };
 
+            this.equipRevision++;
             if (isEdit) {
                 this.data.inventory.story[this.editingStoryItemIndex] = item;
                 this.logEvent('✨', 'Item Edited', `Updated item "${name}".`);
@@ -3069,8 +2681,6 @@ function createCharacterSheet() {
                 this.data.inventory.story.push(item);
                 this.logEvent('✨', 'Item Added', `Added item "${name}".`);
             }
-            this.equipRevision++;
-            this.saveState();
             this.modalStoryItemOpen = false;
             this.editingStoryItemIndex = null;
         },
@@ -3097,7 +2707,6 @@ function createCharacterSheet() {
             if (!ok) return;
             this.data.inventory.story.splice(index, 1);
             this.logEvent('🗑️', 'Item Removed', `Removed item "${st.name}".`);
-            this.saveState();
         },
 
         // ================= TOOLS & EQUIPMENT MANAGEMENT =================
@@ -3143,7 +2752,6 @@ function createCharacterSheet() {
                 this.data.inventory.tools.push(item);
                 this.logEvent('🎒', 'Tool Added', `Added tool/equipment "${name}".`);
             }
-            this.saveState();
             this.modalToolOpen = false;
             this.editingToolIndex = null;
         },
@@ -3157,7 +2765,6 @@ function createCharacterSheet() {
             if (!ok) return;
             this.data.inventory.tools.splice(index, 1);
             this.logEvent('🗑️', 'Tool Removed', `Removed tool/equipment "${t.name}".`);
-            this.saveState();
         },
 
         // ================= CAST SPELL MODAL =================
@@ -3249,7 +2856,6 @@ function createCharacterSheet() {
                 this.setConcentration(sp.name);
             }
 
-            this.saveState();
             this.modalCastSpellOpen = false;
         },
 
@@ -3291,7 +2897,6 @@ function createCharacterSheet() {
                 sourceType: this.spellCompendiumSource.toLowerCase()
             });
             this.logEvent('📖', 'Spell Learned', `Added "${compSpell.name}" to spellbook (Source: ${this.spellCompendiumSource}).`);
-            this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Added "${compSpell.name}" to your spellbook.`, "Spell Added", "✨");
         },
@@ -3322,7 +2927,6 @@ function createCharacterSheet() {
             });
 
             this.logEvent('📖', 'Custom Spell Created', `Created custom spell "${name}" (Level ${lvl}).`);
-            this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Custom spell "${name}" created.`, "Spell Created", "✨");
         },
@@ -3341,7 +2945,6 @@ function createCharacterSheet() {
 
             this.data.magic.spells = (this.data.magic.spells || []).filter(s => normalizeKey(s.name) !== normalizeKey(spellName));
             this.logEvent('🗑️', 'Spell Removed', `Removed spell "${spellName}" from spellbook.`);
-            this.saveState();
         },
 
         toggleSpellFavorite(spellName) {
@@ -3452,26 +3055,8 @@ function createCharacterSheet() {
                 }
             });
 
-            // 1. Sync Spell Slots according to official class tables
-            syncCharacterSpellSlots(this.data);
-
-            // 2. Detect & auto-add newly unlocked class features / clean stale
-            const { newResources, newTraits, staleResourceIds, staleTraitNames } = detectClassFeaturesToSync(this.data);
-            if (staleResourceIds.size > 0) {
-                this.data.combat.resources = (this.data.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
-            }
-            if (staleTraitNames.size > 0) {
-                this.data.combat.traits = (this.data.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
-            }
-            if (newResources.length > 0) {
-                this.data.combat.resources.push(...newResources);
-            }
-            if (newTraits.length > 0) {
-                this.data.combat.traits.push(...newTraits);
-            }
-
-            sanitizeTracking(this.data);
-            this.saveState();
+            // 1. Sync Spell Slots & 2. Auto-sync class features & clean stale
+            const { newResources, newTraits } = applyClassFeaturesSync(this.data);
             this.modalLevelUpOpen = false;
 
             const totalLevel = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
@@ -3485,24 +3070,8 @@ function createCharacterSheet() {
         },
 
         syncClassFeatures() {
-            syncCharacterSpellSlots(this.data);
-            const { newResources, newTraits, staleResourceIds, staleTraitNames } = detectClassFeaturesToSync(this.data);
-            let addedCount = 0;
-            if (staleResourceIds.size > 0) {
-                this.data.combat.resources = (this.data.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
-            }
-            if (staleTraitNames.size > 0) {
-                this.data.combat.traits = (this.data.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
-            }
-            if (newResources.length > 0) {
-                this.data.combat.resources.push(...newResources);
-                addedCount += newResources.length;
-            }
-            if (newTraits.length > 0) {
-                this.data.combat.traits.push(...newTraits);
-                addedCount += newTraits.length;
-            }
-            sanitizeTracking(this.data);
+            const { newResources, newTraits } = applyClassFeaturesSync(this.data);
+            const addedCount = newResources.length + newTraits.length;
             this.saveState();
 
             if (addedCount > 0) {
@@ -3626,11 +3195,7 @@ function createCharacterSheet() {
         async resetDefaults() {
             const ok = await this.uiConfirm("Reset character sheet to default starting state? All current modifications will be lost.", "Reset Character", "⚠️", "Reset", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
-            try {
-                if (typeof localStorage !== 'undefined' && typeof localStorage.removeItem === 'function') {
-                    localStorage.removeItem(STORAGE_KEY);
-                }
-            } catch (e) { }
+            StorageService.remove(STORAGE_KEY);
             this.data = sanitizeTracking(JSON.parse(JSON.stringify(CHARACTER_DATA)));
             this.saveState();
             await this.uiAlert("Character sheet reset to defaults.", "Reset Done", "🔄");

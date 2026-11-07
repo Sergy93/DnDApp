@@ -37,7 +37,11 @@ import {
     calculateSlotDamage,
     resolveSpellData,
     loadInitialData,
-    createCharacterSheet
+    createCharacterSheet,
+    TemplateHelper,
+    ItemBonusHelper,
+    StorageService,
+    applyClassFeaturesSync
 } from '../src/app.js';
 
 test('String & Key Normalization Helpers', () => {
@@ -638,4 +642,62 @@ test('Data Constants & File Content Parsing', () => {
     const parsed = parseCharacterFileContent('{"identity":{"name":"Dorian"}}');
     assert.equal(parsed.identity.name, 'Dorian');
     assert.throws(() => parseCharacterFileContent(''), /Empty file/);
+});
+
+test('Refactored Domain Helpers: TemplateHelper, ItemBonusHelper, StorageService & applyClassFeaturesSync', () => {
+    // 1. TemplateHelper
+    const template = 'DC {{DC}}, Atk {{spellAtk}}, PB {{PB}}, Die {{bardicDie}}, Song {{songOfRestDie}}, Vessel {{vesselHours}}h';
+    const interpolated = TemplateHelper.interpolate(template, {
+        pb: 3,
+        spellDC: 15,
+        spellAtk: '+7',
+        bardicDie: '1d8',
+        songOfRestDie: '1d6',
+        vesselHours: 6
+    });
+    assert.equal(interpolated, 'DC 15, Atk +7, PB +3, Die 1d8, Song 1d6, Vessel 6h');
+    assert.equal(TemplateHelper.interpolate(null), '');
+
+    // 2. ItemBonusHelper
+    const form = {
+        bonusAttr: 'STR',
+        attrMode: 'bonus',
+        bonusAttrVal: 2,
+        saveType: 'DEX',
+        saveMode: 'bonus',
+        saveVal: 1
+    };
+    const parsedBonuses = ItemBonusHelper.parseStatBonuses(form);
+    assert.deepEqual(parsedBonuses, {
+        attr: 'STR',
+        attrMode: 'bonus',
+        STR: 2,
+        attrVal: 2,
+        saveType: 'DEX',
+        saveMode: 'bonus',
+        saveVal: 1
+    });
+
+    const list = [];
+    ItemBonusHelper.addUniqueItem(list, 'Shield');
+    ItemBonusHelper.addUniqueItem(list, 'Shield'); // duplicate, should be ignored
+    ItemBonusHelper.addUniqueItem(list, 'Misty Step');
+    assert.deepEqual(list, ['Shield', 'Misty Step']);
+    ItemBonusHelper.removeIndex(list, 0);
+    assert.deepEqual(list, ['Misty Step']);
+
+    // 3. StorageService fallback
+    const fallback = { fallback: true };
+    assert.deepEqual(StorageService.load('non_existent_key_xyz', fallback), fallback);
+
+    // 4. applyClassFeaturesSync
+    const mockChar = {
+        identity: { classes: [{ name: 'Bard', level: 1 }] },
+        magic: { slots: [] },
+        combat: { resources: [], traits: [] },
+        vitals: {}
+    };
+    const syncRes = applyClassFeaturesSync(mockChar);
+    assert.ok(syncRes);
+    assert.ok(Array.isArray(syncRes.newResources));
 });
