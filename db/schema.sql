@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS characters (
     concentration_json TEXT NOT NULL DEFAULT '{"active":false,"spellName":""}' CHECK (json_valid(concentration_json)),
     death_saves_json TEXT NOT NULL DEFAULT '{"successes":[false,false,false],"failures":[false,false,false]}' CHECK (json_valid(death_saves_json)),
     status_notes TEXT NOT NULL DEFAULT '',
+    quests_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(quests_json)),
+    campaign_notes TEXT NOT NULL DEFAULT '',
 
     -- Optimistic Concurrency Control & Schema Evolution
     version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),

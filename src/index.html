@@ -256,6 +256,22 @@
                     <div x-show="data.vitals.currentHp === 0" class="flex items-center gap-2 bg-dark-950 px-2.5 py-1 rounded-xl border border-red-600/60 animate-pulse">
                         <span class="text-xs font-black text-red-400">☠️ UNCONSCIOUS</span>
                     </div>
+
+                    <!-- Inspiration Points Widget -->
+                    <div class="flex items-center gap-1.5 bg-dark-950 px-2.5 py-1.5 rounded-xl border border-amber-600/50 shadow-inner"
+                        title="Heroic Inspiration (DM Inspiration)">
+                        <span class="text-sm">⭐</span>
+                        <span class="text-xs font-bold text-amber-300">Inspiration:</span>
+                        <span class="text-sm font-black text-amber-200 min-w-[1.2rem] text-center" x-text="data.vitals?.inspiration || 0"></span>
+                        <div class="flex items-center gap-1 ml-1">
+                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
+                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 disabled:opacity-30 disabled:cursor-not-allowed text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                title="Use 1 Inspiration point">-</button>
+                            <button type="button" @click="adjustInspiration(1)"
+                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                title="Gain 1 Inspiration point">+</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Active Tactical Reminders & Conditions -->
@@ -366,6 +382,9 @@
             <button @click="activeTab = 'progression'"
                 class="tab-btn flex-1 py-3 border-b-2 transition"
                 :class="activeTab === 'progression' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📜 Classes</button>
+            <button @click="activeTab = 'quests'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'quests' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">🗺️ Quests & Story</button>
         </nav>
 
         <main class="flex-grow p-3 md:p-5 overflow-y-auto">
@@ -448,7 +467,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-3 md:gap-5 mb-6 text-center">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mb-6 text-center">
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.ac"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">🛡️ Armor Class</div>
@@ -463,6 +482,19 @@
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">⚡ Initiative</div>
                         <span class="text-xs text-gray-400 block mt-0.5" x-text="stats.initDesc"></span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow flex flex-col justify-between">
+                        <div>
+                            <div class="text-3xl md:text-5xl text-amber-400 font-black" x-text="data.vitals?.inspiration || 0"></div>
+                            <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">✨ Inspiration</div>
+                            <span class="text-xs text-gray-400 block mt-0.5">Heroic / DM Points</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 mt-2">
+                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
+                                class="w-7 h-7 rounded-lg bg-dark-900 hover:bg-dark-950 disabled:opacity-30 disabled:cursor-not-allowed border border-gray-700 text-gray-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Use 1 Inspiration point">-</button>
+                            <button type="button" @click="adjustInspiration(1)"
+                                class="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Add 1 Inspiration point">+</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1323,6 +1355,120 @@
                 </div>
             </section>
 
+            <!-- TAB: QUESTS & STORY -->
+            <section x-show="activeTab === 'quests'" class="tab-view">
+                <!-- QUESTS SECTION HEADER -->
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-6 bg-dark-800 border border-gray-700 rounded-xl p-4 shadow">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-brand-300 flex items-center gap-2">
+                            <span>🗺️</span> Quests & Campaign Story
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Track adventures, milestones, objectives, and world lore</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Filters -->
+                        <div class="flex bg-dark-950 p-1 rounded-xl border border-gray-800 text-xs font-bold">
+                            <button type="button" @click="questFilter = 'active'"
+                                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                :class="questFilter === 'active' ? 'bg-brand-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'">
+                                <span>Active</span>
+                                <span class="bg-dark-900/80 px-1.5 py-0.2 rounded-full text-[10px]" x-text="activeQuestsCount"></span>
+                            </button>
+                            <button type="button" @click="questFilter = 'completed'"
+                                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                :class="questFilter === 'completed' ? 'bg-brand-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'">
+                                <span>Completed</span>
+                                <span class="bg-dark-900/80 px-1.5 py-0.2 rounded-full text-[10px]" x-text="completedQuestsCount"></span>
+                            </button>
+                            <button type="button" @click="questFilter = 'all'"
+                                class="px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                                :class="questFilter === 'all' ? 'bg-brand-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'">
+                                <span>All</span>
+                                <span class="bg-dark-900/80 px-1.5 py-0.2 rounded-full text-[10px]" x-text="(data.quests || []).length"></span>
+                            </button>
+                        </div>
+
+                        <!-- Add Quest Button -->
+                        <button type="button" @click="openQuestModal()"
+                            class="px-3.5 py-2 bg-brand-600 hover:bg-brand-500 border border-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow active:scale-95">
+                            <span>➕</span> New Quest
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- QUESTS LIST (2 COLS ON DESKTOP) -->
+                    <div class="lg:col-span-2 space-y-3">
+                        <template x-for="q in filteredQuests" :key="q.id">
+                            <div class="bg-dark-800 border rounded-xl p-4 shadow transition relative"
+                                :class="q.status === 'completed' ? 'border-gray-800 opacity-75 bg-dark-850' : 'border-gray-700 hover:border-brand-500/50'">
+                                <div class="flex items-start gap-3">
+                                    <input type="checkbox"
+                                        class="cb-custom cb-success mt-1 shrink-0"
+                                        :checked="q.status === 'completed'"
+                                        @change="toggleQuestStatus(q.id)"
+                                        :title="q.status === 'completed' ? 'Mark as Active' : 'Mark as Completed'">
+
+                                    <div class="flex-grow min-w-0">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <h3 class="font-bold text-sm md:text-base text-gray-100 flex items-center gap-2"
+                                                :class="{'line-through text-gray-500': q.status === 'completed'}">
+                                                <span x-text="q.title"></span>
+                                            </h3>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" @click="openQuestModal(q)"
+                                                    class="p-1 text-gray-400 hover:text-brand-300 rounded transition" title="Edit Quest">
+                                                    ✏️
+                                                </button>
+                                                <button type="button" @click="removeQuest(q.id)"
+                                                    class="p-1 text-gray-400 hover:text-red-400 rounded transition" title="Delete Quest">
+                                                    🗑️
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <p x-show="q.desc" class="text-xs text-gray-300 mt-2 leading-relaxed whitespace-pre-wrap" x-text="q.desc"></p>
+
+                                        <div class="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-gray-800/80 text-[11px]">
+                                            <span x-show="q.location" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-dark-900 border border-gray-700 text-gray-300">
+                                                <span>📍</span> <span x-text="q.location"></span>
+                                            </span>
+                                            <span x-show="q.reward" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-950/40 border border-amber-600/40 text-amber-300">
+                                                <span>🏆</span> <span x-text="q.reward"></span>
+                                            </span>
+                                            <span x-show="q.createdAt" class="text-gray-500 text-[10px] ml-auto" x-text="`Created: ${q.createdAt}`"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div x-show="filteredQuests.length === 0" class="bg-dark-850 border border-gray-800 rounded-xl p-8 text-center">
+                            <span class="text-4xl block mb-2">📜</span>
+                            <p class="text-sm font-bold text-gray-400">No quests found</p>
+                            <p class="text-xs text-gray-500 mt-1">Track quests, bounties, and goals by clicking "New Quest".</p>
+                        </div>
+                    </div>
+
+                    <!-- CAMPAIGN & WORLD NOTES (1 COL ON DESKTOP) -->
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 md:p-5 shadow flex flex-col">
+                        <div class="flex items-center justify-between border-b border-gray-700 pb-2 mb-3">
+                            <h3 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>📖</span> Campaign & World Notes
+                            </h3>
+                            <span class="text-[11px] text-gray-400 font-mono">Auto-saved</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">
+                            Free-form chronicle for campaign lore, NPC contacts, secrets, locations, and session summaries.
+                        </p>
+                        <textarea x-model="data.campaignNotes" @input="saveCampaignNotes()"
+                            class="w-full flex-grow min-h-[350px] bg-dark-950 border border-gray-800 rounded-xl p-3 text-xs md:text-sm text-gray-200 outline-none focus:border-brand-500 resize-y leading-relaxed font-sans"
+                            placeholder="Write your campaign chronicle, lore, rumors, NPC notes, places of interest..."></textarea>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
         <!-- FOOTER: SECONDARY ACTIONS -->
@@ -1350,7 +1496,7 @@
     </div>
 
     <!-- GENERIC MODAL -->
-    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
         x-show="modalDialog.open">
         <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-lg md:max-w-xl max-h-[85vh] w-full p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col">
             <div class="flex items-center gap-3 mb-3 border-b border-gray-800 pb-3 shrink-0">
@@ -1878,13 +2024,19 @@
                 <button @click="modalLogOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
             </div>
 
-            <div class="flex justify-between items-center mb-3 text-xs shrink-0">
+            <div class="flex flex-wrap justify-between items-center gap-2 mb-3 text-xs shrink-0">
                 <span class="text-gray-400">Key events during gameplay (damage, healing, rests, concentration & statuses):</span>
-                <button type="button" @click="clearSessionLog()"
-                    x-show="data.sessionLog && data.sessionLog.length > 0"
-                    class="text-red-400 hover:text-red-300 font-bold underline flex items-center gap-1">
-                    <span>🗑️</span> Clear Log
-                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="addCustomLogEntry()"
+                        class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-lg text-xs shadow flex items-center gap-1 transition">
+                        <span>✍️</span> + Add Note / Entry
+                    </button>
+                    <button type="button" @click="clearSessionLog()"
+                        x-show="data.sessionLog && data.sessionLog.length > 0"
+                        class="text-red-400 hover:text-red-300 font-bold underline flex items-center gap-1 text-xs">
+                        <span>🗑️</span> Clear Log
+                    </button>
+                </div>
             </div>
 
             <!-- Event List -->
@@ -2635,7 +2787,7 @@
                 <!-- 3. Select Slot or Innate / Item Resource -->
                 <div>
                     <label class="text-gray-300 font-bold block mb-1">2. Spell Slot / Resource to Spend</label>
-                    <select x-model="castSpellForm.slotKey"
+                    <select x-model="castSpellForm.selectedSlotKey"
                         class="w-full bg-dark-950 border rounded-xl p-2.5 font-bold outline-none transition"
                         :class="(selectedCastSlotOption && !selectedCastSlotOption.canCast) ? 'border-red-500 text-red-300' : 'border-gray-700 text-white focus:border-brand-500'">
                         <template x-for="opt in castSpellSlotOptions" :key="opt.key">
@@ -2750,6 +2902,67 @@
                         class="px-5 py-2 rounded-lg text-xs font-bold text-white shadow transition"
                         :class="wealthManagerMode === 'spend' ? 'bg-red-600 hover:bg-red-500' : 'bg-emerald-600 hover:bg-emerald-500'"
                         x-text="wealthManagerMode === 'spend' ? 'Spend Coins' : 'Add Coins'"></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: QUEST CREATE / EDIT -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        x-show="modalQuestOpen">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-lg w-full p-5 shadow-[0_0_50px_rgba(139,92,246,0.3)]">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-2.5 mb-4">
+                <h3 class="text-base font-bold text-brand-300 flex items-center gap-2">
+                    <span>🗺️</span>
+                    <span x-text="editingQuestId ? 'Edit Quest / Objective' : 'New Quest / Objective'"></span>
+                </h3>
+                <button @click="modalQuestOpen = false" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <form @submit.prevent="handleSaveQuest()" class="space-y-4 text-xs md:text-sm">
+                <div>
+                    <label class="text-gray-300 font-bold block mb-1">Quest Title *</label>
+                    <input type="text" x-model="questForm.title" required
+                        placeholder="e.g. Find the Lost Relic of Ilmater"
+                        class="w-full bg-dark-950 border border-gray-700 rounded-xl p-2.5 text-white outline-none focus:border-brand-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-gray-400 block mb-1">Location / Target</label>
+                        <input type="text" x-model="questForm.location"
+                            placeholder="e.g. Waterdeep, Crypts"
+                            class="w-full bg-dark-950 border border-gray-700 rounded-xl p-2 text-white outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 block mb-1">Reward / Bounty</label>
+                        <input type="text" x-model="questForm.reward"
+                            placeholder="e.g. 250 GP, Magic Ring"
+                            class="w-full bg-dark-950 border border-gray-700 rounded-xl p-2 text-white outline-none focus:border-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-gray-400 block mb-1">Status</label>
+                    <select x-model="questForm.status"
+                        class="w-full bg-dark-950 border border-gray-700 rounded-xl p-2 text-white outline-none focus:border-brand-500">
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-gray-400 block mb-1">Description & Objectives</label>
+                    <textarea x-model="questForm.desc" rows="4"
+                        placeholder="Details, clues, NPCs involved, requirements..."
+                        class="w-full bg-dark-950 border border-gray-700 rounded-xl p-2.5 text-white outline-none focus:border-brand-500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-gray-800">
+                    <button type="button" @click="modalQuestOpen = false"
+                        class="px-4 py-2 bg-dark-800 hover:bg-dark-700 rounded-lg text-xs font-bold text-gray-300">Cancel</button>
+                    <button type="submit"
+                        class="px-5 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-bold text-white shadow">Save Quest</button>
                 </div>
             </form>
         </div>

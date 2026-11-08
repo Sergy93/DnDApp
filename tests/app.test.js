@@ -701,3 +701,134 @@ test('Refactored Domain Helpers: TemplateHelper, ItemBonusHelper, StorageService
     assert.ok(syncRes);
     assert.ok(Array.isArray(syncRes.newResources));
 });
+
+test('Inspiration, Custom Log Entry, Quests & Story, and Upcast Spell Deduction', async () => {
+    const sheet = createCharacterSheet();
+    sheet.init();
+
+    // Headless test stubs
+    sheet.uiAlert = async () => true;
+    sheet.uiConfirm = async () => true;
+
+    // 1. Inspiration points tracking & bounds
+    sheet.data.vitals.inspiration = 0;
+    sheet.adjustInspiration(1);
+    assert.equal(sheet.data.vitals.inspiration, 1);
+    assert.ok(sheet.data.sessionLog.some(l => l.title?.includes('Inspiration') || l.text?.includes('Inspiration')));
+
+    sheet.adjustInspiration(2);
+    assert.equal(sheet.data.vitals.inspiration, 3);
+
+    sheet.adjustInspiration(-1);
+    assert.equal(sheet.data.vitals.inspiration, 2);
+
+    sheet.adjustInspiration(-5); // Clamps to 0
+    assert.equal(sheet.data.vitals.inspiration, 0);
+
+    // 2. Custom log entry (Story & notes in log)
+    sheet.uiPrompt = async () => 'Found a hidden map behind the altar.';
+    await sheet.addCustomLogEntry();
+    assert.ok(sheet.data.sessionLog.some(l => l.text === 'Found a hidden map behind the altar.'));
+
+    // Cancel prompt should not create log entry
+    const logCountBefore = sheet.data.sessionLog.length;
+    sheet.uiPrompt = async () => null;
+    await sheet.addCustomLogEntry();
+    assert.equal(sheet.data.sessionLog.length, logCountBefore);
+
+    // 3. Quests & Campaign Story
+    sheet.openQuestModal();
+    assert.equal(sheet.modalQuestOpen, true);
+    assert.equal(sheet.editingQuestId, null);
+
+    sheet.questForm = {
+        title: 'Find the Sunblade',
+        desc: 'Hidden in the crypts beneath Ravenloft',
+        location: 'Barovia',
+        reward: '500 GP',
+        status: 'active'
+    };
+    sheet.handleSaveQuest();
+    assert.equal(sheet.modalQuestOpen, false);
+    assert.equal(sheet.data.quests.length, 1);
+
+    const q = sheet.data.quests[0];
+    assert.equal(q.title, 'Find the Sunblade');
+    assert.equal(q.status, 'active');
+    assert.equal(sheet.activeQuestsCount, 1);
+    assert.equal(sheet.completedQuestsCount, 0);
+
+    // Filter testing
+    sheet.questFilter = 'active';
+    assert.equal(sheet.filteredQuests.length, 1);
+    sheet.questFilter = 'completed';
+    assert.equal(sheet.filteredQuests.length, 0);
+
+    // Toggle status
+    sheet.toggleQuestStatus(q.id);
+    assert.equal(q.status, 'completed');
+    assert.equal(sheet.activeQuestsCount, 0);
+    assert.equal(sheet.completedQuestsCount, 1);
+    assert.equal(sheet.filteredQuests.length, 1);
+
+    // Edit quest
+    sheet.openQuestModal(q);
+    assert.equal(sheet.editingQuestId, q.id);
+    assert.equal(sheet.questForm.title, 'Find the Sunblade');
+    sheet.questForm.title = 'Find the Sunblade & Destroy Strahd';
+    sheet.handleSaveQuest();
+    assert.equal(sheet.data.quests[0].title, 'Find the Sunblade & Destroy Strahd');
+
+    // Campaign notes
+    sheet.data.campaignNotes = 'Session 1: The party met at the Blood on the Vine tavern.';
+    sheet.saveCampaignNotes();
+    assert.equal(sheet.data.campaignNotes, 'Session 1: The party met at the Blood on the Vine tavern.');
+
+    // Remove quest
+    await sheet.removeQuest(q.id);
+    assert.equal(sheet.data.quests.length, 0);
+
+    // 4. Upcast spell slot deduction
+    sheet.data.magic = {
+        slots: [
+            { level: '1st Level', spent: [false, false, false, false], max: 4 },
+            { level: '2nd Level', spent: [false, false, false], max: 3 }
+        ],
+        spells: [
+            {
+                name: 'Dissonant Whispers',
+                level: 1,
+                damage: '3d6',
+                higherLevelScale: '+1d6',
+                actionType: 'action'
+            }
+        ]
+    };
+
+    sheet.openCastSpellModal('Dissonant Whispers');
+    assert.equal(sheet.modalCastSpellOpen, true);
+    assert.ok(sheet.castSpellSlotOptions.length >= 2);
+
+    const lvl1Opt = sheet.castSpellSlotOptions.find(o => o.slotLevel === 1);
+    const lvl2Opt = sheet.castSpellSlotOptions.find(o => o.slotLevel === 2);
+    assert.ok(lvl1Opt);
+    assert.ok(lvl2Opt);
+    assert.ok(lvl2Opt.scaledDamage.includes('+1d6')); // 3d6 scaled with +1d6 upcast
+
+    // Select upcast 2nd level slot option
+    sheet.castSpellForm.selectedSlotKey = lvl2Opt.key;
+    sheet.castSpellForm.slotKey = lvl2Opt.key;
+    assert.equal(sheet.selectedCastSlotOption.slotIndex, 1);
+
+    const lvl1SpentBefore = sheet.data.magic.slots[0].spent.filter(Boolean).length;
+    const lvl2SpentBefore = sheet.data.magic.slots[1].spent.filter(Boolean).length;
+
+    await sheet.executeCastSpell();
+
+    const lvl1SpentAfter = sheet.data.magic.slots[0].spent.filter(Boolean).length;
+    const lvl2SpentAfter = sheet.data.magic.slots[1].spent.filter(Boolean).length;
+
+    // Must deduct from 2nd Level slot (slotIndex 1), NOT 1st Level slot (slotIndex 0)
+    assert.equal(lvl1SpentAfter, lvl1SpentBefore, '1st level slots should not be deducted');
+    assert.equal(lvl2SpentAfter, lvl2SpentBefore + 1, '2nd level slot must be deducted for upcast');
+});

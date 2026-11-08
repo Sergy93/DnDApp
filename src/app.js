@@ -499,6 +499,9 @@ function sanitizeTracking(d) {
     if (!d || typeof d !== 'object') d = JSON.parse(JSON.stringify(CHARACTER_DATA));
     if (!d.identity || typeof d.identity !== 'object') d.identity = {};
     if (!d.vitals || typeof d.vitals !== 'object') d.vitals = {};
+    d.vitals.inspiration = Math.max(0, parseInt(d.vitals.inspiration, 10) || 0);
+    if (!Array.isArray(d.quests)) d.quests = [];
+    if (typeof d.campaignNotes !== 'string') d.campaignNotes = '';
     if (!d.combat || typeof d.combat !== 'object') d.combat = {};
     if (!d.inventory || typeof d.inventory !== 'object') d.inventory = {};
 
@@ -1206,6 +1209,7 @@ function createCharacterSheet() {
         castSpellForm: {
             spellName: '',
             selectedSlotKey: '',
+            slotKey: '',
             note: ''
         },
 
@@ -1235,6 +1239,12 @@ function createCharacterSheet() {
         modalToolOpen: false,
         editingToolIndex: null,
         toolForm: { name: '', desc: '', icon: '🎒', isInstrument: false },
+
+        // Quests & Story Modal
+        questFilter: 'active', // 'active' | 'completed' | 'all'
+        modalQuestOpen: false,
+        editingQuestId: null,
+        questForm: { title: '', desc: '', location: '', reward: '', status: 'active' },
 
         // Spell Management Modal
         modalSpellAddOpen: false,
@@ -1574,8 +1584,9 @@ function createCharacterSheet() {
         get selectedCastSlotOption() {
             const opts = this.castSpellSlotOptions;
             if (opts.length === 0) return null;
-            if (this.castSpellForm.selectedSlotKey) {
-                const found = opts.find(o => o.key === this.castSpellForm.selectedSlotKey);
+            const chosenKey = this.castSpellForm.selectedSlotKey || this.castSpellForm.slotKey;
+            if (chosenKey) {
+                const found = opts.find(o => o.key === chosenKey);
                 if (found) return found;
             }
             return opts.find(o => o.canCast) || opts[0];
@@ -1793,6 +1804,27 @@ function createCharacterSheet() {
                 const source = normalizeKey(bg.source || '');
                 return name.includes(q) || desc.includes(q) || feat.includes(q) || source.includes(q);
             });
+        },
+
+        get filteredQuests() {
+            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
+            if (this.questFilter === 'active') {
+                return list.filter(q => q.status !== 'completed');
+            }
+            if (this.questFilter === 'completed') {
+                return list.filter(q => q.status === 'completed');
+            }
+            return list;
+        },
+
+        get activeQuestsCount() {
+            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
+            return list.filter(q => q.status !== 'completed').length;
+        },
+
+        get completedQuestsCount() {
+            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
+            return list.filter(q => q.status === 'completed').length;
         },
 
         // Persistence
@@ -2781,6 +2813,7 @@ function createCharacterSheet() {
             this.castSpellForm = {
                 spellName: chosenName,
                 selectedSlotKey: '',
+                slotKey: '',
                 note: ''
             };
             this.onCastSpellSelectionChange();
@@ -2790,7 +2823,9 @@ function createCharacterSheet() {
         onCastSpellSelectionChange() {
             const opts = this.castSpellSlotOptions;
             const firstAvailable = opts.find(o => o.canCast);
-            this.castSpellForm.selectedSlotKey = firstAvailable ? firstAvailable.key : (opts[0]?.key || '');
+            const key = firstAvailable ? firstAvailable.key : (opts[0]?.key || '');
+            this.castSpellForm.selectedSlotKey = key;
+            this.castSpellForm.slotKey = key;
         },
 
         async executeCastSpell() {
@@ -3158,6 +3193,123 @@ function createCharacterSheet() {
 
             this.saveState();
             await this.uiAlert("Long Rest completed. Health and resources fully restored.", "Long Rest", "✨");
+        },
+
+        // Heroic Inspiration
+        adjustInspiration(delta) {
+            if (!this.data.vitals) this.data.vitals = {};
+            const cur = Math.max(0, parseInt(this.data.vitals.inspiration, 10) || 0);
+            const next = Math.max(0, cur + delta);
+            if (next === cur) return;
+            this.data.vitals.inspiration = next;
+            if (delta > 0) {
+                this.logEvent('⭐', 'Heroic Inspiration', `Gained 1 Inspiration point (Total: ${next}).`);
+            } else {
+                this.logEvent('⭐', 'Heroic Inspiration', `Expended 1 Inspiration point (Remaining: ${next}).`);
+            }
+            this.saveState();
+        },
+
+        // Custom Freeform Log Entry
+        async addCustomLogEntry() {
+            const text = await this.uiPrompt(
+                "Enter your custom event, milestone, or story note to record in the session log:",
+                "Add Session Note / Entry",
+                "",
+                "e.g. Discovered the hidden tunnel, Met with the guildmaster...",
+                "✍️",
+                "Add Entry"
+            );
+            if (!text || !text.trim()) return;
+            this.logEvent('✍️', 'Story / Note', text.trim());
+        },
+
+        // Quests & Story Management
+        openQuestModal(target = null) {
+            if (target && typeof target === 'object') {
+                this.editingQuestId = target.id;
+                this.questForm = {
+                    title: target.title || '',
+                    desc: target.desc || '',
+                    location: target.location || '',
+                    reward: target.reward || '',
+                    status: target.status || 'active'
+                };
+            } else {
+                this.editingQuestId = null;
+                this.questForm = {
+                    title: '',
+                    desc: '',
+                    location: '',
+                    reward: '',
+                    status: 'active'
+                };
+            }
+            this.modalQuestOpen = true;
+        },
+
+        handleSaveQuest() {
+            const title = (this.questForm.title || '').trim();
+            if (!title) return;
+            if (!Array.isArray(this.data.quests)) this.data.quests = [];
+
+            if (this.editingQuestId) {
+                const idx = this.data.quests.findIndex(q => q.id === this.editingQuestId);
+                if (idx >= 0) {
+                    this.data.quests[idx] = {
+                        ...this.data.quests[idx],
+                        title,
+                        desc: (this.questForm.desc || '').trim(),
+                        location: (this.questForm.location || '').trim(),
+                        reward: (this.questForm.reward || '').trim(),
+                        status: this.questForm.status || 'active'
+                    };
+                    this.logEvent('🗺️', 'Quest Updated', `Updated quest "${title}".`);
+                }
+            } else {
+                const newQuest = {
+                    id: 'quest_' + Date.now() + Math.random().toString(36).substring(2, 6),
+                    title,
+                    desc: (this.questForm.desc || '').trim(),
+                    location: (this.questForm.location || '').trim(),
+                    reward: (this.questForm.reward || '').trim(),
+                    status: this.questForm.status || 'active',
+                    createdAt: new Date().toLocaleDateString()
+                };
+                this.data.quests.unshift(newQuest);
+                this.logEvent('🗺️', 'New Quest Accepted', `Added quest "${title}".`);
+            }
+            this.modalQuestOpen = false;
+            this.editingQuestId = null;
+            this.saveState();
+        },
+
+        toggleQuestStatus(id) {
+            if (!Array.isArray(this.data.quests)) return;
+            const q = this.data.quests.find(item => item.id === id);
+            if (!q) return;
+            q.status = q.status === 'completed' ? 'active' : 'completed';
+            if (q.status === 'completed') {
+                this.logEvent('✅', 'Quest Completed', `Marked quest "${q.title}" as completed!`);
+            } else {
+                this.logEvent('🗺️', 'Quest Reopened', `Reopened quest "${q.title}".`);
+            }
+            this.saveState();
+        },
+
+        async removeQuest(id) {
+            if (!Array.isArray(this.data.quests)) return;
+            const q = this.data.quests.find(item => item.id === id);
+            if (!q) return;
+            const ok = await this.uiConfirm(`Do you want to delete the quest "${q.title}"?`, "Delete Quest", "🗑️", "Delete", "bg-red-600 hover:bg-red-500");
+            if (!ok) return;
+            this.data.quests = this.data.quests.filter(item => item.id !== id);
+            this.logEvent('🗑️', 'Quest Deleted', `Deleted quest "${q.title}".`);
+            this.saveState();
+        },
+
+        saveCampaignNotes() {
+            this.saveState();
         },
 
         // Export / Import compatible with JSON (and legacy JS format)

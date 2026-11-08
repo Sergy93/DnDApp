@@ -146,12 +146,14 @@ function buildDatabase() {
                 identity_json, vitals_json, attributes_json, skills_json,
                 inventory_json, magic_json, combat_json, progression_json,
                 conditions_json, concentration_json, death_saves_json, status_notes,
+                quests_json, campaign_notes,
                 version, schema_version
             ) VALUES (
                 ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
+                ?, ?,
                 1, 1
             )
         `);
@@ -175,7 +177,9 @@ function buildDatabase() {
             JSON.stringify(characterData.conditions || []),
             JSON.stringify(characterData.concentration || { active: false, spellName: '' }),
             JSON.stringify(characterData.deathSaves || { successes: [false, false, false], failures: [false, false, false] }),
-            String(characterData.statusNotes || '')
+            String(characterData.statusNotes || ''),
+            JSON.stringify(characterData.quests || []),
+            String(characterData.campaignNotes || '')
         );
 
         // 2. Insert Session Logs
