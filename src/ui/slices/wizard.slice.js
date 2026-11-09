@@ -181,10 +181,15 @@ export function createWizardSlice() {
                 chosenSpells: []
             };
             this.wizardOpen = true;
+            this.currentView = 'create';
+            CharacterRouterService.navigateToCreate();
         },
 
         closeNewHeroWizard() {
             this.wizardOpen = false;
+            this.currentView = 'sheet';
+            const activeSlug = this.data?.slug || this.charactersRegistry?.[0]?.slug || 'dorian';
+            CharacterRouterService.navigateToSlug(activeSlug);
         },
 
         wizardNextStep() {
@@ -310,6 +315,7 @@ export function createWizardSlice() {
             CharacterRouterService.navigateToSlug(saved.slug);
 
             this.wizardOpen = false;
+            this.currentView = 'sheet';
             await this.uiAlert(`Hero "${saved.characterData.identity.name}" has stepped into the realm at /#/c/${saved.slug}!`, "Hero Summoned", "✨");
         }
     };

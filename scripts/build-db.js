@@ -142,26 +142,29 @@ function buildDatabase() {
 
         const insertCharacter = db.prepare(`
             INSERT INTO characters (
-                id, user_id, name, race, total_level, classes_summary,
+                id, user_id, slug, name, race, total_level, classes_summary,
                 identity_json, vitals_json, attributes_json, skills_json,
                 inventory_json, magic_json, combat_json, progression_json,
                 conditions_json, concentration_json, death_saves_json, status_notes,
                 quests_json, campaign_notes,
-                version, schema_version
+                version, schema_version, client_updated_at
             ) VALUES (
-                ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?,
-                1, 1
+                1, 1, ?
             )
         `);
 
         const characterId = 'dorian-gray';
+        const characterSlug = 'dorian';
+        const nowMs = Date.now();
         insertCharacter.run(
             characterId,
             'default-user',
+            characterSlug,
             characterData.identity?.name || 'Dorian',
             characterData.identity?.race || 'Unknown',
             totalLevel,
@@ -179,7 +182,8 @@ function buildDatabase() {
             JSON.stringify(characterData.deathSaves || { successes: [false, false, false], failures: [false, false, false] }),
             String(characterData.statusNotes || ''),
             JSON.stringify(characterData.quests || []),
-            String(characterData.campaignNotes || '')
+            String(characterData.campaignNotes || ''),
+            nowMs
         );
 
         // 2. Insert Session Logs

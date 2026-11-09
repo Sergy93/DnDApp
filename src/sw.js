@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dorian-dnd-cache-v38';
+const CACHE_NAME = 'dorian-dnd-cache-v39';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -35,6 +35,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
+
+  // Let API requests bypass Service Worker cache
+  try {
+    const url = new URL(event.request.url);
+    if (url.pathname.startsWith('/api/')) return;
+  } catch {}
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {

@@ -1,0 +1,409 @@
+<!-- DEDICATED CHARACTER CREATION VIEW (/#/create) -->
+<div x-show="currentView === 'create' || wizardOpen" x-cloak
+    class="fixed inset-0 z-50 bg-dark-950/98 backdrop-blur-md flex flex-col overflow-y-auto">
+
+    <!-- WIZARD HEADER -->
+    <header class="bg-dark-900 border-b border-brand-900/80 px-4 py-3 sm:px-6 shrink-0 shadow-lg">
+        <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <button type="button" @click="closeNewHeroWizard()"
+                    class="px-3 py-1.5 rounded-xl bg-dark-950 hover:bg-dark-800 border border-gray-700 text-xs font-bold text-gray-300 hover:text-white transition flex items-center gap-1.5 shadow"
+                    title="Volver a la hoja de personaje">
+                    <span>←</span>
+                    <span class="hidden sm:inline">Volver a la Hoja</span>
+                </button>
+                <div>
+                    <h2 class="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase">
+                        Character Creation Wizard
+                    </h2>
+                    <p class="text-xs text-gray-400">D&D 5e Rules As Written (PHB, XGE, TCE)</p>
+                </div>
+            </div>
+
+            <!-- STEP BUBBLES -->
+            <div class="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
+                <button type="button" @click="wizardStep = 1"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 1 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>1</span>
+                    <span class="hidden md:inline">Identity</span>
+                </button>
+                <button type="button" @click="wizardStep = 2"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 2 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>2</span>
+                    <span class="hidden md:inline">Race</span>
+                </button>
+                <button type="button" @click="wizardStep = 3"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 3 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>3</span>
+                    <span class="hidden md:inline">Class</span>
+                </button>
+                <button type="button" @click="wizardStep = 4"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 4 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>4</span>
+                    <span class="hidden md:inline">Attributes</span>
+                </button>
+                <button type="button" x-show="wizardIsSpellcaster" @click="wizardStep = 5"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 5 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>5</span>
+                    <span class="hidden md:inline">Magic</span>
+                </button>
+                <button type="button" @click="wizardStep = 6"
+                    class="px-2.5 py-1 rounded-lg border transition flex items-center gap-1"
+                    :class="wizardStep === 6 ? 'bg-brand-600 text-white border-brand-500 shadow' : 'bg-dark-950 text-gray-400 border-gray-800 hover:text-white'">
+                    <span>6</span>
+                    <span class="hidden md:inline">Review</span>
+                </button>
+            </div>
+
+            <button type="button" @click="closeNewHeroWizard()"
+                class="text-gray-400 hover:text-white p-1 text-lg rounded-lg hover:bg-dark-800 transition"
+                title="Cancel and close wizard">✖</button>
+        </div>
+    </header>
+
+    <!-- WIZARD CONTENT BODY -->
+    <div class="flex-grow max-w-4xl mx-auto w-full p-4 sm:p-6 md:p-8">
+
+        <!-- STEP 1: IDENTITY & CONCEPT -->
+        <section x-show="wizardStep === 1" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>👤</span> Step 1: Concept & Identity
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Define your character's name, moral alignment, and personal background.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Character Name</label>
+                    <input type="text" x-model="wizardData.name" placeholder="e.g. Elminster, Kaelen, Lyra..."
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white font-bold text-sm focus:border-brand-500 focus:outline-none shadow-inner">
+                    <p class="text-[11px] text-gray-500 mt-1">
+                        URL Slug Preview: <span class="text-brand-300 font-mono" x-text="`#/c/${slugifyCharacterName(wizardData.name)}`"></span>
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Alignment</label>
+                    <select x-model="wizardData.alignment"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-brand-500 focus:outline-none">
+                        <option value="Lawful Good">Lawful Good (LG)</option>
+                        <option value="Neutral Good">Neutral Good (NG)</option>
+                        <option value="Chaotic Good">Chaotic Good (CG)</option>
+                        <option value="Lawful Neutral">Lawful Neutral (LN)</option>
+                        <option value="True Neutral">True Neutral (TN)</option>
+                        <option value="Chaotic Neutral">Chaotic Neutral (CN)</option>
+                        <option value="Lawful Evil">Lawful Evil (LE)</option>
+                        <option value="Neutral Evil">Neutral Evil (NE)</option>
+                        <option value="Chaotic Evil">Chaotic Evil (CE)</option>
+                        <option value="Unaligned">Unaligned</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Background Selector -->
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
+                <label class="block text-xs font-bold text-gray-300 uppercase mb-2">Background Origin (20 Compendium Options)</label>
+                <select x-model="wizardData.background"
+                    class="w-full bg-dark-950 border border-gray-700 rounded-xl px-3.5 py-2 text-white text-sm focus:border-brand-500 focus:outline-none mb-3">
+                    <template x-for="bg in wizardBackgroundsList" :key="bg.key">
+                        <option :value="bg.name" x-text="`${bg.name} — Skills: ${bg.skills.join(', ')}`"></option>
+                    </template>
+                </select>
+                <div class="flex items-center gap-2 flex-wrap text-xs text-gray-400">
+                    <span class="font-bold text-gray-300">Granted Skills:</span>
+                    <template x-for="sk in wizardBackgroundSkills" :key="sk">
+                        <span class="px-2 py-0.5 rounded bg-dark-950 border border-brand-800/60 text-brand-300 font-bold capitalize" x-text="sk.replace('_', ' ')"></span>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: RACE & SPECIES -->
+        <section x-show="wizardStep === 2" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>🧬</span> Step 2: Race & Species
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Select race and subrace to apply speed, darkvision, senses, and racial traits.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Primary Race</label>
+                    <select x-model="wizardData.race" @change="onWizardRaceChange()"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-brand-500 focus:outline-none">
+                        <template x-for="r in wizardRacesList" :key="r.key">
+                            <option :value="r.key" x-text="`${r.name} (${r.speed})`"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div x-show="wizardSubracesList.length > 0">
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Subrace / Lineage</label>
+                    <select x-model="wizardData.subrace"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-brand-500 focus:outline-none">
+                        <template x-for="sr in wizardSubracesList" :key="sr.key">
+                            <option :value="sr.key" x-text="sr.name"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ASI Mode Toggle -->
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
+                    <span class="text-sm font-bold text-gray-200">Ability Score Increase (ASI) Rule</span>
+                    <div class="flex items-center gap-1 bg-dark-950 p-0.5 rounded-lg border border-gray-800 text-xs">
+                        <button type="button" @click="wizardData.asiMode = 'traditional'"
+                            class="px-2.5 py-1 rounded-md font-bold transition"
+                            :class="wizardData.asiMode === 'traditional' ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-white'">
+                            Classic RAW
+                        </button>
+                        <button type="button" @click="wizardData.asiMode = 'flexible'"
+                            class="px-2.5 py-1 rounded-md font-bold transition"
+                            :class="wizardData.asiMode === 'flexible' ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-white'">
+                            Tasha's Origin (TCE)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <span class="font-bold text-gray-400">Racial Bonuses Applied:</span>
+                    <template x-for="(bonus, attr) in wizardRacialAsi" :key="attr">
+                        <span x-show="bonus > 0"
+                            class="px-2 py-0.5 rounded bg-brand-950 border border-brand-700/60 text-brand-300 font-bold"
+                            x-text="`+${bonus} ${attr}`"></span>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: CLASS & LEVEL -->
+        <section x-show="wizardStep === 3" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>⚔️</span> Step 3: Class, Subclass & Skills
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Select class, starting level, subclass, and class skill proficiencies.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Class</label>
+                    <select x-model="wizardData.class" @change="onWizardClassChange()"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-brand-500 focus:outline-none">
+                        <template x-for="c in wizardClassesList" :key="c.key">
+                            <option :value="c.key" x-text="`${c.name} (${c.hitDie})`"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">Starting Level (1 - 20)</label>
+                    <input type="number" min="1" max="20" x-model.number="wizardData.level" @change="onWizardClassChange()"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white font-bold text-sm focus:border-brand-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 uppercase mb-1.5">
+                        <span>Subclass</span>
+                        <span class="text-[10px] text-gray-400 font-normal" x-text="`(Unlocks Lvl ${wizardClassRules.subclassLevel})`"></span>
+                    </label>
+                    <select x-model="wizardData.subclass" :disabled="wizardData.level < wizardClassRules.subclassLevel"
+                        class="w-full bg-dark-900 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-brand-500 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed">
+                        <option value="">Select Subclass...</option>
+                        <template x-for="sc in wizardSubclassesList" :key="sc.key">
+                            <option :value="sc.name" x-text="sc.name"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Class Skills Selection -->
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
+                    <span class="text-sm font-bold text-gray-200">
+                        Class Skill Proficiencies
+                    </span>
+                    <span class="text-xs font-mono font-bold"
+                        :class="wizardData.chosenSkills.length === wizardClassRules.skillsChooseCount ? 'text-emerald-400' : 'text-amber-400'"
+                        x-text="`Selected: ${wizardData.chosenSkills.length} of ${wizardClassRules.skillsChooseCount}`"></span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <template x-for="sk in wizardAllowedSkillsList" :key="sk.id">
+                        <button type="button" @click="toggleWizardSkill(sk.id)"
+                            class="px-3 py-2 rounded-lg border text-left text-xs font-semibold transition flex items-center justify-between gap-1"
+                            :class="isWizardSkillSelected(sk.id) ? 'bg-brand-950/80 border-brand-500/80 text-brand-200' : 'bg-dark-950 border-gray-800 text-gray-400 hover:text-white'">
+                            <span x-text="sk.name"></span>
+                            <span x-show="wizardBackgroundSkills.includes(sk.id)" class="text-[10px] text-purple-400 font-bold">Origin</span>
+                            <span x-show="wizardData.chosenSkills.includes(sk.id)" class="text-[10px] text-emerald-400 font-bold">✓</span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: ABILITY SCORES -->
+        <section x-show="wizardStep === 4" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>💪</span> Step 4: Ability Scores
+                    </h3>
+                    <p class="text-xs text-gray-400 mt-1">Generate ability scores using standard array, point buy, or 4d6.</p>
+                </div>
+
+                <!-- Method Switcher -->
+                <div class="flex items-center gap-1 bg-dark-900 p-1 rounded-xl border border-gray-800 text-xs">
+                    <button type="button" @click="wizardData.scoreMethod = 'standard'"
+                        class="px-2.5 py-1 rounded-lg font-bold transition"
+                        :class="wizardData.scoreMethod === 'standard' ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-white'">Standard Array</button>
+                    <button type="button" @click="wizardData.scoreMethod = 'pointbuy'"
+                        class="px-2.5 py-1 rounded-lg font-bold transition"
+                        :class="wizardData.scoreMethod === 'pointbuy' ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-white'">Point Buy (27)</button>
+                    <button type="button" @click="wizardData.scoreMethod = 'roll4d6'"
+                        class="px-2.5 py-1 rounded-lg font-bold transition"
+                        :class="wizardData.scoreMethod === 'roll4d6' ? 'bg-brand-600 text-white' : 'text-gray-400 hover:text-white'">Roll 4d6</button>
+                </div>
+            </div>
+
+            <!-- Point Buy Controls -->
+            <div x-show="wizardData.scoreMethod === 'pointbuy'" class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-4">
+                    <span class="text-sm font-bold text-gray-200">Point Buy Allocator (8 to 15)</span>
+                    <span class="text-xs font-mono font-bold"
+                        :class="wizardPointBuyRemaining === 0 ? 'text-emerald-400' : 'text-brand-300'"
+                        x-text="`Remaining Points: ${wizardPointBuyRemaining} / 27`"></span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <template x-for="(attr, k) in wizardFinalAttributes" :key="k">
+                        <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 text-center flex flex-col justify-between">
+                            <span class="font-bold text-xs text-gray-400" x-text="k"></span>
+                            <div class="text-xl font-black text-white my-1" x-text="wizardData.pointBuyScores[k]"></div>
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" @click="adjustPointBuy(k, -1)" :disabled="wizardData.pointBuyScores[k] <= 8"
+                                    class="w-7 h-7 rounded bg-dark-900 border border-gray-700 text-gray-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs">–</button>
+                                <button type="button" @click="adjustPointBuy(k, 1)" :disabled="wizardData.pointBuyScores[k] >= 15 || wizardPointBuyRemaining <= 0"
+                                    class="w-7 h-7 rounded bg-dark-900 border border-gray-700 text-gray-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed font-bold text-xs">+</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Roll 4d6 Controls -->
+            <div x-show="wizardData.scoreMethod === 'roll4d6'" class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow text-center">
+                <p class="text-xs text-gray-400 mb-3">Rolls 4d6 and drops the lowest die for each attribute.</p>
+                <button type="button" @click="roll4d6Attributes()"
+                    class="px-4 py-2 bg-brand-600 hover:bg-brand-500 rounded-xl text-white font-bold text-xs shadow transition active:scale-95">
+                    🎲 Roll 4d6 Drop Lowest
+                </button>
+            </div>
+
+            <!-- Live Final Attributes Summary Card -->
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
+                <h4 class="text-sm font-bold text-gray-200 border-b border-gray-800 pb-2 mb-3">
+                    Final Attributes & Modifiers (Base + Racial ASI)
+                </h4>
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-2.5 text-center">
+                    <template x-for="(attr, k) in wizardFinalAttributes" :key="k">
+                        <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                            <span class="text-[11px] font-bold text-gray-400 block uppercase" x-text="k"></span>
+                            <div class="text-xl font-black text-brand-300 my-0.5" x-text="attr.score"></div>
+                            <span class="text-xs font-bold text-emerald-400 block" x-text="attr.modStr"></span>
+                            <span class="text-[10px] text-gray-500 block" x-text="`(${attr.base} + ${attr.racial})`"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: MAGIC & SPELLS -->
+        <section x-show="wizardStep === 5" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>✨</span> Step 5: Magic & Spellcasting
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Spellcasting parameters calibrated for <span class="text-brand-300 font-bold" x-text="wizardData.class"></span>.</p>
+            </div>
+
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-5 shadow text-center">
+                <p class="text-xs text-gray-300">
+                    Spellcasting key: <strong class="text-brand-300 uppercase" x-text="wizardClassRules.spellcastingAttr"></strong>.
+                    Spell save DC and attack bonuses will be calibrated automatically.
+                </p>
+                <p class="text-[11px] text-gray-500 mt-2">
+                    You can manage and expand your full spellbook from the Combat Tab at any time!
+                </p>
+            </div>
+        </section>
+
+        <!-- STEP 6: REVIEW & SUMMON -->
+        <section x-show="wizardStep === 6" class="space-y-6">
+            <div class="border-b border-gray-800 pb-3">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>📜</span> Step 6: Review & Summon Hero
+                </h3>
+                <p class="text-xs text-gray-400 mt-1">Confirm your hero's starting traits before stepping into the realm.</p>
+            </div>
+
+            <!-- Hero Summary Card -->
+            <div class="bg-dark-900 border border-brand-900/60 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-800 pb-4">
+                    <div>
+                        <h4 class="text-2xl font-black text-white" x-text="wizardData.name || 'Hero'"></h4>
+                        <p class="text-sm text-brand-300 font-semibold"
+                            x-text="`Level ${wizardData.level} ${capitalizeWord(wizardData.class)}${wizardData.subclass ? ' (' + wizardData.subclass + ')' : ''}`"></p>
+                        <p class="text-xs text-gray-400"
+                            x-text="`${wizardData.subrace ? capitalizeWord(wizardData.subrace) + ' ' : ''}${capitalizeWord(wizardData.race)} • ${wizardData.background} • ${wizardData.alignment}`"></p>
+                    </div>
+                    <div class="text-right font-mono text-xs text-gray-400">
+                        URL: <span class="text-brand-400 font-bold" x-text="`#/c/${slugifyCharacterName(wizardData.name)}`"></span>
+                    </div>
+                </div>
+
+                <!-- Attributes Row -->
+                <div class="grid grid-cols-6 gap-2 text-center text-xs">
+                    <template x-for="(attr, k) in wizardFinalAttributes" :key="k">
+                        <div class="bg-dark-950 p-2 rounded-lg border border-gray-800">
+                            <span class="text-[10px] text-gray-500 font-bold block" x-text="k"></span>
+                            <strong class="text-sm text-white" x-text="attr.score"></strong>
+                            <span class="text-[10px] text-emerald-400 block" x-text="attr.modStr"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- WIZARD FOOTER NAVIGATION -->
+    <footer class="bg-dark-900 border-t border-brand-900/80 px-4 py-3 sm:px-6 shrink-0 shadow-lg">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-4">
+            <button type="button" @click="wizardPrevStep()" :disabled="wizardStep <= 1"
+                class="px-4 py-2 rounded-xl bg-dark-950 border border-gray-700 text-xs font-bold text-gray-300 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition">
+                ← Previous Step
+            </button>
+
+            <div class="text-xs text-gray-500 font-mono">
+                Step <span x-text="wizardStep"></span> of 6
+            </div>
+
+            <button type="button" x-show="wizardStep < 6" @click="wizardNextStep()"
+                class="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-xs font-bold text-white shadow-lg transition active:scale-95">
+                Next Step →
+            </button>
+
+            <button type="button" x-show="wizardStep === 6" @click="finalizeAndCreateHero()"
+                class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-purple-600 hover:from-brand-500 hover:to-purple-500 text-sm font-black text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] transition active:scale-95 flex items-center gap-2">
+                <span>✨</span> Summon Hero
+            </button>
+        </div>
+    </footer>
+</div>

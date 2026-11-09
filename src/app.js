@@ -34,6 +34,7 @@ import { calculateMovementAndSenses, getArmorMinStr } from "./domain/calculators
 import { calculateSpellPreparation } from "./domain/calculators/spell-preparation.calculator.js";
 import { CharacterStorageService, slugifyCharacterName } from "./services/character-storage.service.js";
 import { CharacterRouterService } from "./services/character-router.service.js";
+import { CharacterSyncService, SYNC_STATUS } from "./services/character-sync.service.js";
 import { composeSlices } from "./helpers/slice.helper.js";
 import { getAllEquippedItems } from "./domain/items/equipped-items.helper.js";
 import { createQuestsSlice } from "./ui/slices/quests.slice.js";
@@ -507,6 +508,11 @@ function createCharacterSheet() {
         CONSTANTS: DND_CONSTANTS,
         data: loadInitialData(),
         activeTab: 'profile',
+        currentView: 'sheet',
+        syncStatus: 'synced',
+        syncError: null,
+        userProfile: null,
+        isLoggedIn: false,
         compendiumCount: 0,
         charactersRegistry: [],
         activeCharacterId: null,
@@ -531,15 +537,74 @@ function createCharacterSheet() {
             this.charactersRegistry = CharacterStorageService.getRegistry();
             this.activeCharacterId = this.data?.id || CharacterStorageService.getActiveCharacterId();
 
-            if (this.data?.slug && typeof window !== 'undefined') {
-                CharacterRouterService.navigateToSlug(this.data.slug, true);
+            CharacterSyncService.initListeners();
+            this.syncStatus = CharacterSyncService.getStatus();
+            CharacterSyncService.onStatusChange((status, err) => {
+                this.syncStatus = status;
+                this.syncError = err;
+            });
+
+            const storedProfile = CharacterSyncService.getUserProfile();
+            if (storedProfile) {
+                this.userProfile = storedProfile;
+                this.isLoggedIn = Boolean(storedProfile.email);
+            }
+            if (typeof fetch !== 'undefined') {
+                CharacterSyncService.checkAuth().then(auth => {
+                    if (auth && auth.user) {
+                        this.userProfile = auth.user;
+                        this.isLoggedIn = auth.authenticated;
+                    }
+                }).catch(() => {});
             }
 
-            CharacterRouterService.onRouteChanged((newSlug) => {
-                if (newSlug && newSlug !== this.data?.slug) {
-                    this.loadCharacterBySlug(newSlug);
+            const route = CharacterRouterService.parseRoute();
+            const loggedOut = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('dnd_logged_out') === 'true';
+            const hasCharacters = this.charactersRegistry.length > 0;
+
+            if (route.view === 'login') {
+                if (!loggedOut && (hasCharacters || this.isLoggedIn)) {
+                    const activeSlug = this.data?.slug || this.charactersRegistry[0]?.slug || 'dorian';
+                    CharacterRouterService.navigateToSlug(activeSlug, true);
+                    this.currentView = 'sheet';
+                } else {
+                    this.currentView = 'login';
+                }
+            } else if (route.view === 'create') {
+                this.currentView = 'create';
+                this.openNewHeroWizard();
+            } else if (route.view === 'sheet') {
+                this.currentView = 'sheet';
+                if (route.slug && route.slug !== this.data?.slug) {
+                    this.loadCharacterBySlug(route.slug);
+                } else if (this.data?.slug && typeof window !== 'undefined') {
+                    CharacterRouterService.navigateToSlug(this.data.slug, true);
+                }
+            } else {
+                const activeSlug = this.data?.slug || this.charactersRegistry[0]?.slug || 'dorian';
+                CharacterRouterService.navigateToSlug(activeSlug, true);
+                this.currentView = 'sheet';
+            }
+
+            CharacterRouterService.onRouteChanged((newSlug, newRoute) => {
+                if (newRoute?.view === 'login') {
+                    this.currentView = 'login';
+                } else if (newRoute?.view === 'create') {
+                    this.currentView = 'create';
+                    this.openNewHeroWizard();
+                } else if (newRoute?.view === 'sheet') {
+                    this.currentView = 'sheet';
+                    if (newSlug && newSlug !== this.data?.slug) {
+                        this.loadCharacterBySlug(newSlug);
+                    }
                 }
             });
+
+            if (typeof navigator !== 'undefined' && navigator.onLine) {
+                CharacterSyncService.syncNow().then(() => {
+                    this.charactersRegistry = CharacterStorageService.getRegistry();
+                }).catch(() => {});
+            }
 
             if (SpellService.spellsCompendium.length > 0) {
                 this.compendiumCount = SpellService.spellsCompendium.length;
@@ -585,6 +650,79 @@ function createCharacterSheet() {
             StorageService.save(STORAGE_KEY, this.data);
             this.charactersRegistry = CharacterStorageService.getRegistry();
             this.activeCharacterId = this.data?.id;
+            CharacterSyncService.scheduleSync(1500);
+        },
+
+        async forceSync() {
+            const res = await CharacterSyncService.syncNow();
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+            const active = CharacterStorageService.getActiveCharacter();
+            if (active && active.id === this.data?.id) {
+                this.data = sanitizeTracking(active);
+                this.equipRevision++;
+            }
+            if (res.success) {
+                await this.uiAlert(`Sincronización completada con Cloudflare D1 (${res.updated} actualizados, ${res.deleted} borrados).`, "Sincronizado", "☁️");
+            } else if (res.error === 'Offline') {
+                await this.uiAlert("Estás en modo offline. Los cambios se guardan localmente y se sincronizarán al reconectar.", "Modo Offline", "📡");
+            } else {
+                await this.uiAlert(`Aviso de sincronización: ${res.error || 'Error de red'}. Los datos locales están a salvo.`, "Aviso", "⚠️");
+            }
+        },
+
+        async loginWithGoogle() {
+            try {
+                const auth = await CharacterSyncService.checkAuth();
+                if (auth.authenticated && auth.user) {
+                    this.userProfile = auth.user;
+                    this.isLoggedIn = true;
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.removeItem('dnd_logged_out');
+                    }
+                    const activeSlug = this.data?.slug || this.charactersRegistry[0]?.slug || 'dorian';
+                    CharacterRouterService.navigateToSlug(activeSlug);
+                    this.currentView = 'sheet';
+                    await this.forceSync();
+                    return;
+                }
+            } catch (e) {}
+
+            const email = await this.uiPrompt("Introduce tu correo de Google para identificarte:", "Google OAuth / Cloudflare Access", "Google Identity", "usuario@gmail.com", "👤", "Continuar");
+            if (email && email.trim()) {
+                const profile = { id: email.trim().toLowerCase(), email: email.trim().toLowerCase() };
+                CharacterSyncService.setUserProfile(profile);
+                this.userProfile = profile;
+                this.isLoggedIn = true;
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.removeItem('dnd_logged_out');
+                }
+                const activeSlug = this.data?.slug || this.charactersRegistry[0]?.slug || 'dorian';
+                CharacterRouterService.navigateToSlug(activeSlug);
+                this.currentView = 'sheet';
+                CharacterSyncService.syncNow().then(() => {
+                    this.charactersRegistry = CharacterStorageService.getRegistry();
+                }).catch(() => {});
+            }
+        },
+
+        continueAsGuest() {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('dnd_logged_out');
+            }
+            const activeSlug = this.data?.slug || this.charactersRegistry[0]?.slug || 'dorian';
+            CharacterRouterService.navigateToSlug(activeSlug);
+            this.currentView = 'sheet';
+        },
+
+        logout() {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('dnd_logged_out', 'true');
+            }
+            CharacterSyncService.setUserProfile(null);
+            this.userProfile = null;
+            this.isLoggedIn = false;
+            CharacterRouterService.navigateToLogin();
+            this.currentView = 'login';
         },
 
         loadCharacterBySlug(slug) {
@@ -620,6 +758,8 @@ function createCharacterSheet() {
 
         createNewCharacter() {
             this.characterSwitcherOpen = false;
+            this.currentView = 'create';
+            CharacterRouterService.navigateToCreate();
             this.openNewHeroWizard();
         },
 
@@ -635,6 +775,7 @@ function createCharacterSheet() {
             const charId = this.data.id;
             CharacterStorageService.deleteCharacter(charId);
             this.charactersRegistry = CharacterStorageService.getRegistry();
+            CharacterSyncService.scheduleSync(500);
 
             const next = this.charactersRegistry[0];
             if (next) {

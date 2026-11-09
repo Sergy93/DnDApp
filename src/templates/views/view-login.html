@@ -1,0 +1,80 @@
+<!-- LOGIN & LANDING VIEW -->
+<div x-show="currentView === 'login'" x-transition class="w-full max-w-xl mx-auto my-auto p-4 md:p-6 text-center">
+    <div class="bg-dark-900 border border-brand-800/80 rounded-3xl p-6 md:p-10 shadow-[0_0_50px_rgba(168,85,247,0.25)] flex flex-col items-center">
+        <!-- Logo / Icon -->
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-900 via-brand-600 to-purple-400 p-0.5 shadow-lg shadow-purple-950/60 mb-5 flex items-center justify-center">
+            <div class="w-full h-full bg-dark-950 rounded-[14px] flex items-center justify-center text-4xl">
+                🐉
+            </div>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-400 to-purple-400 uppercase tracking-tight">
+            D&D 5e Companion
+        </h1>
+        <p class="text-xs md:text-sm text-gray-400 mt-2 max-w-md">
+            Hoja de personaje PWA de alta fidelidad, cálculo de reglas 5e en tiempo real y sincronización en el Edge con Cloudflare D1.
+        </p>
+
+        <!-- Status / Auth info banner if applicable -->
+        <div class="w-full mt-6 space-y-3">
+            <!-- Google Login / Cloudflare Access -->
+            <button type="button" @click="loginWithGoogle()"
+                class="w-full py-3.5 px-4 bg-white hover:bg-gray-100 text-gray-900 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-3 transition shadow-lg shadow-white/10 active:scale-98">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Entrar con Google (Cloudflare Access)</span>
+            </button>
+
+            <!-- Continue Local / Guest -->
+            <button type="button" @click="continueAsGuest()"
+                class="w-full py-3.5 px-4 bg-dark-950 hover:bg-dark-850 text-brand-300 border border-brand-700/60 hover:border-brand-500 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2.5 transition active:scale-98">
+                <span>🛡️</span>
+                <span>Continuar sin cuenta (Modo Local / Offline)</span>
+            </button>
+        </div>
+
+        <!-- Offline-first badges -->
+        <div class="grid grid-cols-2 gap-3 w-full mt-8 pt-6 border-t border-gray-800 text-left">
+            <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
+                <div class="text-xs font-bold text-brand-400 flex items-center gap-1">
+                    <span>⚡</span> Latencia 0 ms
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                    Guarda instantáneamente en tu dispositivo sin esperas.
+                </div>
+            </div>
+            <div class="bg-dark-950/70 p-3 rounded-xl border border-emerald-900/60">
+                <div class="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                    <span>☁️</span> Cloudflare D1
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                    Sincronización bidireccional automática en segundo plano.
+                </div>
+            </div>
+            <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
+                <div class="text-xs font-bold text-purple-400 flex items-center gap-1">
+                    <span>📜</span> Reglas 5e RAW
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                    13 Clases, 30 Razas, 20 Trasfondos, Dotes y Conjuros.
+                </div>
+            </div>
+            <div class="bg-dark-950/70 p-3 rounded-xl border border-amber-900/60">
+                <div class="text-xs font-bold text-amber-400 flex items-center gap-1">
+                    <span>👥</span> Multi-Personaje
+                </div>
+                <div class="text-[11px] text-gray-400 mt-0.5">
+                    Selector rápido con URLs amigables (/#/c/{slug}).
+                </div>
+            </div>
+        </div>
+
+        <div class="text-[11px] text-gray-500 font-mono mt-6">
+            Dorian D&D Companion • v39 Cloudflare Edition
+        </div>
+    </div>
+</div>

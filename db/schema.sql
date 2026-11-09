@@ -11,6 +11,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS characters (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    slug TEXT NOT NULL,
     name TEXT NOT NULL,
     race TEXT NOT NULL,
     total_level INTEGER NOT NULL CHECK (total_level BETWEEN 1 AND 20),
@@ -32,21 +33,37 @@ CREATE TABLE IF NOT EXISTS characters (
     quests_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(quests_json)),
     campaign_notes TEXT NOT NULL DEFAULT '',
 
-    -- Optimistic Concurrency Control & Schema Evolution
+    -- Optimistic Concurrency Control & Offline-First Synchronization
     version INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
     schema_version INTEGER NOT NULL DEFAULT 1 CHECK (schema_version >= 1),
+    client_updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 ) STRICT;
 
-CREATE INDEX IF NOT EXISTS idx_characters_user_updated
-    ON characters(user_id, updated_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_characters_user_slug
+    ON characters(user_id, slug);
+
+CREATE INDEX IF NOT EXISTS idx_characters_user_sync
+    ON characters(user_id, client_updated_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_characters_name
     ON characters(name);
 
 -- ----------------------------------------------------------------------------
--- 2. Session Logs Table (Normalized per-entry log with Cascade Delete)
+-- 2. Character Tombstones Table (Deleted Characters Offline Tracking)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS character_tombstones (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    deleted_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_tombstones_user_time
+    ON character_tombstones(user_id, deleted_at DESC);
+
+-- ----------------------------------------------------------------------------
+-- 3. Session Logs Table (Normalized per-entry log with Cascade Delete)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS session_logs (
     id TEXT PRIMARY KEY,
@@ -60,7 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_session_logs_character_time
     ON session_logs(character_id, timestamp DESC);
 
 -- ----------------------------------------------------------------------------
--- 3. Compendium: Spells
+-- 4. Compendium: Spells
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS compendium_spells (
     id TEXT PRIMARY KEY,
@@ -84,7 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_spells_name
     ON compendium_spells(name);
 
 -- ----------------------------------------------------------------------------
--- 4. Compendium: Classes
+-- 5. Compendium: Classes
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS compendium_classes (
     id TEXT PRIMARY KEY,
@@ -96,7 +113,7 @@ CREATE TABLE IF NOT EXISTS compendium_classes (
 ) STRICT;
 
 -- ----------------------------------------------------------------------------
--- 5. Compendium: Backgrounds
+-- 6. Compendium: Backgrounds
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS compendium_backgrounds (
     id TEXT PRIMARY KEY,

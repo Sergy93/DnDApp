@@ -177,6 +177,10 @@ export class CharacterStorageService {
         const classesSummary = classes.map(c => `${c.name || 'Class'}${c.subclass ? ` (${c.subclass})` : ''} ${c.level || 1}`).join(' / ') || 'Level 1';
         const race = characterData.identity?.race || 'Unknown';
 
+        // Ensure client_updated_at is stamped
+        const now = Date.now();
+        characterData.client_updated_at = characterData.client_updated_at || now;
+
         // 1. Save character JSON document
         try {
             storage.setItem(CHAR_DATA_PREFIX + id, JSON.stringify(characterData));
@@ -195,7 +199,7 @@ export class CharacterStorageService {
             race,
             level: totalLevel,
             classesSummary,
-            updatedAt: Date.now()
+            updatedAt: characterData.client_updated_at
         };
 
         if (existingIdx >= 0) {
@@ -210,6 +214,20 @@ export class CharacterStorageService {
             this.setActiveCharacterId(id, storage);
         }
 
+        // 3. Enqueue for background cloud synchronization
+        if (options.skipSyncQueue !== true) {
+            try {
+                const rawQueue = storage.getItem(STORAGE_KEYS.SYNC_QUEUE);
+                const queue = rawQueue ? JSON.parse(rawQueue) : [];
+                if (!queue.includes(id)) {
+                    queue.push(id);
+                    storage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(queue));
+                }
+            } catch (e) {
+                console.error('Failed to update sync queue in saveCharacter', e);
+            }
+        }
+
         return { id, slug, characterData };
     }
 
@@ -218,9 +236,10 @@ export class CharacterStorageService {
      * 
      * @param {string} id - Character ID.
      * @param {Storage} [storage=window.localStorage]
+     * @param {Object} [options={}] - Options { skipSyncQueue: boolean }
      * @returns {boolean} True if successfully deleted.
      */
-    static deleteCharacter(id, storage = typeof localStorage !== 'undefined' ? localStorage : null) {
+    static deleteCharacter(id, storage = typeof localStorage !== 'undefined' ? localStorage : null, options = {}) {
         if (!storage || !id) return false;
         try {
             storage.removeItem(CHAR_DATA_PREFIX + id);
@@ -235,6 +254,25 @@ export class CharacterStorageService {
                     storage.removeItem(ACTIVE_CHAR_STORAGE_KEY);
                 }
             }
+
+            if (options?.skipSyncQueue !== true) {
+                try {
+                    const rawQueue = storage.getItem(STORAGE_KEYS.SYNC_QUEUE);
+                    const queue = rawQueue ? JSON.parse(rawQueue) : [];
+                    const filteredQueue = queue.filter(qId => qId !== id);
+                    storage.setItem(STORAGE_KEYS.SYNC_QUEUE, JSON.stringify(filteredQueue));
+
+                    const rawTombstones = storage.getItem(STORAGE_KEYS.SYNC_TOMBSTONES);
+                    const tombstones = rawTombstones ? JSON.parse(rawTombstones) : [];
+                    if (!tombstones.includes(id)) {
+                        tombstones.push(id);
+                        storage.setItem(STORAGE_KEYS.SYNC_TOMBSTONES, JSON.stringify(tombstones));
+                    }
+                } catch (e) {
+                    console.error('Failed to update sync tombstones in deleteCharacter', e);
+                }
+            }
+
             return true;
         } catch {
             return false;

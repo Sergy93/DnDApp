@@ -180,80 +180,156 @@
 
 <body class="p-2 md:p-5 flex justify-center" x-data="characterSheet" x-cloak>
 
-    <div class="max-w-6xl w-full bg-dark-900 rounded-2xl shadow-[0_0_40px_rgba(59,7,100,0.5)] border border-brand-900/60 overflow-hidden flex flex-col min-h-[96vh]">
+    <!-- @include "views/view-login.html" -->
+
+    <!-- @include "views/view-create.html" -->
+
+    <div x-show="currentView === 'sheet'" class="max-w-6xl w-full bg-dark-900 rounded-2xl shadow-[0_0_40px_rgba(59,7,100,0.5)] border border-brand-900/60 overflow-hidden flex flex-col min-h-[96vh]">
 
         <!-- HEADER -->
-        <header class="bg-dark-950 border-b border-brand-600/40 p-4 md:p-6 text-center relative shrink-0">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="text-left">
-                    <div class="flex items-center gap-2.5 flex-wrap">
-                        <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase"
-                            x-text="data.identity?.name || 'Character'"></h1>
+        <header class="bg-dark-950 border-b border-brand-600/40 p-4 md:p-6 relative shrink-0">
+            <!-- TOP UTILITY BAR: LIVE SYNC BADGE & USER AUTH PROFILE -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-800/80 text-xs flex-wrap gap-2">
+                <!-- LIVE CLOUD SYNC BADGE -->
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="forceSync()"
+                        class="px-3 py-1 rounded-full border text-xs font-bold transition flex items-center gap-1.5 shadow active:scale-95"
+                        :class="{
+                            'bg-emerald-950/80 border-emerald-500/80 text-emerald-300 hover:border-emerald-400': syncStatus === 'synced',
+                            'bg-amber-950/80 border-amber-500/80 text-amber-300 animate-pulse': syncStatus === 'syncing',
+                            'bg-sky-950/80 border-sky-500/80 text-sky-300 hover:border-sky-400': syncStatus === 'offline',
+                            'bg-red-950/80 border-red-500/80 text-red-300 hover:border-red-400': syncStatus === 'conflict'
+                        }"
+                        :title="syncStatus === 'synced' ? 'Sincronizado con Cloudflare D1. Clic para forzar sync.' : (syncStatus === 'syncing' ? 'Sincronizando con D1...' : (syncStatus === 'offline' ? 'Modo Offline: datos guardados en LocalStorage.' : 'Error al sincronizar. Clic para reintentar.'))">
+                        <span x-show="syncStatus === 'synced'" class="text-emerald-400">🟢</span>
+                        <span x-show="syncStatus === 'syncing'" class="text-amber-400 animate-spin inline-block">🔄</span>
+                        <span x-show="syncStatus === 'offline'" class="text-sky-400">🔵</span>
+                        <span x-show="syncStatus === 'conflict'" class="text-red-400">🔴</span>
 
-                        <!-- CHARACTER SWITCHER DROPDOWN -->
-                        <div class="relative inline-block text-left" @click.outside="characterSwitcherOpen = false">
-                            <button type="button" @click="characterSwitcherOpen = !characterSwitcherOpen"
-                                class="px-2.5 py-1 bg-dark-900 hover:bg-dark-850 border border-brand-500/50 hover:border-brand-400 rounded-lg text-xs font-bold text-brand-300 hover:text-white transition shadow flex items-center gap-1.5"
-                                title="Switch character or manage saved characters">
-                                <span>👥</span>
-                                <span class="hidden sm:inline font-mono" x-text="`#/${data.slug || 'dorian'}`"></span>
-                                <span class="text-[10px]">▼</span>
+                        <span x-show="syncStatus === 'synced'">☁️ Cloudflare D1 Sincronizado</span>
+                        <span x-show="syncStatus === 'syncing'">Sincronizando con D1...</span>
+                        <span x-show="syncStatus === 'offline'">📡 Modo Offline (0ms)</span>
+                        <span x-show="syncStatus === 'conflict'">⚠️ Reintentar Sync</span>
+                    </button>
+                </div>
+
+                <!-- USER AUTH STATUS & LOGOUT -->
+                <div class="flex items-center gap-2">
+                    <template x-if="userProfile && userProfile.email">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 hidden sm:inline">Cuenta:</span>
+                            <span class="px-2.5 py-0.5 rounded-md bg-dark-900 border border-brand-800/80 text-brand-300 font-mono font-semibold"
+                                x-text="userProfile.email"></span>
+                            <button type="button" @click="logout()"
+                                class="text-gray-400 hover:text-red-300 transition text-[11px] underline ml-1"
+                                title="Cerrar Sesión">Salir</button>
+                        </div>
+                    </template>
+                    <template x-if="!userProfile || !userProfile.email">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md bg-dark-900 border border-gray-800 text-gray-400 font-semibold">
+                                👤 Modo Local
+                            </span>
+                            <button type="button" @click="loginWithGoogle()"
+                                class="text-brand-400 hover:text-brand-300 text-xs font-bold underline">
+                                Entrar con Google
                             </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
 
-                            <!-- DROPDOWN MENU -->
-                            <div x-show="characterSwitcherOpen" x-transition
-                                class="absolute left-0 mt-2 w-72 bg-dark-950 border border-brand-800/80 rounded-xl shadow-2xl py-2 z-50">
-                                <div class="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 flex justify-between items-center">
-                                    <span>Saved Characters</span>
-                                    <span class="text-brand-400 font-mono" x-text="`${charactersRegistry.length} total`"></span>
-                                </div>
-                                <div class="max-h-60 overflow-y-auto divide-y divide-gray-900">
-                                    <template x-for="c in charactersRegistry" :key="c.id">
-                                        <div @click="switchCharacter(c.id)"
-                                            class="px-3 py-2 hover:bg-dark-900 cursor-pointer flex items-center justify-between transition gap-2"
-                                            :class="c.id === activeCharacterId ? 'bg-brand-950/40 border-l-2 border-brand-400' : ''">
-                                            <div class="min-w-0 flex-1">
-                                                <div class="font-bold text-sm text-gray-100 truncate" x-text="c.name"></div>
-                                                <div class="text-[11px] text-gray-400 truncate" x-text="`${c.race || ''} • ${c.classesSummary || ('Level ' + c.level)}`"></div>
+            <!-- PROMINENT HERO ROW WITH BIG AVATAR AND SELECTOR -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 text-left w-full md:w-auto">
+                    <!-- BIG HERO AVATAR WITH LEVEL BADGE -->
+                    <div class="relative shrink-0">
+                        <div class="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-tr from-brand-900 via-brand-600 to-purple-400 p-0.5 shadow-xl shadow-purple-950/60 flex items-center justify-center">
+                            <div class="w-full h-full bg-dark-900 rounded-[14px] flex items-center justify-center text-3xl md:text-4xl select-none">
+                                🧙‍♂️
+                            </div>
+                        </div>
+                        <span class="absolute -bottom-1 -right-1 bg-gradient-to-r from-amber-500 to-amber-600 border border-dark-950 text-dark-950 font-black text-xs px-2 py-0.5 rounded-full shadow-lg"
+                            x-text="`L${stats.totalLevel}`"></span>
+                    </div>
+
+                    <div class="min-w-0 flex-1">
+                        <!-- CHARACTER NAME & DROPDOWN TRIGGER -->
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase tracking-tight truncate"
+                                x-text="data.identity?.name || 'Character'"></h1>
+
+                            <!-- BIG CHARACTER SWITCHER DROPDOWN -->
+                            <div class="relative inline-block text-left" @click.outside="characterSwitcherOpen = false">
+                                <button type="button" @click="characterSwitcherOpen = !characterSwitcherOpen"
+                                    class="px-3 py-1.5 bg-dark-900 hover:bg-dark-850 border border-brand-500/60 hover:border-brand-400 rounded-xl text-xs md:text-sm font-bold text-brand-300 hover:text-white transition shadow-lg flex items-center gap-2 active:scale-95"
+                                    title="Cambiar de personaje o gestionar héroes guardados">
+                                    <span>👥 Cambiar</span>
+                                    <span class="font-mono text-brand-400" x-text="`#/${data.slug || 'dorian'}`"></span>
+                                    <span class="text-xs transition-transform" :class="characterSwitcherOpen ? 'rotate-180' : ''">▼</span>
+                                </button>
+
+                                <!-- DROPDOWN MENU -->
+                                <div x-show="characterSwitcherOpen" x-transition
+                                    class="absolute left-0 mt-2 w-80 bg-dark-950 border border-brand-800/80 rounded-2xl shadow-2xl py-2 z-50">
+                                    <div class="px-3.5 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 flex justify-between items-center">
+                                        <span>Tus Personajes Guardados</span>
+                                        <span class="text-brand-400 font-mono" x-text="`${charactersRegistry.length} en total`"></span>
+                                    </div>
+                                    <div class="max-h-72 overflow-y-auto divide-y divide-gray-900">
+                                        <template x-for="c in charactersRegistry" :key="c.id">
+                                            <div @click="switchCharacter(c.id)"
+                                                class="px-3.5 py-2.5 hover:bg-dark-900 cursor-pointer flex items-center justify-between transition gap-2"
+                                                :class="c.id === activeCharacterId ? 'bg-brand-950/60 border-l-4 border-brand-400' : ''">
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="font-bold text-sm text-gray-100 truncate flex items-center gap-1.5">
+                                                        <span x-text="c.name"></span>
+                                                        <span x-show="c.id === activeCharacterId" class="text-xs text-brand-400">⭐</span>
+                                                    </div>
+                                                    <div class="text-[11px] text-gray-400 truncate" x-text="`${c.race || ''} • ${c.classesSummary || ('Level ' + c.level)}`"></div>
+                                                </div>
+                                                <span class="text-xs px-2 py-0.5 rounded-lg font-mono font-bold"
+                                                    :class="c.id === activeCharacterId ? 'bg-brand-600 text-white' : 'bg-dark-900 text-gray-400 border border-gray-800'"
+                                                    x-text="`L${c.level}`"></span>
                                             </div>
-                                            <span class="text-xs px-1.5 py-0.5 rounded font-mono font-bold"
-                                                :class="c.id === activeCharacterId ? 'bg-brand-600 text-white' : 'bg-dark-900 text-gray-400 border border-gray-800'"
-                                                x-text="`L${c.level}`"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                                <div class="border-t border-gray-800 pt-2 px-2 space-y-1">
-                                    <button type="button" @click="createNewCharacter()"
-                                        class="w-full text-left px-2.5 py-1.5 text-xs font-semibold text-brand-300 hover:bg-dark-900 rounded-lg flex items-center gap-1.5 transition">
-                                        <span>➕</span> Create New Character
-                                    </button>
-                                    <label class="w-full text-left px-2.5 py-1.5 text-xs font-semibold text-gray-300 hover:bg-dark-900 rounded-lg flex items-center gap-1.5 transition cursor-pointer">
-                                        <span>📂</span> Import Character File (.json)
-                                        <input type="file" accept=".json,.js,application/json,text/javascript" class="hidden" @change="importJSON($event)">
-                                    </label>
-                                    <button type="button" x-show="charactersRegistry.length > 1" @click="deleteCurrentCharacter()"
-                                        class="w-full text-left px-2.5 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-950/40 rounded-lg flex items-center gap-1.5 transition">
-                                        <span>🗑️</span> Delete Current Character
-                                    </button>
+                                        </template>
+                                    </div>
+                                    <div class="border-t border-gray-800 pt-2 px-2 space-y-1">
+                                        <button type="button" @click="createNewCharacter()"
+                                            class="w-full text-left px-3 py-2 text-xs font-bold text-brand-300 hover:bg-dark-900 hover:text-white rounded-xl flex items-center gap-2 transition">
+                                            <span>➕</span> Crear Nuevo Héroe (Wizard)
+                                        </button>
+                                        <label class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-dark-900 hover:text-white rounded-xl flex items-center gap-2 transition cursor-pointer">
+                                            <span>📂</span> Importar Personaje (.json)
+                                            <input type="file" accept=".json,.js,application/json,text/javascript" class="hidden" @change="importJSON($event)">
+                                        </label>
+                                        <button type="button" x-show="charactersRegistry.length > 1" @click="deleteCurrentCharacter()"
+                                            class="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 rounded-xl flex items-center gap-2 transition">
+                                            <span>🗑️</span> Borrar Personaje Actual
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5 capitalize" x-text="stats.classesSummary"></p>
-                    <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
-                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
-                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
-                        <button type="button" @click="showCurrentBackgroundDetail()"
-                            class="bg-dark-900 hover:bg-dark-800 border border-brand-500/50 hover:border-brand-400 px-2.5 py-1 rounded-lg text-brand-300 hover:text-white transition flex items-center gap-1 font-semibold"
-                            title="Click to view background details">
-                            <span>📜</span>
-                            <span x-text="data.identity?.background || 'Background'"></span>
-                        </button>
-                        <span class="bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold" x-text="`Level ${stats.totalLevel}`"></span>
+
+                        <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5 capitalize truncate" x-text="stats.classesSummary"></p>
+
+                        <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
+                            <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
+                            <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
+                            <button type="button" @click="showCurrentBackgroundDetail()"
+                                class="bg-dark-900 hover:bg-dark-800 border border-brand-500/50 hover:border-brand-400 px-2.5 py-1 rounded-lg text-brand-300 hover:text-white transition flex items-center gap-1 font-semibold"
+                                title="Click to view background details">
+                                <span>📜</span>
+                                <span x-text="data.identity?.background || 'Background'"></span>
+                            </button>
+                            <span class="bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold" x-text="`Level ${stats.totalLevel}`"></span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col items-center md:items-end gap-2.5 w-full md:w-auto">
+                <!-- RIGHT HEADER ACTIONS: REST BUTTONS -->
+                <div class="flex flex-col items-center md:items-end gap-2.5 w-full md:w-auto shrink-0">
                     <div class="flex flex-wrap items-center gap-2">
                         <button @click="openShortRestModal()"
                             class="px-3.5 py-2 bg-blue-950/80 hover:bg-blue-900 border border-blue-500/60 text-blue-200 rounded-xl text-xs md:text-sm font-bold transition shadow active:scale-95 flex items-center gap-1.5">
@@ -499,8 +575,6 @@
     <!-- @include "modals/modal-wealth.html" -->
 
     <!-- @include "modals/modal-quest.html" -->
-
-    <!-- @include "modals/modal-new-hero.html" -->
 
 </body>
 </html>
