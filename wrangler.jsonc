@@ -1,5 +1,6 @@
 {
   "name": "dorian-dnd",
+  "main": "src/worker.js",
   "preview_urls": false,
   "compatibility_date": "2026-10-13",
   "observability": {
@@ -19,7 +20,8 @@
     }
   },
   "assets": {
-    "directory": "./src"
+    "directory": "./src",
+    "binding": "ASSETS"
   },
   "d1_databases": [
     {

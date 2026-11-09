@@ -317,6 +317,14 @@ export function createWizardSlice() {
             this.wizardOpen = false;
             this.currentView = 'sheet';
             await this.uiAlert(`Hero "${saved.characterData.identity.name}" has stepped into the realm at /#/c/${saved.slug}!`, "Hero Summoned", "✨");
+        },
+
+        slugifyCharacterName(name) {
+            return slugifyCharacterName(name);
+        },
+
+        capitalizeWord(str) {
+            return capitalizeWord(str);
         }
     };
 }

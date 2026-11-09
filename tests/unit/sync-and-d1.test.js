@@ -212,3 +212,49 @@ test('Cloudflare Functions D1 Payload Serialization & Integrity', async (t) => {
         assert.equal(rehydrated.magic.spellcastingAbility, CHARACTER_DATA.magic.spellcastingAbility);
     });
 });
+
+test('Cloudflare Worker Main Router (src/worker.js)', async (t) => {
+    const { default: worker } = await import('../../src/worker.js');
+
+    await t.test('routes /api/auth/me correctly', async () => {
+        const req = new Request('https://dorian-dnd.workers.dev/api/auth/me', {
+            headers: { 'cf-access-authenticated-user-email': 'tester@google.com' }
+        });
+        const res = await worker.fetch(req, {}, {});
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.success, true);
+        assert.equal(data.user.email, 'tester@google.com');
+        assert.equal(data.authenticated, true);
+    });
+
+    await t.test('handles /favicon.ico with silent 204 fallback', async () => {
+        const req = new Request('https://dorian-dnd.workers.dev/favicon.ico');
+        const res = await worker.fetch(req, {}, {});
+        assert.equal(res.status, 204);
+    });
+
+    await t.test('delegates non-API requests to env.ASSETS', async () => {
+        let assetsCalled = false;
+        const mockEnv = {
+            ASSETS: {
+                fetch: async () => {
+                    assetsCalled = true;
+                    return new Response('<!DOCTYPE html>', { status: 200 });
+                }
+            }
+        };
+        const req = new Request('https://dorian-dnd.workers.dev/index.html');
+        const res = await worker.fetch(req, mockEnv, {});
+        assert.equal(assetsCalled, true);
+        assert.equal(res.status, 200);
+    });
+
+    await t.test('returns 404 JSON for unknown /api/ endpoints', async () => {
+        const req = new Request('https://dorian-dnd.workers.dev/api/nonexistent');
+        const res = await worker.fetch(req, {}, {});
+        assert.equal(res.status, 404);
+        const data = await res.json();
+        assert.equal(data.success, false);
+    });
+});

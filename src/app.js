@@ -898,6 +898,14 @@ function createCharacterSheet() {
             };
             reader.readAsText(file);
             event.target.value = '';
+        },
+
+        slugifyCharacterName(name) {
+            return slugifyCharacterName(name);
+        },
+
+        capitalizeWord(word) {
+            return capitalizeWord(word);
         }
     };
 
@@ -910,6 +918,11 @@ function createCharacterSheet() {
         createSpellsSlice(),
         createWizardSlice()
     );
+}
+
+if (typeof window !== 'undefined') {
+    window.slugifyCharacterName = slugifyCharacterName;
+    window.capitalizeWord = capitalizeWord;
 }
 
 if (typeof document !== 'undefined') {

@@ -1,11 +1,9 @@
-const CACHE_NAME = 'dorian-dnd-cache-v39';
+const CACHE_NAME = 'dorian-dnd-cache-v40';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './bundle.js',
-  './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -36,16 +34,32 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Let API requests bypass Service Worker cache
+  let url;
   try {
-    const url = new URL(event.request.url);
-    if (url.pathname.startsWith('/api/')) return;
-  } catch {}
+    url = new URL(event.request.url);
+  } catch {
+    return;
+  }
+
+  // Only handle HTTP and HTTPS requests; ignore chrome-extension, moz-extension, etc.
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
+  // Let API requests bypass Service Worker cache completely
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // Let third-party CDN assets (Tailwind, Alpine CDN) bypass SW cache to avoid CORS restrictions
+  if (url.origin !== self.location.origin) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Cache hit: return response, and fetch fresh copy in background
+        // Cache hit: return cached response and fetch fresh copy in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -56,7 +70,7 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      // Cache miss: fetch from network and cache
+      // Cache miss: fetch from network and cache local static assets
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'opaque') {
           return networkResponse;
@@ -67,7 +81,7 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // If offline and request is HTML, return cached index
+        // If offline and request is HTML navigation, return cached index
         if (event.request.headers.get('accept')?.includes('text/html')) {
           return caches.match('./index.html') || caches.match('./');
         }
