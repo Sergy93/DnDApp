@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/app.test.js",
+    "test": "node --test tests/app.test.js tests/integration/*.test.js",
     "compile:data": "node scripts/compile-compendiums.js",
     "build:html": "node scripts/build-html.js",
     "build:js": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
