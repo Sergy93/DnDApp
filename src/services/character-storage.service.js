@@ -126,6 +126,16 @@ export class CharacterStorageService {
     }
 
     /**
+     * Loads the active character document.
+     * @param {Storage} [storage=window.localStorage]
+     * @returns {Object|null}
+     */
+    static getActiveCharacter(storage = typeof localStorage !== 'undefined' ? localStorage : null) {
+        const id = this.getActiveCharacterId(storage);
+        return id ? this.getCharacterById(id, storage) : null;
+    }
+
+    /**
      * Loads full character data by character slug.
      * @param {string} slug - Character URL slug.
      * @param {Storage} [storage=window.localStorage]

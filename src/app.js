@@ -40,6 +40,8 @@ import { createProgressionSlice } from "./ui/slices/progression.slice.js";
 import { createVitalsSlice } from "./ui/slices/vitals.slice.js";
 import { createInventorySlice } from "./ui/slices/inventory.slice.js";
 import { createSpellsSlice } from "./ui/slices/spells.slice.js";
+import { createWizardSlice } from "./ui/slices/wizard.slice.js";
+import { CharacterBuilderService } from "./domain/character/character-builder.service.js";
 import * as DND_CONSTANTS from "./domain/constants/dnd.constants.js";
 import {
     DEFAULT_ABILITY_SCORE,
@@ -124,7 +126,9 @@ export {
     RaceProvider,
     SpellService,
     ClassProgressionService,
-    ClassSyncService
+    ClassSyncService,
+    CharacterBuilderService,
+    createWizardSlice
 };
 
 const findCompendiumClass = ClassProgressionService.findCompendiumClass.bind(ClassProgressionService);
@@ -603,69 +607,9 @@ function createCharacterSheet() {
             }
         },
 
-        async createNewCharacter() {
-            const name = await this.uiPrompt("Enter the new character's name:", "New Character", "Hero");
-            if (!name) return;
-
-            this.saveState();
-
-            const newChar = {
-                id: CharacterStorageService.generateUniqueId(),
-                identity: {
-                    name: name.trim(),
-                    race: "Human",
-                    alignment: "Neutral",
-                    background: "Folk Hero",
-                    classes: [{ name: "Fighter", level: 1 }]
-                },
-                attributes: {
-                    STR: { score: 10, profSave: true },
-                    DEX: { score: 10, profSave: false },
-                    CON: { score: 10, profSave: true },
-                    INT: { score: 10, profSave: false },
-                    WIS: { score: 10, profSave: false },
-                    CHA: { score: 10, profSave: false }
-                },
-                vitals: {
-                    currentHp: 10,
-                    maxHp: 10,
-                    tempHp: 0,
-                    speed: "30 ft.",
-                    inspiration: false,
-                    hitDiceSpent: [false],
-                    deathSaves: { successes: [false, false, false], failures: [false, false, false] },
-                    conditions: [],
-                    damageResistances: []
-                },
-                skills: DND_5E_SKILLS.map(s => ({ id: s.id, name: s.name, attr: s.attr, profType: '' })),
-                combat: {
-                    traits: [],
-                    resources: [],
-                    sessionLogs: []
-                },
-                inventory: {
-                    wealth: { pp: 0, gp: 10, ep: 0, sp: 0, cp: 0 },
-                    weapons: [],
-                    armors: [],
-                    consumables: [],
-                    tools: [],
-                    story: []
-                },
-                magic: {
-                    slots: [],
-                    spells: [],
-                    favorites: []
-                },
-                quests: []
-            };
-
-            const saved = CharacterStorageService.saveCharacter(newChar, { makeActive: true });
-            this.data = sanitizeTracking(saved.characterData);
-            this.activeCharacterId = saved.id;
-            this.charactersRegistry = CharacterStorageService.getRegistry();
-            CharacterRouterService.navigateToSlug(saved.slug);
+        createNewCharacter() {
             this.characterSwitcherOpen = false;
-            await this.uiAlert(`New character "${saved.characterData.identity.name}" created!`, "Character Created", "✨");
+            this.openNewHeroWizard();
         },
 
         async deleteCurrentCharacter() {
@@ -810,7 +754,8 @@ function createCharacterSheet() {
         createProgressionSlice(),
         createVitalsSlice(),
         createInventorySlice(),
-        createSpellsSlice()
+        createSpellsSlice(),
+        createWizardSlice()
     );
 }
 
