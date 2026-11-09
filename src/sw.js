@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dorian-dnd-cache-v31';
+const CACHE_NAME = 'dorian-dnd-cache-v32';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

@@ -1322,44 +1322,6 @@
                         </div>
                     </div>
                 </div>
-
-                    <!-- TOOLS & EQUIPMENT (ALPHABETICAL LIST WITH RULES & USAGE) -->
-                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
-                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
-                            <h4 class="text-sm sm:text-base font-bold text-gray-100 flex items-center gap-1.5">
-                                <span>🎒</span> Tools & Equipment
-                            </h4>
-                            <button @click="openToolModal()"
-                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
-                                <span>➕</span> Add
-                            </button>
-                        </div>
-                        <div class="space-y-2 text-xs md:text-sm">
-                            <template x-for="t in sortedTools" :key="t.name">
-                                <div class="bg-dark-900 p-3 rounded-lg border border-gray-800 flex justify-between items-start gap-3 hover:border-gray-700 transition">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="text-base shrink-0" x-text="t.icon || '🎒'"></span>
-                                            <strong class="font-bold text-white text-sm" x-text="t.name"></strong>
-                                            <span x-show="t.isInstrument"
-                                                class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-950/70 text-blue-300 border border-blue-800/60">
-                                                🎸 Spellcasting Focus
-                                            </span>
-                                        </div>
-                                        <p class="text-gray-300 text-xs mt-1.5 leading-relaxed" x-text="t.desc || 'No usage notes provided.'"></p>
-                                    </div>
-                                    <div class="flex items-center gap-1 shrink-0 mt-0.5">
-                                        <button @click="openToolModal(t)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
-                                        <button @click="removeTool(t)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete">🗑️</button>
-                                    </div>
-                                </div>
-                            </template>
-                            <div x-show="!data.inventory.tools || data.inventory.tools.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
-                                No tools or equipment recorded.
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </section>
 
             <!-- TAB: CLASSES & PROGRESSION -->
