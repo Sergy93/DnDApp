@@ -5,6 +5,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "node --import ./tests/test-helper.js --test tests/app.test.js tests/unit/*.test.js tests/integration/*.test.js",
+    "test:e2e": "playwright test",
     "compile:data": "node scripts/compile-compendiums.js",
     "build:html": "node scripts/build-html.js",
     "build:js": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
@@ -16,6 +17,8 @@
     "start": "npm run dev"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "typescript": "^7.0.2",
     "wrangler": "^4.151.0"
   },
   "type": "module",
