@@ -10,7 +10,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['arcana', 'history', 'investigation', 'medicine', 'nature', 'perception', 'sleight_of_hand'],
         subclassLevel: 3,
-        spellcastingAttr: 'INT'
+        spellcastingAttr: 'INT',
+        primaryAbility: 'INT',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Intelligence governs your spellcasting DC, infusion limit, and tool expertise. Prioritize INT, then CON for HP and concentration.'
     },
     barbarian: {
         hitDie: 'd12',
@@ -19,7 +22,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['animal_handling', 'athletics', 'intimidation', 'nature', 'perception', 'survival'],
         subclassLevel: 3,
-        spellcastingAttr: null
+        spellcastingAttr: null,
+        primaryAbility: 'STR',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Strength powers your melee rage damage and athletics. Constitution boosts Unarmored Defense and maximum hit points.'
     },
     bard: {
         hitDie: 'd8',
@@ -28,7 +34,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 3,
         skillOptions: 'all', // Bards can choose ANY 3 skills
         subclassLevel: 3,
-        spellcastingAttr: 'CHA'
+        spellcastingAttr: 'CHA',
+        primaryAbility: 'CHA',
+        secondaryAbilities: 'DEX, CON',
+        descriptionHint: 'Charisma powers your spell save DC, spell attack rolls, and number of Bardic Inspiration uses. Dexterity boosts AC and finesse weapons.'
     },
     cleric: {
         hitDie: 'd8',
@@ -37,7 +46,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['history', 'insight', 'medicine', 'persuasion', 'religion'],
         subclassLevel: 1, // Divine Domain at 1st level
-        spellcastingAttr: 'WIS'
+        spellcastingAttr: 'WIS',
+        primaryAbility: 'WIS',
+        secondaryAbilities: 'STR or CON',
+        descriptionHint: 'Wisdom is your divine spellcasting ability and determines your prepared spells count. Strength or Constitution aids armor and survival.'
     },
     druid: {
         hitDie: 'd8',
@@ -46,7 +58,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['animal_handling', 'arcana', 'insight', 'medicine', 'nature', 'perception', 'religion', 'survival'],
         subclassLevel: 2, // Circle at 2nd level
-        spellcastingAttr: 'WIS'
+        spellcastingAttr: 'WIS',
+        primaryAbility: 'WIS',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Wisdom drives your natural spellcasting and prepared spells list. Constitution is vital for concentration while Wild Shaped or casting.'
     },
     fighter: {
         hitDie: 'd10',
@@ -55,7 +70,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['acrobatics', 'animal_handling', 'athletics', 'history', 'insight', 'intimidation', 'perception', 'survival'],
         subclassLevel: 3,
-        spellcastingAttr: null
+        spellcastingAttr: null,
+        primaryAbility: 'STR or DEX',
+        secondaryAbilities: 'CON',
+        descriptionHint: 'Choose Strength for heavy armor and great weapons, or Dexterity for archery and rapier finesse. Constitution provides martial staying power.'
     },
     monk: {
         hitDie: 'd8',
@@ -64,7 +82,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['acrobatics', 'athletics', 'history', 'insight', 'religion', 'stealth'],
         subclassLevel: 3,
-        spellcastingAttr: null
+        spellcastingAttr: null,
+        primaryAbility: 'DEX & WIS',
+        secondaryAbilities: 'CON',
+        descriptionHint: 'Dexterity fuels martial arts attacks and Unarmored AC. Wisdom powers Ki save DC and adds to Unarmored Defense.'
     },
     paladin: {
         hitDie: 'd10',
@@ -73,7 +94,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['athletics', 'insight', 'intimidation', 'medicine', 'persuasion', 'religion'],
         subclassLevel: 3,
-        spellcastingAttr: 'CHA'
+        spellcastingAttr: 'CHA',
+        primaryAbility: 'STR & CHA',
+        secondaryAbilities: 'CON',
+        descriptionHint: 'Strength powers divine smite melee attacks and heavy armor. Charisma enhances spellcasting, aura saves, and Channel Divinity.'
     },
     ranger: {
         hitDie: 'd10',
@@ -82,7 +106,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 3,
         skillOptions: ['animal_handling', 'athletics', 'insight', 'investigation', 'nature', 'perception', 'stealth', 'survival'],
         subclassLevel: 3,
-        spellcastingAttr: 'WIS'
+        spellcastingAttr: 'WIS',
+        primaryAbility: 'DEX & WIS',
+        secondaryAbilities: 'CON',
+        descriptionHint: 'Dexterity powers archery, finesse weapons, and stealth. Wisdom governs spell save DC and survival tracking.'
     },
     rogue: {
         hitDie: 'd8',
@@ -91,7 +118,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 4,
         skillOptions: ['acrobatics', 'athletics', 'deception', 'insight', 'intimidation', 'investigation', 'perception', 'performance', 'persuasion', 'sleight_of_hand', 'stealth'],
         subclassLevel: 3,
-        spellcastingAttr: null
+        spellcastingAttr: null,
+        primaryAbility: 'DEX',
+        secondaryAbilities: 'CON, INT or CHA',
+        descriptionHint: 'Dexterity is vital for Sneak Attack, Stealth, Sleight of Hand, and AC. Secondary scores support Arcane Trickster (INT) or Swashbuckler (CHA).'
     },
     sorcerer: {
         hitDie: 'd6',
@@ -100,7 +130,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['arcana', 'deception', 'insight', 'intimidation', 'persuasion', 'religion'],
         subclassLevel: 1, // Sorcerous Origin at 1st level
-        spellcastingAttr: 'CHA'
+        spellcastingAttr: 'CHA',
+        primaryAbility: 'CHA',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Charisma is your innate spellcasting power, dictating spell attack bonus and save DC. Constitution protects concentration and hit points.'
     },
     warlock: {
         hitDie: 'd8',
@@ -109,7 +142,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['arcana', 'deception', 'history', 'intimidation', 'investigation', 'nature', 'religion'],
         subclassLevel: 1, // Otherworldly Patron at 1st level
-        spellcastingAttr: 'CHA'
+        spellcastingAttr: 'CHA',
+        primaryAbility: 'CHA',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Charisma is your patron pact spellcasting ability. Dexterity boosts light armor AC, and Constitution preserves concentration.'
     },
     wizard: {
         hitDie: 'd6',
@@ -118,7 +154,10 @@ export const CLASS_CREATION_RULES = {
         skillsChooseCount: 2,
         skillOptions: ['arcana', 'history', 'insight', 'investigation', 'medicine', 'religion'],
         subclassLevel: 2, // Arcane Tradition at 2nd level
-        spellcastingAttr: 'INT'
+        spellcastingAttr: 'INT',
+        primaryAbility: 'INT',
+        secondaryAbilities: 'CON, DEX',
+        descriptionHint: 'Intelligence is your spellcasting ability and determines spell save DC and prepared spells count. Constitution maintains concentration and HP.'
     }
 };
 

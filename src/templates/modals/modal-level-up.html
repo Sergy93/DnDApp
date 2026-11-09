@@ -46,18 +46,77 @@
                     </div>
                 </div>
 
-                <!-- Puntuaciones de Atributos (ASI) -->
-                <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 space-y-2">
-                    <h4 class="font-bold text-gray-200">💪 Ability Score Improvements</h4>
-                    <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
-                            <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
-                                <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
-                                <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
-                                    class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
-                                <span class="text-xs text-brand-300 font-bold block mt-1"
-                                    x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
+                <!-- Ability Score Improvement (ASI) or Feat Selection -->
+                <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 space-y-3">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <h4 class="font-bold text-gray-200 flex items-center gap-1.5">
+                            <span>💪</span> ASI or 5e Feat
+                        </h4>
+                        <div class="flex items-center gap-1 bg-dark-900 p-0.5 rounded-lg border border-gray-800 text-xs">
+                            <button type="button" @click="levelUpForm.asiOrFeatMode = 'asi'"
+                                class="px-2.5 py-1 rounded font-bold transition"
+                                :class="levelUpForm.asiOrFeatMode === 'asi' ? 'bg-amber-600 text-black' : 'text-gray-400 hover:text-white'">
+                                Ability (+2 / +1)
+                            </button>
+                            <button type="button" @click="levelUpForm.asiOrFeatMode = 'feat'"
+                                class="px-2.5 py-1 rounded font-bold transition"
+                                :class="levelUpForm.asiOrFeatMode === 'feat' ? 'bg-amber-600 text-black' : 'text-gray-400 hover:text-white'">
+                                Choose Feat
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ASI Mode -->
+                    <div x-show="levelUpForm.asiOrFeatMode === 'asi'" class="space-y-2">
+                        <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
+                                    <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
+                                    <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
+                                        class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
+                                    <span class="text-xs text-brand-300 font-bold block mt-1"
+                                        x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Feat Mode -->
+                    <div x-show="levelUpForm.asiOrFeatMode === 'feat'" class="space-y-3">
+                        <p class="text-gray-400 text-xs">Select a canonical 5e Feat (PHB, XGE, TCE) to add to your character:</p>
+                        <select x-model="levelUpForm.selectedFeatId"
+                            class="w-full bg-dark-900 border border-gray-700 rounded-lg p-2 text-xs sm:text-sm text-white outline-none focus:border-amber-500">
+                            <option value="">-- Select a Feat --</option>
+                            <template x-for="f in availableFeats" :key="f.id">
+                                <option :value="f.id" x-text="`${f.name}${f.prerequisite ? ' (Prereq: ' + f.prerequisite + ')' : ''}`"></option>
+                            </template>
+                        </select>
+
+                        <!-- Feat Details Preview -->
+                        <template x-if="levelUpSelectedFeat">
+                            <div class="bg-dark-900 border border-amber-500/40 rounded-xl p-3 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <h5 class="font-bold text-amber-300 text-sm" x-text="levelUpSelectedFeat.name"></h5>
+                                    <span x-show="levelUpSelectedFeat.prerequisite"
+                                        class="text-[10px] bg-red-950/80 text-red-300 border border-red-800 px-2 py-0.5 rounded font-mono"
+                                        x-text="`Prereq: ${levelUpSelectedFeat.prerequisite}`"></span>
+                                </div>
+                                <p class="text-xs text-gray-300 leading-relaxed" x-text="levelUpSelectedFeat.desc"></p>
+
+                                <!-- Half-Feat Bonus Stat Selector -->
+                                <div x-show="levelUpSelectedFeat.asi" class="pt-2 border-t border-gray-800">
+                                    <label class="block text-xs font-bold text-amber-400 mb-1">
+                                        ⚡ Half-Feat Bonus: Select attribute for +1 bonus
+                                    </label>
+                                    <select x-model="levelUpForm.selectedFeatAsi"
+                                        class="bg-dark-950 border border-amber-600/60 rounded px-2.5 py-1 text-xs text-white outline-none">
+                                        <option value="">-- Choose Attribute (+1) --</option>
+                                        <template x-for="att in (levelUpSelectedFeat.asi?.attributes || [])" :key="att">
+                                            <option :value="att" x-text="`+1 ${att}`"></option>
+                                        </template>
+                                    </select>
+                                </div>
                             </div>
                         </template>
                     </div>

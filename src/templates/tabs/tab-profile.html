@@ -83,9 +83,13 @@
                         <span class="text-xs text-gray-400 block mt-0.5 truncate" x-text="stats.armorDesc"></span>
                     </div>
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow" :title="stats.speedDesc">
-                        <div class="text-3xl md:text-5xl font-black" :class="stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-brand-300'" x-text="stats.speedStr || data.vitals.speed"></div>
+                        <div class="text-3xl md:text-5xl font-black"
+                            :class="hasSpeedZeroCondition.length > 0 ? 'text-red-500 animate-pulse' : (stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-brand-300')"
+                            x-text="hasSpeedZeroCondition.length > 0 ? '0 ft' : (stats.speedStr || data.vitals.speed)"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">👟 Speed</div>
-                        <span class="text-xs block mt-0.5 truncate" :class="stats.heavyArmorPenalty > 0 ? 'text-amber-400 font-semibold' : 'text-gray-400'" x-text="stats.heavyArmorPenalty > 0 ? '⚠️ Encumbered (-10 ft)' : (stats.speedDesc || data.identity?.race || 'Base movement')"></span>
+                        <span class="text-xs block mt-0.5 truncate font-semibold"
+                            :class="hasSpeedZeroCondition.length > 0 ? 'text-red-400' : (stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-gray-400')"
+                            x-text="hasSpeedZeroCondition.length > 0 ? `🚫 0 ft (${hasSpeedZeroCondition[0].name})` : (stats.heavyArmorPenalty > 0 ? '⚠️ Encumbered (-10 ft)' : (stats.speedDesc || data.identity?.race || 'Base movement'))"></span>
                     </div>
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow" :title="stats.initDesc">
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>

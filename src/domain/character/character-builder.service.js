@@ -16,6 +16,8 @@ import {
     CLASS_CREATION_RULES,
     RACIAL_ASI_MAP
 } from '../constants/creation-rules.constants.js';
+import { CLASS_STARTING_EQUIPMENT } from '../constants/equipment-packages.constants.js';
+import { findFeat } from '../constants/feats.constants.js';
 import { normalizeKey, capitalizeWord } from '../../helpers/string.helper.js';
 
 export class CharacterBuilderService {
@@ -154,7 +156,7 @@ export class CharacterBuilderService {
         // 2. CON Modifier & HP
         const conMod = calculateAbilityModifier(finalAttributes[ABILITIES.CON]?.score);
         const isHillDwarf = normalizeKey(raceKey) === 'dwarf' && Boolean(normalizeKey(subraceKey).includes('hill'));
-        const maxHp = this.calculateStartingHp(classKey, conMod, level, isHillDwarf);
+        let maxHp = this.calculateStartingHp(classKey, conMod, level, isHillDwarf);
 
         // 3. Skills setup
         // Combine background skills + chosen class skills + racial proficiencies
@@ -203,7 +205,68 @@ export class CharacterBuilderService {
 
         const expectedSlots = ClassSyncService.calculateExpectedSlots([classObj]);
 
-        // 8. Compile raw character draft
+        // 8. Starting Equipment Package Resolution
+        let weapons = wizardData.startingWeapons || [];
+        let armors = wizardData.startingArmors || [];
+        let tools = wizardData.startingTools || [];
+        let consumables = [
+            { name: 'Potion of Healing', qty: 2 },
+            { name: 'Rations (1 day)', qty: 5 },
+            { name: 'Waterskin', qty: 1 }
+        ];
+
+        // If specific starting equipment selections are made or default package is used
+        const classEquip = CLASS_STARTING_EQUIPMENT[classKey];
+        if (classEquip?.choices && (!wizardData.startingWeapons || wizardData.startingWeapons.length === 0)) {
+            weapons = [];
+            armors = [];
+            tools = [];
+            const selectedIndices = wizardData.selectedEquipment || {};
+
+            classEquip.choices.forEach((choice, choiceIdx) => {
+                const optIdx = selectedIndices[choiceIdx] !== undefined ? selectedIndices[choiceIdx] : 0;
+                const opt = choice.options[optIdx] || choice.options[0];
+                if (opt?.items) {
+                    opt.items.forEach(item => {
+                        if (item.type === 'weapon') weapons.push({ ...item });
+                        else if (item.type === 'armor') armors.push({ ...item });
+                        else if (item.type === 'consumable') consumables.push({ ...item });
+                        else tools.push({ ...item });
+                    });
+                }
+            });
+        }
+
+        // 9. Feat & Half-Feat Resolution
+        const traits = [
+            ...(raceInfo.traits || []).map(t => typeof t === 'string' ? { name: t, desc: '' } : t)
+        ];
+
+        if (wizardData.chosenFeat) {
+            const feat = findFeat(wizardData.chosenFeat);
+            if (feat) {
+                traits.push({
+                    name: `Feat: ${feat.name}`,
+                    desc: feat.desc
+                });
+
+                // Apply half-feat stat bonus
+                if (feat.asi && wizardData.chosenFeatAsi) {
+                    const attrKey = String(wizardData.chosenFeatAsi).toUpperCase();
+                    if (finalAttributes[attrKey]) {
+                        finalAttributes[attrKey].score += feat.asi.amount || 1;
+                        finalAttributes[attrKey].mod = calculateAbilityModifier(finalAttributes[attrKey].score);
+                    }
+                }
+
+                // If Tough feat is selected, grant +2 HP per level
+                if (feat.id === 'tough') {
+                    maxHp += 2 * level;
+                }
+            }
+        }
+
+        // 10. Compile raw character draft
         const rawCharacter = {
             id: CharacterStorageService.generateUniqueId(),
             identity: {
@@ -228,9 +291,7 @@ export class CharacterBuilderService {
             },
             skills,
             combat: {
-                traits: [
-                    ...(raceInfo.traits || []).map(t => typeof t === 'string' ? { name: t, desc: '' } : t)
-                ],
+                traits,
                 resources: [],
                 sessionLogs: [
                     {
@@ -250,16 +311,10 @@ export class CharacterBuilderService {
                     sp: 0,
                     cp: 0
                 },
-                weapons: wizardData.startingWeapons || [],
-                armors: wizardData.startingArmors || [],
-                consumables: [
-                    { name: 'Potion of Healing', qty: 2 },
-                    { name: 'Rations (1 day)', qty: 5 },
-                    { name: 'Waterskin', qty: 1 }
-                ],
-                tools: wizardData.startingTools || [
-                    { name: "Explorer's Pack", desc: 'Bedroll, mess kit, tinderbox, 10 torches, 50 feet of hempen rope.' }
-                ],
+                weapons,
+                armors,
+                consumables,
+                tools,
                 story: []
             },
             magic: {

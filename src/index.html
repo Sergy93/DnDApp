@@ -460,6 +460,49 @@
                     </template>
                 </div>
             </div>
+
+            <!-- Bonus Feat for Variant Human / Custom Lineage -->
+            <div x-show="wizardIsFeatEligible" class="bg-dark-900 border border-amber-600/50 rounded-xl p-4 sm:p-5 shadow space-y-3">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-sm font-bold text-amber-300 flex items-center gap-1.5">
+                        <span>🌟</span> Bonus 5e Feat (Variant Human / Custom Lineage)
+                    </span>
+                    <span class="text-[10px] text-amber-400/80 font-mono">1 Bonus Feat RAW</span>
+                </div>
+                <p class="text-xs text-gray-400">Your lineage grants 1 free feat at character creation:</p>
+                <select x-model="wizardData.chosenFeat"
+                    class="w-full bg-dark-950 border border-gray-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:border-amber-500 focus:outline-none">
+                    <option value="">-- Select Bonus Feat --</option>
+                    <template x-for="f in wizardAvailableFeats" :key="f.id">
+                        <option :value="f.id" x-text="`${f.name}${f.prerequisite ? ' (Prereq: ' + f.prerequisite + ')' : ''}`"></option>
+                    </template>
+                </select>
+
+                <!-- Feat Details Preview -->
+                <template x-if="wizardSelectedFeatObj">
+                    <div class="bg-dark-950 border border-amber-500/30 rounded-xl p-3.5 space-y-2 text-xs">
+                        <div class="flex items-center justify-between">
+                            <strong class="text-amber-300 font-bold text-sm" x-text="wizardSelectedFeatObj.name"></strong>
+                            <span x-show="wizardSelectedFeatObj.prerequisite"
+                                class="text-[10px] bg-red-950 text-red-300 border border-red-800 px-2 py-0.5 rounded font-mono"
+                                x-text="`Prerequisite: ${wizardSelectedFeatObj.prerequisite}`"></span>
+                        </div>
+                        <p class="text-gray-300 leading-relaxed" x-text="wizardSelectedFeatObj.desc"></p>
+
+                        <!-- Half-Feat Selector -->
+                        <div x-show="wizardSelectedFeatObj.asi" class="pt-2 border-t border-gray-800 flex items-center gap-3">
+                            <span class="font-bold text-amber-400">⚡ Half-Feat Bonus:</span>
+                            <select x-model="wizardData.chosenFeatAsi"
+                                class="bg-dark-900 border border-amber-600/70 rounded-lg px-2.5 py-1 text-xs text-white outline-none">
+                                <option value="">-- Select Attribute (+1) --</option>
+                                <template x-for="att in (wizardSelectedFeatObj.asi?.attributes || [])" :key="att">
+                                    <option :value="att" x-text="`+1 ${att}`"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </section>
 
         <!-- STEP 3: CLASS & LEVEL -->
@@ -509,6 +552,35 @@
                 </div>
             </div>
 
+            <!-- Class Attributes & Magic Focus Card -->
+            <div x-show="wizardClassRules" class="bg-dark-900 border border-brand-900/60 rounded-xl p-4 shadow space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🎯</span> Class Focus & Spellcasting Attribute
+                    </span>
+                    <span class="text-xs font-mono text-brand-300" x-text="`Hit Die: ${wizardClassRules.hitDie}`"></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="text-gray-400">Primary:</span>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-brand-950 border border-brand-700/80 text-brand-300 font-bold" x-text="wizardClassRules.primaryAbility"></span>
+                    <template x-if="wizardClassRules.secondaryAbilities?.length">
+                        <div class="flex items-center gap-1">
+                            <span class="text-gray-500">• Secondary:</span>
+                            <template x-for="sec in wizardClassRules.secondaryAbilities" :key="sec">
+                                <span class="px-2 py-0.5 rounded bg-dark-950 border border-gray-700 text-gray-300 font-semibold" x-text="sec"></span>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="wizardClassRules.spellcastingAttr">
+                        <div class="flex items-center gap-1 ml-auto">
+                            <span class="text-purple-400 font-bold">🔮 Spellcasting Ability:</span>
+                            <span class="px-2.5 py-1 rounded bg-purple-950 border border-purple-700/70 text-purple-300 font-black uppercase text-xs" x-text="wizardClassRules.spellcastingAttr"></span>
+                        </div>
+                    </template>
+                </div>
+                <p x-show="wizardClassRules.descriptionHint" class="text-xs text-gray-400 italic pt-1 border-t border-gray-800/80" x-text="wizardClassRules.descriptionHint"></p>
+            </div>
+
             <!-- Class Skills Selection -->
             <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
                 <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
@@ -528,6 +600,35 @@
                             <span x-show="wizardBackgroundSkills.includes(sk.id)" class="text-[10px] text-purple-400 font-bold">Origin</span>
                             <span x-show="wizardData.chosenSkills.includes(sk.id)" class="text-[10px] text-emerald-400 font-bold">✓</span>
                         </button>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Starting Equipment Choice Packages -->
+            <div class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-sm font-bold text-gray-200 flex items-center gap-1.5">
+                        <span>🎒</span> Starting Equipment Packages (RAW 5e)
+                    </span>
+                    <span class="text-xs text-brand-300 font-mono capitalize" x-text="`${wizardData.class} Package`"></span>
+                </div>
+                <p class="text-xs text-gray-400">Choose starting weapon, armor, and pack loadouts:</p>
+
+                <div class="space-y-3">
+                    <template x-for="(choice, choiceIdx) in wizardStartingEquipmentChoices" :key="choiceIdx">
+                        <div class="bg-dark-950 p-3.5 rounded-xl border border-gray-800 space-y-2">
+                            <span class="text-xs font-bold text-gray-300 uppercase tracking-wider block" x-text="choice.name"></span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <template x-for="(opt, optIdx) in choice.options" :key="optIdx">
+                                    <button type="button" @click="setWizardEquipmentChoice(choiceIdx, optIdx)"
+                                        class="p-2.5 rounded-lg border text-left text-xs transition flex flex-col justify-between gap-1"
+                                        :class="(wizardData.selectedEquipment && wizardData.selectedEquipment[choiceIdx] === optIdx) || (!wizardData.selectedEquipment?.[choiceIdx] && optIdx === 0) ? 'bg-brand-950 border-brand-500 text-white shadow' : 'bg-dark-900 border-gray-800 text-gray-400 hover:text-white'">
+                                        <span class="font-bold text-xs" x-text="opt.label"></span>
+                                        <span class="text-[11px] text-gray-400" x-text="opt.items.map(i => i.name + (i.qty > 1 ? ' x' + i.qty : '')).join(', ')"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
                     </template>
                 </div>
             </div>
@@ -557,6 +658,28 @@
                 </div>
             </div>
 
+            <!-- Class Recommended Distribution Banner -->
+            <div class="bg-gradient-to-r from-brand-950/90 via-dark-900 to-purple-950/80 border border-brand-700/50 rounded-xl p-4 shadow flex flex-wrap items-center justify-between gap-3">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">💡</span>
+                        <strong class="text-white text-xs sm:text-sm">
+                            Recommended for <span class="text-brand-300 uppercase" x-text="wizardData.class"></span>:
+                        </strong>
+                        <span class="text-xs text-emerald-400 font-bold" x-text="`Prioritize ${wizardClassRules.primaryAbility}`"></span>
+                        <span x-show="wizardClassRules.secondaryAbilities?.length" class="text-xs text-gray-300" x-text="`then ${wizardClassRules.secondaryAbilities.join(', ')}`"></span>
+                    </div>
+                    <div x-show="wizardClassRules.spellcastingAttr" class="text-xs text-purple-300 flex items-center gap-1.5">
+                        <span>🔮</span>
+                        <span>Spellcasting depends on <strong class="uppercase text-purple-200" x-text="wizardClassRules.spellcastingAttr"></strong> for Spell Attack and Save DC!</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="px-2.5 py-1 rounded-lg bg-dark-950 border border-brand-500/50 text-brand-300 font-mono font-bold"
+                        x-text="`Hit Die: ${wizardClassRules.hitDie}`"></span>
+                </div>
+            </div>
+
             <!-- Standard Array Controls -->
             <div x-show="wizardData.scoreMethod === 'standard'" class="bg-dark-900 border border-gray-800 rounded-xl p-4 sm:p-5 shadow">
                 <div class="flex items-center justify-between border-b border-gray-800 pb-2 mb-4">
@@ -568,8 +691,13 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <template x-for="k in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="k">
-                        <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 flex items-center justify-between">
-                            <span class="font-bold text-xs text-gray-300" x-text="k"></span>
+                        <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 flex items-center justify-between"
+                            :class="k === wizardClassRules.primaryAbility ? 'border-brand-500/80 bg-brand-950/20' : (k === wizardClassRules.spellcastingAttr ? 'border-purple-500/80 bg-purple-950/20' : '')">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-bold text-xs text-gray-300" x-text="k"></span>
+                                <span x-show="k === wizardClassRules.primaryAbility" class="text-[9px] bg-brand-900/90 text-brand-300 border border-brand-700 px-1 py-0.5 rounded font-bold uppercase">Primary</span>
+                                <span x-show="k === wizardClassRules.spellcastingAttr && k !== wizardClassRules.primaryAbility" class="text-[9px] bg-purple-900/90 text-purple-300 border border-purple-700 px-1 py-0.5 rounded font-bold uppercase">Spells</span>
+                            </div>
                             <select :value="wizardData.standardArrayAssigned[k]" @change="assignStandardScore(k, $event.target.value)"
                                 class="bg-dark-900 border border-gray-700 rounded-lg px-2.5 py-1 text-white font-bold text-sm focus:border-brand-500 focus:outline-none">
                                 <template x-for="val in [15, 14, 13, 12, 10, 8]" :key="val">
@@ -591,8 +719,13 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <template x-for="(attr, k) in wizardFinalAttributes" :key="k">
-                        <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 text-center flex flex-col justify-between">
-                            <span class="font-bold text-xs text-gray-400" x-text="k"></span>
+                        <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 text-center flex flex-col justify-between"
+                            :class="k === wizardClassRules.primaryAbility ? 'border-brand-500/80 bg-brand-950/20' : (k === wizardClassRules.spellcastingAttr ? 'border-purple-500/80 bg-purple-950/20' : '')">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="font-bold text-xs text-gray-400" x-text="k"></span>
+                                <span x-show="k === wizardClassRules.primaryAbility" class="text-[9px] bg-brand-900/90 text-brand-300 border border-brand-700 px-1 py-0.5 rounded font-bold uppercase">Primary</span>
+                                <span x-show="k === wizardClassRules.spellcastingAttr && k !== wizardClassRules.primaryAbility" class="text-[9px] bg-purple-900/90 text-purple-300 border border-purple-700 px-1 py-0.5 rounded font-bold uppercase">Spells</span>
+                            </div>
                             <div class="text-xl font-black text-white my-1" x-text="wizardData.pointBuyScores[k]"></div>
                             <div class="flex items-center justify-center gap-2">
                                 <button type="button" @click="adjustPointBuy(k, -1)" :disabled="wizardData.pointBuyScores[k] <= 8"
@@ -641,13 +774,20 @@
                 <p class="text-xs text-gray-400 mt-1">Spellcasting parameters calibrated for <span class="text-brand-300 font-bold" x-text="wizardData.class"></span>.</p>
             </div>
 
-            <div class="bg-dark-900 border border-gray-800 rounded-xl p-5 shadow text-center">
+            <!-- Magic & Spellcasting Section (if spellcaster) -->
+            <div class="bg-dark-900 border border-purple-900/60 rounded-xl p-5 shadow space-y-3">
+                <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                    <span class="text-sm font-bold text-purple-300 flex items-center gap-1.5">
+                        <span>✨</span> Magic & Spellcasting Overview
+                    </span>
+                    <span class="text-xs text-purple-400 font-mono font-bold uppercase" x-text="`Key: ${wizardClassRules.spellcastingAttr}`"></span>
+                </div>
                 <p class="text-xs text-gray-300">
-                    Spellcasting key: <strong class="text-brand-300 uppercase" x-text="wizardClassRules.spellcastingAttr"></strong>.
-                    Spell save DC and attack bonuses will be calibrated automatically.
+                    Spellcasting key: <strong class="text-purple-300 uppercase" x-text="wizardClassRules.spellcastingAttr"></strong>.
+                    Spell attack bonus and spell save DC are automatically calculated and ready in your combat dashboard.
                 </p>
-                <p class="text-[11px] text-gray-500 mt-2">
-                    You can manage and expand your full spellbook from the Combat Tab at any time!
+                <p class="text-[11px] text-gray-500">
+                    You can manage and expand your full spellbook with 1-click slot tracking from the Combat Tab at any time!
                 </p>
             </div>
         </section>
@@ -685,6 +825,14 @@
                             <span class="text-[10px] text-emerald-400 block" x-text="attr.modStr"></span>
                         </div>
                     </template>
+                </div>
+
+                <!-- Feat Summary if chosen -->
+                <div x-show="wizardSelectedFeatObj" class="bg-dark-950 p-3 rounded-xl border border-amber-500/40 text-xs space-y-1">
+                    <span class="text-amber-300 font-bold flex items-center gap-1.5">
+                        <span>🌟</span> <span x-text="`Bonus Feat: ${wizardSelectedFeatObj?.name}`"></span>
+                    </span>
+                    <p class="text-gray-400 text-[11px]" x-text="wizardSelectedFeatObj?.desc"></p>
                 </div>
             </div>
         </section>
@@ -1124,9 +1272,13 @@
                         <span class="text-xs text-gray-400 block mt-0.5 truncate" x-text="stats.armorDesc"></span>
                     </div>
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow" :title="stats.speedDesc">
-                        <div class="text-3xl md:text-5xl font-black" :class="stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-brand-300'" x-text="stats.speedStr || data.vitals.speed"></div>
+                        <div class="text-3xl md:text-5xl font-black"
+                            :class="hasSpeedZeroCondition.length > 0 ? 'text-red-500 animate-pulse' : (stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-brand-300')"
+                            x-text="hasSpeedZeroCondition.length > 0 ? '0 ft' : (stats.speedStr || data.vitals.speed)"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">👟 Speed</div>
-                        <span class="text-xs block mt-0.5 truncate" :class="stats.heavyArmorPenalty > 0 ? 'text-amber-400 font-semibold' : 'text-gray-400'" x-text="stats.heavyArmorPenalty > 0 ? '⚠️ Encumbered (-10 ft)' : (stats.speedDesc || data.identity?.race || 'Base movement')"></span>
+                        <span class="text-xs block mt-0.5 truncate font-semibold"
+                            :class="hasSpeedZeroCondition.length > 0 ? 'text-red-400' : (stats.heavyArmorPenalty > 0 ? 'text-amber-400' : 'text-gray-400')"
+                            x-text="hasSpeedZeroCondition.length > 0 ? `🚫 0 ft (${hasSpeedZeroCondition[0].name})` : (stats.heavyArmorPenalty > 0 ? '⚠️ Encumbered (-10 ft)' : (stats.speedDesc || data.identity?.race || 'Base movement'))"></span>
                     </div>
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow" :title="stats.initDesc">
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>
@@ -1306,6 +1458,61 @@
             <!-- TAB: COMBAT & MAGIC -->
             <section x-show="activeTab === 'combat'" class="tab-view space-y-5">
 
+                <!-- ACTIVE CONDITIONS TACTICAL ALERT BANNER (High Visibility at the Table) -->
+                <div x-show="activeConditionsList.length > 0" class="bg-gradient-to-r from-purple-950/95 via-dark-900 to-purple-950/90 border-2 border-purple-500/70 rounded-2xl p-4 shadow-[0_0_30px_rgba(168,85,247,0.3)] space-y-3">
+                    <div class="flex items-center justify-between border-b border-purple-800/80 pb-2">
+                        <span class="text-xs sm:text-sm font-black text-purple-200 uppercase tracking-wider flex items-center gap-2">
+                            <span class="text-base animate-pulse">⚠️</span> Active Conditions & Tactical Effects
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-mono text-purple-300 font-bold" x-text="`${activeConditionsList.length} Active`"></span>
+                            <button type="button" @click="modalConditionsOpen = true"
+                                class="text-xs text-brand-300 hover:text-white underline font-bold transition">Manage Conditions</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                        <template x-for="c in activeConditionsList" :key="c.id">
+                            <div class="bg-dark-950/90 border border-purple-600/50 rounded-xl p-3 flex items-start justify-between gap-3 shadow">
+                                <div class="flex items-start gap-2.5">
+                                    <span class="text-2xl shrink-0" x-text="c.icon"></span>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <strong class="text-white text-xs font-bold" x-text="c.name"></strong>
+                                            <span class="text-[10px] text-purple-300 font-mono bg-purple-950/90 border border-purple-700/60 px-1.5 py-0.2 rounded" x-text="c.source || 'Active'"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-300 leading-snug mt-1" x-text="c.summary"></p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="clearCondition(c.id)"
+                                    class="text-gray-500 hover:text-red-400 p-1 font-bold text-sm" title="Clear this condition">✕</button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Tactical Quick Warnings -->
+                    <div class="flex flex-wrap items-center gap-2 pt-1 border-t border-purple-900/60 text-xs">
+                        <template x-if="hasAttackDisadvantageCondition.length > 0">
+                            <span class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-700 text-red-300 font-bold flex items-center gap-1">
+                                <span>⚠️</span>
+                                <span>Attack Rolls: DISADVANTAGE (<span x-text="hasAttackDisadvantageCondition.map(c => c.name).join(', ')"></span>)</span>
+                            </span>
+                        </template>
+                        <template x-if="hasSpeedZeroCondition.length > 0">
+                            <span class="px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-700 text-red-300 font-bold flex items-center gap-1">
+                                <span>🚫</span>
+                                <span>Speed: 0 FT (<span x-text="hasSpeedZeroCondition.map(c => c.name).join(', ')"></span>)</span>
+                            </span>
+                        </template>
+                        <template x-if="hasSaveAutoFailCondition.length > 0">
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-950/80 border border-amber-700 text-amber-300 font-bold flex items-center gap-1">
+                                <span>⚡</span>
+                                <span>STR & DEX Saves: AUTO-FAIL (<span x-text="hasSaveAutoFailCondition.map(c => c.name).join(', ')"></span>)</span>
+                            </span>
+                        </template>
+                    </div>
+                </div>
+
                 <!-- TOP COMBAT BANNER: SPELL SLOTS & QUICK STATS -->
                 <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 shadow">
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-700/80 pb-3 mb-3">
@@ -1373,6 +1580,15 @@
                                     class="px-2.5 py-1 bg-brand-900/60 hover:bg-brand-600 border border-brand-500/50 text-brand-200 text-xs font-bold rounded-lg transition">
                                     + Add Weapon
                                 </button>
+                            </div>
+
+                            <!-- Attack Disadvantage Warning -->
+                            <div x-show="hasAttackDisadvantageCondition.length > 0" class="mb-3 p-2.5 bg-red-950/80 border border-red-700/80 rounded-xl text-xs font-bold text-red-200 flex items-center justify-between shadow">
+                                <span class="flex items-center gap-1.5">
+                                    <span>⚠️</span>
+                                    <span>ATTACK ROLLS AT DISADVANTAGE: Condition <span class="text-white underline" x-text="hasAttackDisadvantageCondition.map(c => c.name).join(', ')"></span> active!</span>
+                                </span>
+                                <span class="text-[10px] bg-red-900 px-2 py-0.5 rounded font-mono uppercase">Roll 2d20 Take Lower</span>
                             </div>
                             <div class="overflow-x-auto rounded-lg border border-gray-700">
                                 <table class="w-full text-left text-xs bg-dark-900">
@@ -3371,18 +3587,77 @@
                     </div>
                 </div>
 
-                <!-- Puntuaciones de Atributos (ASI) -->
-                <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 space-y-2">
-                    <h4 class="font-bold text-gray-200">💪 Ability Score Improvements</h4>
-                    <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
-                            <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
-                                <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
-                                <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
-                                    class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
-                                <span class="text-xs text-brand-300 font-bold block mt-1"
-                                    x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
+                <!-- Ability Score Improvement (ASI) or Feat Selection -->
+                <div class="bg-dark-950 p-3 rounded-xl border border-gray-800 space-y-3">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <h4 class="font-bold text-gray-200 flex items-center gap-1.5">
+                            <span>💪</span> ASI or 5e Feat
+                        </h4>
+                        <div class="flex items-center gap-1 bg-dark-900 p-0.5 rounded-lg border border-gray-800 text-xs">
+                            <button type="button" @click="levelUpForm.asiOrFeatMode = 'asi'"
+                                class="px-2.5 py-1 rounded font-bold transition"
+                                :class="levelUpForm.asiOrFeatMode === 'asi' ? 'bg-amber-600 text-black' : 'text-gray-400 hover:text-white'">
+                                Ability (+2 / +1)
+                            </button>
+                            <button type="button" @click="levelUpForm.asiOrFeatMode = 'feat'"
+                                class="px-2.5 py-1 rounded font-bold transition"
+                                :class="levelUpForm.asiOrFeatMode === 'feat' ? 'bg-amber-600 text-black' : 'text-gray-400 hover:text-white'">
+                                Choose Feat
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ASI Mode -->
+                    <div x-show="levelUpForm.asiOrFeatMode === 'asi'" class="space-y-2">
+                        <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
+                                    <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
+                                    <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
+                                        class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
+                                    <span class="text-xs text-brand-300 font-bold block mt-1"
+                                        x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Feat Mode -->
+                    <div x-show="levelUpForm.asiOrFeatMode === 'feat'" class="space-y-3">
+                        <p class="text-gray-400 text-xs">Select a canonical 5e Feat (PHB, XGE, TCE) to add to your character:</p>
+                        <select x-model="levelUpForm.selectedFeatId"
+                            class="w-full bg-dark-900 border border-gray-700 rounded-lg p-2 text-xs sm:text-sm text-white outline-none focus:border-amber-500">
+                            <option value="">-- Select a Feat --</option>
+                            <template x-for="f in availableFeats" :key="f.id">
+                                <option :value="f.id" x-text="`${f.name}${f.prerequisite ? ' (Prereq: ' + f.prerequisite + ')' : ''}`"></option>
+                            </template>
+                        </select>
+
+                        <!-- Feat Details Preview -->
+                        <template x-if="levelUpSelectedFeat">
+                            <div class="bg-dark-900 border border-amber-500/40 rounded-xl p-3 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <h5 class="font-bold text-amber-300 text-sm" x-text="levelUpSelectedFeat.name"></h5>
+                                    <span x-show="levelUpSelectedFeat.prerequisite"
+                                        class="text-[10px] bg-red-950/80 text-red-300 border border-red-800 px-2 py-0.5 rounded font-mono"
+                                        x-text="`Prereq: ${levelUpSelectedFeat.prerequisite}`"></span>
+                                </div>
+                                <p class="text-xs text-gray-300 leading-relaxed" x-text="levelUpSelectedFeat.desc"></p>
+
+                                <!-- Half-Feat Bonus Stat Selector -->
+                                <div x-show="levelUpSelectedFeat.asi" class="pt-2 border-t border-gray-800">
+                                    <label class="block text-xs font-bold text-amber-400 mb-1">
+                                        ⚡ Half-Feat Bonus: Select attribute for +1 bonus
+                                    </label>
+                                    <select x-model="levelUpForm.selectedFeatAsi"
+                                        class="bg-dark-950 border border-amber-600/60 rounded px-2.5 py-1 text-xs text-white outline-none">
+                                        <option value="">-- Choose Attribute (+1) --</option>
+                                        <template x-for="att in (levelUpSelectedFeat.asi?.attributes || [])" :key="att">
+                                            <option :value="att" x-text="`+1 ${att}`"></option>
+                                        </template>
+                                    </select>
+                                </div>
                             </div>
                         </template>
                     </div>

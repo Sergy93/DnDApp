@@ -70,6 +70,22 @@ export function createVitalsSlice() {
             });
         },
 
+        get hasAttackDisadvantageCondition() {
+            const active = (this.activeConditionsList || []).map(c => c.id);
+            const disadv = ['blinded', 'frightened', 'poisoned', 'prone', 'restrained'];
+            return (this.activeConditionsList || []).filter(c => disadv.includes(c.id));
+        },
+
+        get hasSpeedZeroCondition() {
+            const zero = ['grappled', 'restrained', 'paralyzed', 'petrified', 'stunned', 'unconscious'];
+            return (this.activeConditionsList || []).filter(c => zero.includes(c.id));
+        },
+
+        get hasSaveAutoFailCondition() {
+            const fail = ['paralyzed', 'petrified', 'stunned', 'unconscious'];
+            return (this.activeConditionsList || []).filter(c => fail.includes(c.id));
+        },
+
         get availableHitDiceCount() {
             return (this.data?.vitals?.hitDiceSpent || []).filter(s => !s).length;
         },

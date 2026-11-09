@@ -10,6 +10,7 @@ import {
     ABILITY_MODIFIER_DIVISOR,
     DEFAULT_HIT_DIE
 } from '../../domain/constants/dnd.constants.js';
+import { DND_5E_FEATS, findFeat } from '../../domain/constants/feats.constants.js';
 
 /**
  * Progression, Level Up, Backgrounds Compendium, and Class Feature Sync state slice.
@@ -40,7 +41,18 @@ export function createProgressionSlice() {
             attributes: {},
             newClassName: '',
             newClassSubclass: '',
-            newClassHitDie: 'd8'
+            newClassHitDie: 'd8',
+            asiOrFeatMode: 'asi',
+            selectedFeatId: '',
+            selectedFeatAsi: ''
+        },
+
+        get availableFeats() {
+            return DND_5E_FEATS;
+        },
+
+        get levelUpSelectedFeat() {
+            return findFeat(this.levelUpForm.selectedFeatId);
         },
 
         // Background Compendium
@@ -94,6 +106,9 @@ export function createProgressionSlice() {
             this.levelUpForm.newClassName = '';
             this.levelUpForm.newClassSubclass = '';
             this.levelUpForm.newClassHitDie = 'd8';
+            this.levelUpForm.asiOrFeatMode = 'asi';
+            this.levelUpForm.selectedFeatId = '';
+            this.levelUpForm.selectedFeatAsi = '';
             this.modalLevelUpOpen = true;
         },
 
@@ -163,17 +178,52 @@ export function createProgressionSlice() {
                 }
             });
 
+            // If Feat was chosen instead of manual ASI
+            let featAddedMsg = '';
+            if (this.levelUpForm.asiOrFeatMode === 'feat' && this.levelUpForm.selectedFeatId) {
+                const feat = findFeat(this.levelUpForm.selectedFeatId);
+                if (feat) {
+                    this.data.combat = this.data.combat || {};
+                    this.data.combat.traits = this.data.combat.traits || [];
+                    const featName = `Feat: ${feat.name}`;
+                    if (!this.data.combat.traits.some(t => t.name.toLowerCase() === featName.toLowerCase())) {
+                        this.data.combat.traits.push({
+                            name: featName,
+                            desc: feat.desc
+                        });
+                    }
+
+                    // Apply half-feat ASI if specified
+                    if (feat.asi && this.levelUpForm.selectedFeatAsi) {
+                        const attrKey = String(this.levelUpForm.selectedFeatAsi).toUpperCase();
+                        if (this.data.attributes[attrKey]) {
+                            this.data.attributes[attrKey].score += (feat.asi.amount || 1);
+                        }
+                    }
+
+                    // If Tough feat, grant +2 HP per level
+                    if (feat.id === 'tough') {
+                        const totalLvl = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
+                        const toughBonus = 2 * totalLvl;
+                        this.data.vitals.maxHp += toughBonus;
+                        this.data.vitals.currentHp = Math.min(this.data.vitals.maxHp, this.data.vitals.currentHp + toughBonus);
+                    }
+
+                    featAddedMsg = ` Learned Feat: ${feat.name}.`;
+                }
+            }
+
             // 1. Sync Spell Slots & 2. Auto-sync class features & clean stale
             const { newResources, newTraits } = ClassSyncService.applyClassFeaturesSync(this.data);
             this.modalLevelUpOpen = false;
 
             const totalLevel = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
             const addedNames = [...newResources.map(r => r.name), ...newTraits.map(t => t.name)];
-            let alertMsg = `Advanced to Level ${totalLevel}! HP, Hit Dice, and Spell Slots have been automatically synchronized.`;
+            let alertMsg = `Advanced to Level ${totalLevel}! HP, Hit Dice, and Spell Slots have been automatically synchronized.${featAddedMsg}`;
             if (addedNames.length > 0) {
                 alertMsg += `\n\n✨ Unlocked new class features added:\n• ` + addedNames.join('\n• ');
             }
-            this.logEvent('⭐', 'Level Up', `Reached Level ${totalLevel}. Max HP: ${newMaxHp}.${addedNames.length > 0 ? ` Unlocked: ${addedNames.join(', ')}.` : ''}`);
+            this.logEvent('⭐', 'Level Up', `Reached Level ${totalLevel}. Max HP: ${this.data.vitals.maxHp}.${featAddedMsg}${addedNames.length > 0 ? ` Unlocked: ${addedNames.join(', ')}.` : ''}`);
             this.uiAlert(alertMsg, "Level Up Complete", "🎉");
         },
 

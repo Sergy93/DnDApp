@@ -350,11 +350,15 @@ export class ClassSyncService {
         const syncResult = this.detectClassFeaturesToSync(character);
         const { newResources, newTraits, staleResourceIds, staleTraitNames } = syncResult;
 
+        character.combat = character.combat || {};
+        character.combat.resources = character.combat.resources || [];
+        character.combat.traits = character.combat.traits || [];
+
         if (staleResourceIds.size > 0) {
-            character.combat.resources = (character.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
+            character.combat.resources = character.combat.resources.filter(r => !staleResourceIds.has(r.id));
         }
         if (staleTraitNames.size > 0) {
-            character.combat.traits = (character.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
+            character.combat.traits = character.combat.traits.filter(t => !staleTraitNames.has(normalizeKey(t.name)));
         }
         if (newResources.length > 0) {
             character.combat.resources.push(...newResources);

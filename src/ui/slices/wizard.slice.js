@@ -9,6 +9,8 @@ import {
     POINT_BUY_TOTAL_POINTS,
     STANDARD_ARRAY
 } from '../../domain/constants/creation-rules.constants.js';
+import { DND_5E_FEATS, findFeat } from '../../domain/constants/feats.constants.js';
+import { CLASS_STARTING_EQUIPMENT } from '../../domain/constants/equipment-packages.constants.js';
 import { normalizeKey, capitalizeWord } from '../../helpers/string.helper.js';
 
 export function createWizardSlice() {
@@ -34,7 +36,10 @@ export function createWizardSlice() {
             rolledAttributes: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
             manualAttributes: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
             chosenSkills: [],
-            chosenSpells: []
+            chosenSpells: [],
+            chosenFeat: '',
+            chosenFeatAsi: '',
+            selectedEquipment: { 0: 0, 1: 0, 2: 0 }
         },
 
         // ================= WIZARD COMPUTED GETTERS =================
@@ -107,6 +112,25 @@ export function createWizardSlice() {
             const backgrounds = CompendiumStorageService.getBackgrounds();
             const bgObj = backgrounds[bgKey];
             return (bgObj?.skillProficiencies || []).map(s => normalizeKey(s));
+        },
+
+        get wizardAvailableFeats() {
+            return DND_5E_FEATS;
+        },
+
+        get wizardIsFeatEligible() {
+            const r = normalizeKey(this.wizardData.race);
+            const sr = normalizeKey(this.wizardData.subrace);
+            return r === 'customlineage' || (r === 'human' && sr.includes('variant')) || this.wizardData.level >= 4;
+        },
+
+        get wizardSelectedFeatObj() {
+            return findFeat(this.wizardData.chosenFeat);
+        },
+
+        get wizardStartingEquipmentChoices() {
+            const cKey = normalizeKey(this.wizardData.class);
+            return CLASS_STARTING_EQUIPMENT[cKey]?.choices || [];
         },
 
         get wizardAllowedSkillsList() {
@@ -188,7 +212,10 @@ export function createWizardSlice() {
                 rolledAttributes: { STR: 12, DEX: 12, CON: 12, INT: 12, WIS: 12, CHA: 12 },
                 manualAttributes: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
                 chosenSkills: ['athletics', 'perception'],
-                chosenSpells: []
+                chosenSpells: [],
+                chosenFeat: '',
+                chosenFeatAsi: '',
+                selectedEquipment: { 0: 0, 1: 0, 2: 0 }
             };
             this.wizardOpen = true;
             this.currentView = 'create';
@@ -384,6 +411,13 @@ export function createWizardSlice() {
             return this.wizardBackgroundSkills.includes(normId) || this.wizardData.chosenSkills.includes(normId);
         },
 
+        setWizardEquipmentChoice(choiceIdx, optIdx) {
+            if (!this.wizardData.selectedEquipment) {
+                this.wizardData.selectedEquipment = {};
+            }
+            this.wizardData.selectedEquipment[choiceIdx] = optIdx;
+        },
+
         async finalizeAndCreateHero() {
             // Validate all steps before finalizing
             for (let s = 1; s <= 4; s++) {
@@ -416,7 +450,10 @@ export function createWizardSlice() {
                 baseAttributes: baseAttrs,
                 chosenSkills: this.wizardData.chosenSkills,
                 backgroundSkills: this.wizardBackgroundSkills,
-                chosenSpells: this.wizardData.chosenSpells
+                chosenSpells: this.wizardData.chosenSpells,
+                chosenFeat: this.wizardData.chosenFeat,
+                chosenFeatAsi: this.wizardData.chosenFeatAsi,
+                selectedEquipment: this.wizardData.selectedEquipment
             };
 
             const newCharacter = CharacterBuilderService.buildCharacter(payload);
