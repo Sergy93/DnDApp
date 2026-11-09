@@ -3,6 +3,7 @@ import { onRequestGet as getAuthMe } from '../functions/api/auth/me.js';
 import { onRequestGet as getCharacters, onRequestPost as postCharacters } from '../functions/api/characters/index.js';
 import { onRequestGet as getCharacterBySlug, onRequestDelete as deleteCharacter } from '../functions/api/characters/[slug].js';
 import { onRequestPost as postSync } from '../functions/api/sync.js';
+import { onRequestGet as getCompendiumAll } from '../functions/api/compendium/all.js';
 
 export default {
     async fetch(request, env, ctx) {
@@ -45,6 +46,9 @@ export default {
                     }
                     if (pathname === '/api/sync' && request.method === 'POST') {
                         return postSync(context);
+                    }
+                    if (pathname === '/api/compendium/all' && request.method === 'GET') {
+                        return getCompendiumAll(context);
                     }
 
                     return new Response(JSON.stringify({

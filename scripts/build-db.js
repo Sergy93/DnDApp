@@ -123,6 +123,9 @@ function buildDatabase() {
     const backgroundCompendium = JSON.parse(
         fs.readFileSync(path.join(ROOT_DIR, 'src', 'dnd-data', 'background-compendium.json'), 'utf8')
     );
+    const raceCompendium = JSON.parse(
+        fs.readFileSync(path.join(ROOT_DIR, 'src', 'dnd-data', 'race-compendium.json'), 'utf8')
+    );
 
     const spellCompendium = JSON.parse(
         fs.readFileSync(path.join(ROOT_DIR, 'src', 'dnd-data', 'spell-compendium.json'), 'utf8')
@@ -297,6 +300,30 @@ function buildDatabase() {
             backgroundsInserted++;
         }
 
+        // 6. Insert Compendium Races
+        const insertRace = db.prepare(`
+            INSERT INTO compendium_races (
+                id, name, source_book, speed, data_json
+            ) VALUES (?, ?, ?, ?, ?)
+        `);
+
+        let racesInserted = 0;
+        for (const [key, rc] of Object.entries(raceCompendium)) {
+            const id = slugify(key);
+            const name = rc.name || key;
+            const sourceBook = rc.source || 'PHB';
+            const speed = rc.speed || '30 ft.';
+
+            insertRace.run(
+                id,
+                name,
+                sourceBook,
+                speed,
+                JSON.stringify(rc)
+            );
+            racesInserted++;
+        }
+
         db.exec('COMMIT;');
 
         // Run integrity and foreign key verification
@@ -322,6 +349,7 @@ function buildDatabase() {
         console.log(`- Spells seeded: ${spellsInserted}`);
         console.log(`- Classes seeded: ${classesInserted}`);
         console.log(`- Backgrounds seeded: ${backgroundsInserted}`);
+        console.log(`- Races seeded: ${racesInserted}`);
         console.log('====================================================');
     } catch (err) {
         db.exec('ROLLBACK;');

@@ -64,8 +64,8 @@ export function calculateSkills(
             advantageSources.push(s.noteSource || 'Sheet Note');
         }
 
-        // If parent ability check has advantage, all derived skill checks have advantage
-        if (attrObj.hasAttrAdvantage) {
+        // If parent ability check has general advantage, all derived skill checks have advantage
+        if (attrObj.hasFullAttrAdvantage || (attrObj.hasAttrAdvantage && !attrObj.isSkillSpecificAdvantage)) {
             hasAdvantage = true;
             advantageSources.push(...(attrObj.attrAdvantageSources || []));
         }

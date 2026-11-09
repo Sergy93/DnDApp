@@ -5,8 +5,18 @@ import {
     BASE_PROFICIENCY_BONUS,
     ABILITIES,
     ABILITY_KEYS,
-    calculateAbilityModifier
+    calculateAbilityModifier,
+    DND_5E_SKILLS
 } from '../constants/dnd.constants.js';
+
+const SKILL_TO_ATTR_MAP = Object.freeze(
+    Object.fromEntries(
+        (DND_5E_SKILLS || []).flatMap(s => [
+            [s.id.toLowerCase().replace(/[^a-z0-9]/g, ''), s.attr],
+            [s.name.toLowerCase().replace(/[^a-z0-9]/g, ''), s.attr]
+        ])
+    )
+);
 
 /**
  * Pure calculation functions for character ability scores and saving throws.
@@ -51,6 +61,8 @@ export function calculateAttributes(
         let bonusFromItems = 0;
         let itemSaveBonus = 0;
         let hasAttrAdvantage = false;
+        let hasFullAttrAdvantage = false;
+        let isSkillSpecificAdvantage = false;
         const attrAdvantageSources = [];
         let hasSaveAdvantage = false;
         const saveAdvantageSources = [];
@@ -72,6 +84,7 @@ export function calculateAttributes(
                 if (sbAttr === k) {
                     if (sb.attrMode === 'advantage') {
                         hasAttrAdvantage = true;
+                        hasFullAttrAdvantage = true;
                         attrAdvantageSources.push(item.name || 'Equipment');
                     } else if (sb.attrVal) {
                         bonusFromItems += parseInt(sb.attrVal, 10) || 0;
@@ -97,6 +110,7 @@ export function calculateAttributes(
                 item.advantageAttrs.forEach(a => {
                     if (String(a).toUpperCase() === k) {
                         hasAttrAdvantage = true;
+                        hasFullAttrAdvantage = true;
                         attrAdvantageSources.push(item.name || 'Equipment');
                     }
                 });
@@ -111,13 +125,54 @@ export function calculateAttributes(
                 });
             }
 
+            // Direct skill advantage arrays on items (e.g. Ring of Consilium Dubium with Persuasion & Deception)
+            if (Array.isArray(item.advantageSkills) && item.advantageSkills.length > 0) {
+                const matchedSkills = [];
+                item.advantageSkills.forEach(sk => {
+                    const norm = String(sk).toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (SKILL_TO_ATTR_MAP[norm] === k) {
+                        matchedSkills.push(sk);
+                    }
+                });
+                if (matchedSkills.length > 0) {
+                    hasAttrAdvantage = true;
+                    isSkillSpecificAdvantage = true;
+                    const label = item.name ? `${item.name} (${matchedSkills.join(', ')})` : 'Equipment';
+                    if (!attrAdvantageSources.includes(label)) {
+                        attrAdvantageSources.push(label);
+                    }
+                }
+            }
+
             // Advantage mentioned in item description or special properties
             const itemText = (item.desc || '') + ' ' + (item.special || '');
             if (itemText.toLowerCase().includes('advantage')) {
                 const normText = itemText.toLowerCase().replace(/[^a-z0-9]/g, '');
                 if (normText.includes(`advantageon${attrFullName}check`) || normText.includes(`advantageon${k.toLowerCase()}check`)) {
                     hasAttrAdvantage = true;
+                    hasFullAttrAdvantage = true;
                     if (!attrAdvantageSources.includes(item.name)) attrAdvantageSources.push(item.name || 'Equipment');
+                }
+                // Check if item text specifies advantage on a skill associated with this attribute (only if not already matched)
+                const alreadyMatchedForItem = attrAdvantageSources.some(s => s.startsWith(item.name || 'Equipment'));
+                if (!alreadyMatchedForItem) {
+                    const matchedSkillsFromText = [];
+                    DND_5E_SKILLS.forEach(sk => {
+                        if (sk.attr === k) {
+                            const skNorm = sk.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                            if (normText.includes(`advantageon${skNorm}`) || normText.includes(`advantageon${sk.id}`)) {
+                                matchedSkillsFromText.push(sk.name);
+                            }
+                        }
+                    });
+                    if (matchedSkillsFromText.length > 0) {
+                        hasAttrAdvantage = true;
+                        isSkillSpecificAdvantage = true;
+                        const label = item.name ? `${item.name} (${[...new Set(matchedSkillsFromText)].join(', ')})` : 'Equipment';
+                        if (!attrAdvantageSources.includes(label)) {
+                            attrAdvantageSources.push(label);
+                        }
+                    }
                 }
                 if (normText.includes(`advantageon${attrFullName}save`) || normText.includes(`advantageon${k.toLowerCase()}save`) ||
                     (normText.includes('advantageonsavingthrow') && (normText.includes(`all${attrFullName}`) || normText.includes('allsavingthrow')))) {
@@ -138,7 +193,26 @@ export function calculateAttributes(
                 const normText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
                 if (normText.includes(`advantageon${attrFullName}check`) || normText.includes(`advantageon${k.toLowerCase()}check`)) {
                     hasAttrAdvantage = true;
+                    hasFullAttrAdvantage = true;
                     if (!attrAdvantageSources.includes(t.name)) attrAdvantageSources.push(t.name || 'Trait');
+                }
+                // Check if trait grants advantage on skill of this attribute
+                const matchedTraitSkills = [];
+                DND_5E_SKILLS.forEach(sk => {
+                    if (sk.attr === k) {
+                        const skNorm = sk.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        if (normText.includes(`advantageon${skNorm}`) || normText.includes(`advantageon${sk.id}`)) {
+                            matchedTraitSkills.push(sk.name);
+                        }
+                    }
+                });
+                if (matchedTraitSkills.length > 0) {
+                    hasAttrAdvantage = true;
+                    isSkillSpecificAdvantage = true;
+                    const label = t.name ? `${t.name} (${[...new Set(matchedTraitSkills)].join(', ')})` : 'Trait';
+                    if (!attrAdvantageSources.includes(label)) {
+                        attrAdvantageSources.push(label);
+                    }
                 }
                 if (normText.includes(`advantageon${attrFullName}save`) || normText.includes(`advantageon${k.toLowerCase()}save`)) {
                     hasSaveAdvantage = true;
@@ -178,6 +252,8 @@ export function calculateAttributes(
             profSave: !!raw.profSave,
             itemSaveBonus,
             hasAttrAdvantage,
+            hasFullAttrAdvantage,
+            isSkillSpecificAdvantage,
             attrAdvantageSources: [...new Set(attrAdvantageSources)],
             hasSaveAdvantage,
             saveAdvantageSources: [...new Set(saveAdvantageSources)]

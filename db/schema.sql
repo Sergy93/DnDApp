@@ -122,3 +122,17 @@ CREATE TABLE IF NOT EXISTS compendium_backgrounds (
     skills_json TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(skills_json)),
     data_json TEXT NOT NULL CHECK (json_valid(data_json))
 ) STRICT;
+
+-- ----------------------------------------------------------------------------
+-- 7. Compendium: Races
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS compendium_races (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    source_book TEXT NOT NULL DEFAULT 'PHB',
+    speed TEXT NOT NULL DEFAULT '30 ft.',
+    data_json TEXT NOT NULL CHECK (json_valid(data_json))
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS idx_races_name
+    ON compendium_races(name);

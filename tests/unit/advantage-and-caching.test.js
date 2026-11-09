@@ -46,6 +46,47 @@ test('Advantage Calculation on Attributes, Saves, and Skills', async (t) => {
         assert.equal(athletics.hasAdvantage, false);
     });
 
+    await t.test('Item with skill-specific advantage flags parent attribute and specific skills only', () => {
+        const sampleAttrs = {
+            STR: { score: 10, profSave: false },
+            DEX: { score: 14, profSave: true },
+            CON: { score: 12, profSave: false },
+            INT: { score: 10, profSave: false },
+            WIS: { score: 12, profSave: false },
+            CHA: { score: 16, profSave: true }
+        };
+
+        const ringEquipped = [
+            {
+                name: 'Ring of Consilium Dubium',
+                equipped: true,
+                advantageSkills: ['Persuasion', 'Deception']
+            }
+        ];
+
+        const computedAttrs = calculateAttributes(sampleAttrs, ringEquipped, 2);
+        // Parent attribute CHA must show advantage badge with descriptive source
+        assert.equal(computedAttrs.CHA.hasAttrAdvantage, true);
+        assert.ok(computedAttrs.CHA.attrAdvantageSources.some(s => s.includes('Ring of Consilium Dubium')));
+        assert.equal(computedAttrs.STR.hasAttrAdvantage, false);
+
+        const rawSkills = [
+            { id: 'persuasion', name: 'Persuasion', attr: 'CHA', profType: 'P' },
+            { id: 'deception', name: 'Deception', attr: 'CHA', profType: 'P' },
+            { id: 'intimidation', name: 'Intimidation', attr: 'CHA', profType: 'C' }
+        ];
+
+        const computedSkills = calculateSkills(rawSkills, computedAttrs, 2, {}, ringEquipped);
+        const persuasion = computedSkills.find(s => s.id === 'persuasion');
+        const deception = computedSkills.find(s => s.id === 'deception');
+        const intimidation = computedSkills.find(s => s.id === 'intimidation');
+
+        assert.equal(persuasion.hasAdvantage, true);
+        assert.equal(deception.hasAdvantage, true);
+        // Intimidation must NOT inherit false advantage because the ring is skill-specific
+        assert.equal(intimidation.hasAdvantage, false);
+    });
+
     await t.test('Item with save advantage flags target saving throw', () => {
         const sampleAttrs = {
             STR: { score: 10, profSave: false },

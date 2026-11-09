@@ -10,6 +10,9 @@ import DND_RULES from "./dnd-data/dnd-rules.json" with { type: "json" };
 import CHARACTER_DATA from "./character.json" with { type: "json" };
 import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json" with { type: "json" };
 import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json" with { type: "json" };
+import RACE_COMPENDIUM from "./dnd-data/race-compendium.json" with { type: "json" };
+import SPELL_COMPENDIUM from "./dnd-data/spell-compendium.json" with { type: "json" };
+import { CompendiumStorageService } from "./services/compendium-storage.service.js";
 
 import { normalizeKey, capitalizeWord } from "./helpers/string.helper.js";
 import { TemplateHelper } from "./helpers/template.helper.js";
@@ -517,6 +520,8 @@ function createCharacterSheet() {
         charactersRegistry: [],
         activeCharacterId: null,
         characterSwitcherOpen: false,
+        compendiumStorage: CompendiumStorageService,
+        compendiumLoaded: false,
 
         modalDialog: {
             open: false,
@@ -536,6 +541,23 @@ function createCharacterSheet() {
         init() {
             this.charactersRegistry = CharacterStorageService.getRegistry();
             this.activeCharacterId = this.data?.id || CharacterStorageService.getActiveCharacterId();
+
+            // Initialize Offline-First IndexedDB Compendium
+            CompendiumStorageService.isPopulated().then(populated => {
+                if (!populated) {
+                    CompendiumStorageService.seedPayload({
+                        classes: CLASS_COMPENDIUM,
+                        races: RACE_COMPENDIUM,
+                        backgrounds: BACKGROUND_COMPENDIUM,
+                        spells: SPELL_COMPENDIUM
+                    }).then(() => {
+                        this.compendiumLoaded = true;
+                    }).catch(() => {});
+                } else {
+                    this.compendiumLoaded = true;
+                }
+                CompendiumStorageService.syncFromRemote().catch(() => {});
+            }).catch(() => {});
 
             CharacterSyncService.initListeners();
             this.syncStatus = CharacterSyncService.getStatus();
