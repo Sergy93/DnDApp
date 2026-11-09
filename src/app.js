@@ -31,6 +31,8 @@ import { calculateSpellStats } from "./domain/calculators/spell-stats.calculator
 import { calculateInitiative } from "./domain/calculators/initiative.calculator.js";
 import { calculateMovementAndSenses, getArmorMinStr } from "./domain/calculators/movement-senses.calculator.js";
 import { calculateSpellPreparation } from "./domain/calculators/spell-preparation.calculator.js";
+import { CharacterStorageService, slugifyCharacterName } from "./services/character-storage.service.js";
+import { CharacterRouterService } from "./services/character-router.service.js";
 import { composeSlices } from "./helpers/slice.helper.js";
 import { getAllEquippedItems } from "./domain/items/equipped-items.helper.js";
 import { createQuestsSlice } from "./ui/slices/quests.slice.js";
@@ -102,6 +104,9 @@ export {
     calculateMovementAndSenses,
     getArmorMinStr,
     calculateSpellPreparation,
+    CharacterStorageService,
+    slugifyCharacterName,
+    CharacterRouterService,
     clean5eToolsText,
     parse5eToolsSpell,
     buildSpellsCompendium,
@@ -143,9 +148,33 @@ const sanitizeTracking = (d) => CharacterSanitizerService.sanitize(d);
 
 function loadInitialData() {
     const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
-    const loaded = StorageService.load(STORAGE_KEY, null);
-    if (!loaded) return sanitizeTracking(base);
-    return sanitizeTracking(loaded);
+    const isClient = typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+    if (!isClient) {
+        return sanitizeTracking(base);
+    }
+
+    // 1. Ensure legacy storage is migrated into multi-character registry
+    const { activeId, activeSlug } = CharacterStorageService.migrateLegacyStorage(base);
+
+    // 2. Check if URL hash specifies a character slug
+    const urlSlug = CharacterRouterService.getSlugFromHash();
+    if (urlSlug) {
+        const fromSlug = CharacterStorageService.getCharacterBySlug(urlSlug);
+        if (fromSlug) {
+            CharacterStorageService.setActiveCharacterId(fromSlug.id);
+            return sanitizeTracking(fromSlug);
+        }
+    }
+
+    // 3. Load active character from multi-character storage
+    const activeChar = CharacterStorageService.getCharacterById(activeId);
+    if (activeChar) {
+        return sanitizeTracking(activeChar);
+    }
+
+    // Fallback: save base and return
+    const saved = CharacterStorageService.saveCharacter(base, { makeActive: true });
+    return sanitizeTracking(saved.characterData);
 }
 
 function parseCharacterFileContent(rawText) {
@@ -466,6 +495,9 @@ function createCharacterSheet() {
         data: loadInitialData(),
         activeTab: 'profile',
         compendiumCount: 0,
+        charactersRegistry: [],
+        activeCharacterId: null,
+        characterSwitcherOpen: false,
 
         modalDialog: {
             open: false,
@@ -483,6 +515,19 @@ function createCharacterSheet() {
         },
 
         init() {
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+            this.activeCharacterId = this.data?.id || CharacterStorageService.getActiveCharacterId();
+
+            if (this.data?.slug && typeof window !== 'undefined') {
+                CharacterRouterService.navigateToSlug(this.data.slug, true);
+            }
+
+            CharacterRouterService.onRouteChanged((newSlug) => {
+                if (newSlug && newSlug !== this.data?.slug) {
+                    this.loadCharacterBySlug(newSlug);
+                }
+            });
+
             if (SpellService.spellsCompendium.length > 0) {
                 this.compendiumCount = SpellService.spellsCompendium.length;
             } else {
@@ -523,7 +568,128 @@ function createCharacterSheet() {
 
         // Persistence
         saveState() {
+            CharacterStorageService.saveCharacter(this.data, { makeActive: true });
             StorageService.save(STORAGE_KEY, this.data);
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+            this.activeCharacterId = this.data?.id;
+        },
+
+        loadCharacterBySlug(slug) {
+            const charData = CharacterStorageService.getCharacterBySlug(slug);
+            if (charData) {
+                this.saveState();
+                this.data = sanitizeTracking(charData);
+                this.activeCharacterId = charData.id;
+                this.charactersRegistry = CharacterStorageService.getRegistry();
+                CharacterRouterService.navigateToSlug(charData.slug);
+            } else {
+                this.uiAlert(`Character "${slug}" not found in local storage.`, "Not Found", "⚠️");
+            }
+        },
+
+        switchCharacter(id) {
+            if (!id || id === this.data?.id) {
+                this.characterSwitcherOpen = false;
+                return;
+            }
+            this.saveState();
+            const target = CharacterStorageService.getCharacterById(id);
+            if (target) {
+                this.data = sanitizeTracking(target);
+                this.activeCharacterId = target.id;
+                this.charactersRegistry = CharacterStorageService.getRegistry();
+                CharacterRouterService.navigateToSlug(target.slug);
+                this.characterSwitcherOpen = false;
+            }
+        },
+
+        async createNewCharacter() {
+            const name = await this.uiPrompt("Enter the new character's name:", "New Character", "Hero");
+            if (!name) return;
+
+            this.saveState();
+
+            const newChar = {
+                id: CharacterStorageService.generateUniqueId(),
+                identity: {
+                    name: name.trim(),
+                    race: "Human",
+                    alignment: "Neutral",
+                    background: "Folk Hero",
+                    classes: [{ name: "Fighter", level: 1 }]
+                },
+                attributes: {
+                    STR: { score: 10, profSave: true },
+                    DEX: { score: 10, profSave: false },
+                    CON: { score: 10, profSave: true },
+                    INT: { score: 10, profSave: false },
+                    WIS: { score: 10, profSave: false },
+                    CHA: { score: 10, profSave: false }
+                },
+                vitals: {
+                    currentHp: 10,
+                    maxHp: 10,
+                    tempHp: 0,
+                    speed: "30 ft.",
+                    inspiration: false,
+                    hitDiceSpent: [false],
+                    deathSaves: { successes: [false, false, false], failures: [false, false, false] },
+                    conditions: [],
+                    damageResistances: []
+                },
+                skills: DND_5E_SKILLS.map(s => ({ id: s.id, name: s.name, attr: s.attr, profType: '' })),
+                combat: {
+                    traits: [],
+                    resources: [],
+                    sessionLogs: []
+                },
+                inventory: {
+                    wealth: { pp: 0, gp: 10, ep: 0, sp: 0, cp: 0 },
+                    weapons: [],
+                    armors: [],
+                    consumables: [],
+                    tools: [],
+                    story: []
+                },
+                magic: {
+                    slots: [],
+                    spells: [],
+                    favorites: []
+                },
+                quests: []
+            };
+
+            const saved = CharacterStorageService.saveCharacter(newChar, { makeActive: true });
+            this.data = sanitizeTracking(saved.characterData);
+            this.activeCharacterId = saved.id;
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+            CharacterRouterService.navigateToSlug(saved.slug);
+            this.characterSwitcherOpen = false;
+            await this.uiAlert(`New character "${saved.characterData.identity.name}" created!`, "Character Created", "✨");
+        },
+
+        async deleteCurrentCharacter() {
+            if (this.charactersRegistry.length <= 1) {
+                await this.uiAlert("Cannot delete the only existing character. Create or import another character first.", "Notice", "⚠️");
+                return;
+            }
+            const name = this.data.identity?.name || this.data.slug || 'character';
+            const ok = await this.uiConfirm(`Are you sure you want to delete "${name}"? This cannot be undone.`, "Delete Character", "🗑️", "Delete", "bg-red-600 hover:bg-red-500");
+            if (!ok) return;
+
+            const charId = this.data.id;
+            CharacterStorageService.deleteCharacter(charId);
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+
+            const next = this.charactersRegistry[0];
+            if (next) {
+                const loaded = CharacterStorageService.getCharacterById(next.id);
+                this.data = sanitizeTracking(loaded);
+                this.activeCharacterId = loaded.id;
+                CharacterRouterService.navigateToSlug(loaded.slug);
+            }
+            this.characterSwitcherOpen = false;
+            await this.uiAlert(`Character "${name}" deleted.`, "Deleted", "🗑️");
         },
 
         // Dialogs / Alerts
@@ -606,7 +772,8 @@ function createCharacterSheet() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = "character.json";
+            const fileName = (this.data?.slug || slugifyCharacterName(this.data?.identity?.name) || 'character') + '.json';
+            a.download = fileName;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -620,9 +787,14 @@ function createCharacterSheet() {
             reader.onload = async (e) => {
                 try {
                     const parsed = parseCharacterFileContent(e.target.result);
-                    this.data = sanitizeTracking(parsed);
+                    const sanitized = sanitizeTracking(parsed);
+                    const saved = CharacterStorageService.saveCharacter(sanitized, { makeActive: true });
+                    this.data = sanitizeTracking(saved.characterData);
+                    this.activeCharacterId = saved.id;
+                    this.charactersRegistry = CharacterStorageService.getRegistry();
+                    CharacterRouterService.navigateToSlug(saved.slug);
                     this.saveState();
-                    await this.uiAlert("Character sheet imported and synchronized successfully.", "Character Loaded", "👤");
+                    await this.uiAlert(`Character "${saved.characterData.identity?.name || saved.slug}" loaded at /#/c/${saved.slug}.`, "Character Imported", "👤");
                 } catch (err) {
                     await this.uiAlert("Invalid file format. Please import a valid character.json file.", "Error", "❌");
                 }
