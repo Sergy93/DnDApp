@@ -1,0 +1,53 @@
+<!-- TAB: CLASSES & PROGRESSION -->
+            <section x-show="activeTab === 'progression'" class="tab-view">
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-5 p-4 bg-dark-900 border border-gray-800 rounded-xl">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                            <span>📜</span> Class Progression & Features
+                        </h3>
+                        <span class="text-xs sm:text-sm text-gray-300">Review unlocked features and class milestones.</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button @click="showCurrentBackgroundDetail()"
+                            class="px-3.5 py-2.5 bg-dark-800 hover:bg-dark-700 border border-brand-500/50 text-brand-300 hover:text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow active:scale-95">
+                            <span>📚</span> Backgrounds
+                        </button>
+                        <button @click="openLevelUpModal()"
+                            class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 rounded-xl text-xs sm:text-sm font-black text-black shadow transition flex items-center gap-1.5 active:scale-95">
+                            <span>⭐</span> Level Up / Edit Sheet
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <template x-for="cls in progressionTrees" :key="cls.name">
+                        <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow flex flex-col">
+                            <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-3.5">
+                                <div>
+                                    <h3 class="text-lg sm:text-xl font-black text-brand-300 capitalize" x-text="`${cls.name} ${cls.subclass ? '(' + cls.subclass + ')' : ''}`"></h3>
+                                    <span class="text-xs sm:text-sm text-gray-300">Current Level: <strong class="text-amber-400 font-bold" x-text="cls.currentLevel"></strong> of 20</span>
+                                </div>
+                            </div>
+                            <div class="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+                                <template x-for="lvl in cls.tree" :key="lvl.level">
+                                    <div class="p-3.5 rounded-xl transition"
+                                        :class="lvl.level <= cls.currentLevel ? 'bg-amber-950/30 border border-amber-500/70 text-amber-100' : 'bg-dark-900 border border-gray-800 text-gray-500 opacity-60'">
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <strong class="text-sm sm:text-base uppercase tracking-wider"
+                                                :class="lvl.level <= cls.currentLevel ? 'text-amber-300 font-bold' : 'text-gray-400'"
+                                                x-text="lvl.title"></strong>
+                                            <span x-show="lvl.level <= cls.currentLevel" class="text-xs sm:text-sm bg-amber-500/25 text-amber-300 border border-amber-500/60 px-2.5 py-0.5 rounded-full font-bold">★ Active</span>
+                                        </div>
+                                        <ul class="text-sm sm:text-base space-y-1.5 text-gray-200 leading-relaxed">
+                                            <template x-for="(feat, fIdx) in lvl.feats" :key="fIdx">
+                                                <li x-text="`• ${feat}`"></li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                    <div x-show="progressionTrees.length === 0" class="text-gray-500 text-center col-span-2 py-8">No classes configured.</div>
+                </div>
+            </section>

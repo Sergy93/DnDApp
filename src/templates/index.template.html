@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D 5e Character Sheet</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 900: '#3b0764' },
+                        dark: { 800: '#1f2937', 850: '#18202f', 900: '#111827', 950: '#030712' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #e5e7eb;
+            -webkit-tap-highlight-color: transparent;
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* Mobile and tablet responsive tweaks */
+        @media (max-width: 640px) {
+            body {
+                font-size: 16px;
+            }
+            .tab-btn {
+                font-size: 14px;
+                padding-top: 0.85rem;
+                padding-bottom: 0.85rem;
+            }
+            .cb-custom {
+                width: 1.6em;
+                height: 1.6em;
+            }
+            /* Prevent forced iOS Safari zoom on focus */
+            input:not(.num-input), select, textarea {
+                font-size: 16px;
+            }
+            button {
+                touch-action: manipulation;
+            }
+        }
+
+        @media (min-width: 641px) and (max-width: 1024px) {
+            body {
+                font-size: 16px;
+            }
+            .tab-btn {
+                font-size: 15px;
+                padding-top: 0.9rem;
+                padding-bottom: 0.9rem;
+            }
+            .cb-custom {
+                width: 1.5em;
+                height: 1.5em;
+            }
+            button {
+                touch-action: manipulation;
+            }
+        }
+
+        [x-cloak] { display: none !important; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #3b0764; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+
+        .cb-custom {
+            appearance: none;
+            background-color: rgba(17, 24, 39, 0.85);
+            margin: 0;
+            width: 1.4em;
+            height: 1.4em;
+            border: 2px solid #a855f7;
+            border-radius: 0.35em;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .cb-custom::before {
+            content: "";
+            width: 0.8em;
+            height: 0.8em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #c084fc;
+            background-color: #c084fc;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        .cb-custom:checked::before { transform: scale(1); }
+        .cb-custom:checked { background-color: rgba(168, 85, 247, 0.25); border-color: #c084fc; }
+
+        .cb-success { border-color: #10b981; }
+        .cb-success:checked { background-color: rgba(16, 185, 129, 0.25); border-color: #34d399; }
+        .cb-success::before { box-shadow: inset 1em 1em #34d399; background-color: #34d399; }
+
+        .cb-danger { border-color: #ef4444; }
+        .cb-danger:checked { background-color: rgba(239, 68, 68, 0.25); border-color: #f87171; }
+        .cb-danger::before { box-shadow: inset 1em 1em #f87171; background-color: #f87171; }
+
+        .num-input {
+            background: transparent;
+            border: none;
+            color: white;
+            text-align: center;
+            font-weight: 900;
+            outline: none;
+        }
+
+        .num-input::-webkit-outer-spin-button,
+        .num-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .status-box {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 0.6rem;
+            color: #d1d5db;
+            min-height: 85px;
+            resize: vertical;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .status-box:focus { border-color: #a855f7; }
+
+        .tab-view {
+            animation: slideUp 0.2s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#9333ea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dorian D&D">
+
+    <!-- Application module & Alpine.js -->
+    <script type="module" src="bundle.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('[PWA] Service Worker registered with scope:', reg.scope);
+                }).catch(err => {
+                    console.warn('[PWA] Service Worker registration failed:', err);
+                });
+            });
+        }
+    </script>
+</head>
+
+<body class="p-2 md:p-5 flex justify-center" x-data="characterSheet" x-cloak>
+
+    <div class="max-w-6xl w-full bg-dark-900 rounded-2xl shadow-[0_0_40px_rgba(59,7,100,0.5)] border border-brand-900/60 overflow-hidden flex flex-col min-h-[96vh]">
+
+        <!-- HEADER -->
+        <header class="bg-dark-950 border-b border-brand-600/40 p-4 md:p-6 text-center relative shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="text-left">
+                    <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase"
+                        x-text="data.identity?.name || 'Character'"></h1>
+                    <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5 capitalize" x-text="stats.classesSummary"></p>
+                    <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
+                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
+                        <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
+                        <button type="button" @click="showCurrentBackgroundDetail()"
+                            class="bg-dark-900 hover:bg-dark-800 border border-brand-500/50 hover:border-brand-400 px-2.5 py-1 rounded-lg text-brand-300 hover:text-white transition flex items-center gap-1 font-semibold"
+                            title="Click to view background details">
+                            <span>📜</span>
+                            <span x-text="data.identity?.background || 'Background'"></span>
+                        </button>
+                        <span class="bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold" x-text="`Level ${stats.totalLevel}`"></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center md:items-end gap-2.5 w-full md:w-auto">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button @click="openShortRestModal()"
+                            class="px-3.5 py-2 bg-blue-950/80 hover:bg-blue-900 border border-blue-500/60 text-blue-200 rounded-xl text-xs md:text-sm font-bold transition shadow active:scale-95 flex items-center gap-1.5">
+                            <span>⛺</span> Short Rest
+                        </button>
+                        <button @click="executeLongRest()"
+                            class="px-3.5 py-2 bg-purple-950/80 hover:bg-purple-900 border border-brand-500/60 text-brand-200 rounded-xl text-xs md:text-sm font-bold transition shadow active:scale-95 flex items-center gap-1.5">
+                            <span>🌙</span> Long Rest
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- PERSISTENT TOP VITALS & STATUSES BAR -->
+        <section class="bg-dark-900/95 backdrop-blur border-b border-brand-900/80 px-3 py-2.5 md:px-5 md:py-3 shrink-0 shadow-md">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+
+                <!-- HP / Health Widget -->
+                <div class="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 bg-dark-950 px-3 py-1.5 rounded-xl border border-gray-800 shadow-inner">
+                        <span class="text-xs md:text-sm font-bold text-gray-400">❤️ HP</span>
+                        <div class="flex items-baseline gap-1 cursor-pointer group" @click="openHpManager('damage')" title="Click to manage HP (Damage / Heal / Temp)">
+                            <span class="text-xl md:text-2xl font-black text-red-400 px-1 group-hover:text-red-300 transition select-none" x-text="data.vitals.currentHp"></span>
+                            <span class="text-gray-400 text-xs md:text-sm font-bold">/ <span x-text="data.vitals.maxHp"></span></span>
+                        </div>
+                        <div class="w-px h-5 bg-gray-800 mx-1"></div>
+                        <div class="flex items-center gap-1 cursor-pointer group" @click="openHpManager('temp')" title="Click to set Temporary HP">
+                            <span class="text-xs text-blue-400 font-bold">🛡️</span>
+                            <span class="text-xs md:text-sm font-black min-w-[2rem] text-blue-300 bg-dark-900 border border-blue-500/30 group-hover:border-blue-400 rounded px-1.5 py-0.5 text-center transition select-none"
+                                x-text="data.vitals.tempHp || 0"></span>
+                            <span class="text-[10px] text-gray-500 uppercase font-bold">temp</span>
+                        </div>
+                    </div>
+
+                    <button @click="openHpManager('damage')"
+                        class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-500/60 rounded-xl text-xs font-bold text-red-200 transition shadow active:scale-95 flex items-center gap-1.5">
+                        <span>⚡</span> Damage / Heal / Temp
+                    </button>
+
+                    <!-- Death Saves quick indicator if 0 HP -->
+                    <div x-show="data.vitals.currentHp === 0" class="flex items-center gap-2 bg-dark-950 px-2.5 py-1 rounded-xl border border-red-600/60 animate-pulse">
+                        <span class="text-xs font-black text-red-400">☠️ UNCONSCIOUS</span>
+                    </div>
+
+                    <!-- Inspiration Points Widget -->
+                    <div class="flex items-center gap-1.5 bg-dark-950 px-2.5 py-1.5 rounded-xl border border-amber-600/50 shadow-inner"
+                        title="Heroic Inspiration (DM Inspiration)">
+                        <span class="text-sm">⭐</span>
+                        <span class="text-xs font-bold text-amber-300">Inspiration:</span>
+                        <span class="text-sm font-black text-amber-200 min-w-[1.2rem] text-center" x-text="data.vitals?.inspiration || 0"></span>
+                        <div class="flex items-center gap-1 ml-1">
+                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
+                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 disabled:opacity-30 disabled:cursor-not-allowed text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                title="Use 1 Inspiration point">-</button>
+                            <button type="button" @click="adjustInspiration(1)"
+                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                title="Gain 1 Inspiration point">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Tactical Reminders & Conditions -->
+                <div class="flex flex-wrap items-center gap-1.5 md:gap-2">
+
+                    <!-- Character Damage Resistances Badges (Dynamic with Styled Hover Tooltip) -->
+                    <template x-for="res in stats.resistances" :key="res.id">
+                        <div class="group relative flex items-center gap-1.5 bg-amber-950/70 border border-amber-600/70 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-200 shadow cursor-help transition hover:border-amber-400 hover:bg-amber-900/60"
+                            :title="`${res.name} Resistance • Source: ${res.source}`">
+                            <span x-text="res.icon"></span>
+                            <span x-text="`${res.name} Resist (÷2)`"></span>
+
+                            <!-- Floating Tooltip Card on Hover -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[220px]">
+                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.35)] text-center">
+                                    <div class="font-black text-amber-300 text-xs flex items-center justify-center gap-1">
+                                        <span x-text="res.icon"></span>
+                                        <span x-text="`${res.name} Resistance`"></span>
+                                    </div>
+                                    <div class="text-gray-300 mt-1">
+                                        Source: <strong class="text-brand-300 font-bold" x-text="res.source"></strong>
+                                    </div>
+                                    <div class="text-[10px] text-amber-200/80 mt-0.5">Halves incoming damage (÷2)</div>
+                                </div>
+                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-amber-500/80 rotate-45 -mt-1.5"></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Concentration pill -->
+                    <template x-if="data.concentration && data.concentration.active">
+                        <div class="flex items-center gap-1.5 bg-amber-950/80 border border-amber-500 px-2.5 py-1 rounded-lg text-xs shadow">
+                            <span class="font-bold text-amber-300">🧠</span>
+                            <span class="font-black text-white truncate max-w-[130px] md:max-w-[180px]" x-text="data.concentration.spellName"></span>
+                            <button @click="breakConcentration()" class="text-amber-400 hover:text-white font-bold ml-0.5" title="Drop concentration">✕</button>
+                        </div>
+                    </template>
+
+                    <!-- Active Conditions Pills -->
+                    <template x-for="cond in activeConditionsList" :key="cond.id">
+                        <div class="group relative flex items-center gap-1.5 bg-purple-950/80 border border-brand-500/70 px-2.5 py-1 rounded-lg text-xs shadow hover:border-brand-400 cursor-help"
+                            :title="`${cond.name} • Source: ${cond.source}`">
+                            <span x-text="cond.icon"></span>
+                            <button type="button" @click="showConditionDetail(cond)"
+                                class="font-bold text-purple-200 hover:text-white underline decoration-dotted" x-text="cond.name"></button>
+                            <button type="button" @click="clearCondition(cond.id)"
+                                class="text-purple-400 hover:text-red-400 font-bold ml-0.5" title="Remove condition">✕</button>
+
+                            <!-- Floating Tooltip Card on Hover -->
+                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[240px]">
+                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-purple-500/80 shadow-[0_0_20px_rgba(168,85,247,0.35)] text-center">
+                                    <div class="font-black text-purple-300 text-xs flex items-center justify-center gap-1">
+                                        <span x-text="cond.icon"></span>
+                                        <span x-text="cond.name"></span>
+                                    </div>
+                                    <div class="text-gray-300 mt-1">
+                                        Source: <strong class="text-brand-300 font-bold" x-text="cond.source"></strong>
+                                    </div>
+                                    <div class="text-[10px] text-purple-200/80 mt-0.5 leading-snug" x-text="cond.summary"></div>
+                                </div>
+                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-purple-500/80 rotate-45 -mt-1.5"></div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Add / Manage Conditions Button -->
+                    <button @click="modalConditionsOpen = true"
+                        class="px-2.5 py-1 bg-dark-950 hover:bg-dark-800 border border-brand-600/50 text-brand-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                        <span>✨</span>
+                        <span>Conditions</span>
+                        <span x-show="activeConditionsList.length > 0"
+                            class="bg-brand-600 text-white rounded-full px-1.5 py-0.2 text-[10px] font-black"
+                            x-text="activeConditionsList.length"></span>
+                    </button>
+
+                    <!-- Session Event Log Button -->
+                    <button @click="modalLogOpen = true"
+                        class="px-2.5 py-1 bg-dark-950 hover:bg-dark-800 border border-gray-700 hover:border-brand-500 text-gray-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow"
+                        title="Session Event Log (damage taken, healing, rests, concentration)">
+                        <span>📜</span>
+                        <span>Log</span>
+                        <span x-show="data.sessionLog && data.sessionLog.length > 0"
+                            class="bg-dark-800 border border-gray-600 text-gray-300 rounded-full px-1.5 py-0.2 text-[10px] font-mono font-bold"
+                            x-text="data.sessionLog.length"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Health Bar Visual Indicator -->
+            <div class="w-full bg-dark-950 rounded-full h-1.5 mt-2 overflow-hidden border border-gray-800/80">
+                <div class="h-full transition-all duration-300"
+                    :class="data.vitals.currentHp <= (data.vitals.maxHp * 0.25) ? 'bg-red-500' : (data.vitals.currentHp <= (data.vitals.maxHp * 0.5) ? 'bg-amber-500' : 'bg-green-500')"
+                    :style="`width: ${Math.min(100, Math.max(0, (data.vitals.currentHp / (data.vitals.maxHp || 1)) * 100))}%`"></div>
+            </div>
+        </section>
+
+        <!-- NAVIGATION -->
+        <nav class="flex flex-wrap bg-dark-950 border-b border-gray-800 sticky top-0 z-30 shrink-0 text-sm md:text-base font-bold">
+            <button @click="activeTab = 'profile'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'profile' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📊 Profile</button>
+            <button @click="activeTab = 'combat'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'combat' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">⚔️ Combat & Magic</button>
+            <button @click="activeTab = 'inventory'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'inventory' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">🎒 Inventory</button>
+            <button @click="activeTab = 'progression'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'progression' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">📜 Classes</button>
+            <button @click="activeTab = 'quests'"
+                class="tab-btn flex-1 py-3 border-b-2 transition"
+                :class="activeTab === 'quests' ? 'active text-brand-400 border-brand-500 bg-dark-900' : 'text-gray-400 border-transparent'">🗺️ Quests & Story</button>
+        </nav>
+
+        <main class="flex-grow p-3 md:p-5 overflow-y-auto">
+
+                        <!-- @include "tabs/tab-profile.html" -->
+
+            <!-- @include "tabs/tab-combat.html" -->
+
+            <!-- @include "tabs/tab-inventory.html" -->
+
+            <!-- @include "tabs/tab-progression.html" -->
+
+            <!-- @include "tabs/tab-quests.html" -->
+        </main>
+
+        <!-- FOOTER: SECONDARY ACTIONS -->
+        <footer class="bg-dark-950 border-t border-gray-800 px-4 py-3 shrink-0 text-xs text-gray-400 mt-auto">
+            <div class="flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <label class="px-3 py-1.5 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white font-semibold cursor-pointer transition flex items-center gap-1.5 shadow">
+                        <span>📂</span> Import Character (.json / .js)
+                        <input type="file" accept=".json,.js,application/json,text/javascript" class="hidden" @change="importJSON($event)">
+                    </label>
+                    <button @click="exportJSON()"
+                        class="px-3 py-1.5 bg-dark-900 hover:bg-dark-800 border border-gray-700 rounded-lg text-gray-300 hover:text-white font-semibold transition flex items-center gap-1.5 shadow">
+                        <span>💾</span> Export Character (character.json)
+                    </button>
+                    <button @click="resetDefaults()"
+                        class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 rounded-lg text-red-300 hover:text-red-200 transition flex items-center gap-1.5">
+                        <span>⚠️</span> Reset Defaults
+                    </button>
+                </div>
+                <div class="text-gray-500 text-[11px] font-mono">
+                    D&D 5e Interactive Character Sheet
+                </div>
+            </div>
+        </footer>
+    </div>
+
+        <!-- @include "modals/modal-dialog.html" -->
+
+    <!-- @include "modals/modal-conc-override.html" -->
+
+    <!-- @include "modals/modal-short-rest.html" -->
+
+    <!-- @include "modals/modal-weapon.html" -->
+
+    <!-- @include "modals/modal-armor.html" -->
+
+    <!-- @include "modals/modal-hp.html" -->
+
+    <!-- @include "modals/modal-conditions.html" -->
+
+    <!-- @include "modals/modal-log.html" -->
+
+    <!-- @include "modals/modal-backgrounds.html" -->
+
+    <!-- @include "modals/modal-consumable.html" -->
+
+    <!-- @include "modals/modal-story-item.html" -->
+
+    <!-- @include "modals/modal-tool.html" -->
+
+    <!-- @include "modals/modal-spell-add.html" -->
+
+    <!-- @include "modals/modal-level-up.html" -->
+
+    <!-- @include "modals/modal-cast-spell.html" -->
+
+    <!-- @include "modals/modal-wealth.html" -->
+
+    <!-- @include "modals/modal-quest.html" -->
+
+
+</body>
+</html>

@@ -9,18 +9,47 @@ import DND_RULES from "./dnd-data/dnd-rules.json" with { type: "json" };
 import CHARACTER_DATA from "./character.json" with { type: "json" };
 import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json" with { type: "json" };
 import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json" with { type: "json" };
-import SPELL_COMPENDIUM_RAW from "./dnd-data/spell-compendium.json" with { type: "json" };
 
 import { normalizeKey, capitalizeWord } from "./helpers/string.helper.js";
 import { TemplateHelper } from "./helpers/template.helper.js";
 import { ItemBonusHelper } from "./helpers/item-bonus.helper.js";
 import { collectActionFeatures } from "./helpers/action-collector.helper.js";
+import { createMemo } from "./helpers/memo.helper.js";
 import { StorageService } from "./services/storage.service.js";
-import { calculateAttributes } from "./domain/calculators/attributes.calculator.js";
+import { calculateAttributes, resolveAttributeMod } from "./domain/calculators/attributes.calculator.js";
 import { calculateSkills } from "./domain/calculators/skills.calculator.js";
+import { resolveCharacterResistances } from "./domain/calculators/resistances.calculator.js";
+import { CharacterSanitizerService } from "./domain/character/character-sanitizer.service.js";
+import { ClassFeatureProvider } from "./domain/providers/class-feature.provider.js";
+import { RaceProvider } from "./domain/providers/race.provider.js";
+import { SpellService } from "./domain/spells/spell.service.js";
+import { ClassProgressionService } from "./domain/progression/class-progression.service.js";
+import { ClassSyncService } from "./domain/progression/class-sync.service.js";
 import { calculateArmorClass } from "./domain/calculators/ac.calculator.js";
 import { calculateWeapons } from "./domain/calculators/weapons.calculator.js";
 import { calculateSpellStats } from "./domain/calculators/spell-stats.calculator.js";
+import { composeSlices } from "./helpers/slice.helper.js";
+import { getAllEquippedItems } from "./domain/items/equipped-items.helper.js";
+import { createQuestsSlice } from "./ui/slices/quests.slice.js";
+import { createProgressionSlice } from "./ui/slices/progression.slice.js";
+import { createVitalsSlice } from "./ui/slices/vitals.slice.js";
+import { createInventorySlice } from "./ui/slices/inventory.slice.js";
+import { createSpellsSlice } from "./ui/slices/spells.slice.js";
+import * as DND_CONSTANTS from "./domain/constants/dnd.constants.js";
+import {
+    DEFAULT_ABILITY_SCORE,
+    ABILITY_MODIFIER_OFFSET,
+    ABILITY_MODIFIER_DIVISOR,
+    MIN_CHARACTER_LEVEL,
+    BASE_PROFICIENCY_BONUS,
+    PROFICIENCY_LEVEL_STEP,
+    MIN_RESOURCE_USES,
+    BASE_PASSIVE_SCORE,
+    PASSIVE_ADVANTAGE_BONUS,
+    DEFAULT_HIT_DIE,
+    DND_5E_SKILLS
+} from "./domain/constants/dnd.constants.js";
+
 
 const DND_CONDITIONS = DND_RULES.conditions;
 const DAMAGE_TYPES = DND_RULES.damageTypes;
@@ -33,6 +62,7 @@ const CLASS_FEATURES_SYNC = Object.fromEntries(
 );
 
 export {
+    DND_CONSTANTS,
     DND_CONDITIONS,
     DAMAGE_TYPES,
     DND_5E_SKILLS,
@@ -47,6 +77,11 @@ export {
     syncCharacterSpellSlots,
     resolveDiceScale,
     resolveBardicDie,
+    resolveSneakAttackDie,
+    resolveMartialArtsDie,
+    resolveSuperiorityDie,
+    resolveRageDamage,
+    resolvePsionicEnergyDie,
     detectClassFeaturesToSync,
     applyClassFeaturesSync,
     getResourceMaxUses,
@@ -72,503 +107,32 @@ export {
     createCharacterSheet,
     TemplateHelper,
     ItemBonusHelper,
-    StorageService
+    StorageService,
+    ClassFeatureProvider,
+    RaceProvider,
+    SpellService,
+    ClassProgressionService,
+    ClassSyncService
 };
 
-const SPELL_SOURCES = [SPELL_COMPENDIUM_RAW];
+const findCompendiumClass = ClassProgressionService.findCompendiumClass.bind(ClassProgressionService);
+const resolveSubclassInfo = ClassProgressionService.resolveSubclassInfo.bind(ClassProgressionService);
+const findCompendiumSubclass = ClassProgressionService.findCompendiumSubclass.bind(ClassProgressionService);
+const generateProgressionTree = ClassProgressionService.generateProgressionTree.bind(ClassProgressionService);
+const resolveDiceScale = ClassProgressionService.resolveDiceScale.bind(ClassProgressionService);
+const resolveBardicDie = ClassProgressionService.resolveBardicDie.bind(ClassProgressionService);
+const resolveSneakAttackDie = ClassProgressionService.resolveSneakAttackDie.bind(ClassProgressionService);
+const resolveMartialArtsDie = ClassProgressionService.resolveMartialArtsDie.bind(ClassProgressionService);
+const resolveSuperiorityDie = ClassProgressionService.resolveSuperiorityDie.bind(ClassProgressionService);
+const resolveRageDamage = ClassProgressionService.resolveRageDamage.bind(ClassProgressionService);
+const resolvePsionicEnergyDie = ClassProgressionService.resolvePsionicEnergyDie.bind(ClassProgressionService);
 
-const DND_5E_SKILLS = [
-    { id: 'acrobatics', name: 'Acrobatics', attr: 'DEX' },
-    { id: 'animal_handling', name: 'Animal Handling', attr: 'WIS' },
-    { id: 'arcana', name: 'Arcana', attr: 'INT' },
-    { id: 'athletics', name: 'Athletics', attr: 'STR' },
-    { id: 'deception', name: 'Deception', attr: 'CHA' },
-    { id: 'history', name: 'History', attr: 'INT' },
-    { id: 'insight', name: 'Insight', attr: 'WIS' },
-    { id: 'intimidation', name: 'Intimidation', attr: 'CHA' },
-    { id: 'investigation', name: 'Investigation', attr: 'INT' },
-    { id: 'medicine', name: 'Medicine', attr: 'WIS' },
-    { id: 'nature', name: 'Nature', attr: 'INT' },
-    { id: 'perception', name: 'Perception', attr: 'WIS' },
-    { id: 'performance', name: 'Performance', attr: 'CHA' },
-    { id: 'persuasion', name: 'Persuasion', attr: 'CHA' },
-    { id: 'religion', name: 'Religion', attr: 'INT' },
-    { id: 'sleight_of_hand', name: 'Sleight of Hand', attr: 'DEX' },
-    { id: 'stealth', name: 'Stealth', attr: 'DEX' },
-    { id: 'survival', name: 'Survival', attr: 'WIS' }
-];
-
-function findCompendiumClass(className) {
-    const normClass = normalizeKey(className);
-    if (!normClass) return null;
-
-    const classKey = Object.keys(CLASS_COMPENDIUM).find(key => {
-        const normKey = normalizeKey(key);
-        const normName = normalizeKey(CLASS_COMPENDIUM[key]?.name);
-        return normKey === normClass || normName === normClass;
-    });
-    return classKey ? { key: classKey, obj: CLASS_COMPENDIUM[classKey] } : null;
-}
-
-function resolveSubclassInfo(className, subclassName) {
-    if (!subclassName) return null;
-    const normSub = normalizeKey(subclassName);
-    const normClass = normalizeKey(className || '');
-
-    // 1. Direct class block check
-    const classBlock = SUBCLASS_ALIASES[normClass];
-    if (classBlock) {
-        for (const subKey of Object.keys(classBlock)) {
-            const entry = classBlock[subKey];
-            if (normalizeKey(subKey) === normSub || normalizeKey(entry.name || '') === normSub) {
-                return { key: subKey, name: entry.name, displayName: entry.name, specialization: null };
-            }
-            if (entry.specializations) {
-                for (const specKey of Object.keys(entry.specializations)) {
-                    const spec = entry.specializations[specKey];
-                    if (normalizeKey(specKey) === normSub || normalizeKey(spec.displayName || '') === normSub || normSub.includes(normalizeKey(specKey))) {
-                        return {
-                            key: subKey,
-                            name: entry.name,
-                            displayName: spec.displayName || `${entry.name} (${specKey})`,
-                            specialization: specKey,
-                            specInfo: spec
-                        };
-                    }
-                }
-            }
-        }
-    }
-
-    // 2. Global search across all classes in SUBCLASS_ALIASES
-    for (const cKey of Object.keys(SUBCLASS_ALIASES)) {
-        const cBlock = SUBCLASS_ALIASES[cKey];
-        for (const subKey of Object.keys(cBlock)) {
-            const entry = cBlock[subKey];
-            if (normalizeKey(subKey) === normSub || normalizeKey(entry.name || '') === normSub) {
-                return { classKey: cKey, key: subKey, name: entry.name, displayName: entry.name, specialization: null };
-            }
-            if (entry.specializations) {
-                for (const specKey of Object.keys(entry.specializations)) {
-                    const spec = entry.specializations[specKey];
-                    if (normalizeKey(specKey) === normSub || normalizeKey(spec.displayName || '') === normSub || normSub.includes(normalizeKey(specKey))) {
-                        return {
-                            classKey: cKey,
-                            key: subKey,
-                            name: entry.name,
-                            displayName: spec.displayName || `${entry.name} (${specKey})`,
-                            specialization: specKey,
-                            specInfo: spec
-                        };
-                    }
-                }
-            }
-        }
-    }
-
-    return null;
-}
-
-function findCompendiumSubclass(classObj, subclassName, className = '') {
-    if (!classObj || !classObj.subclasses || !subclassName) return null;
-    const normSub = normalizeKey(subclassName);
-    if (!normSub) return null;
-
-    const resolved = resolveSubclassInfo(className || classObj.name, subclassName);
-    const canonicalSub = resolved ? resolved.key : normSub;
-
-    const subclasses = classObj.subclasses;
-    const subKey = Object.keys(subclasses).find(key => {
-        const normKey = normalizeKey(key);
-        const normName = normalizeKey(subclasses[key]?.name);
-        if (normKey === canonicalSub || normName === canonicalSub || normKey === normSub || normName === normSub) {
-            return true;
-        }
-        if (normName.includes(canonicalSub) || canonicalSub.includes(normKey)) {
-            return true;
-        }
-        // Check if any level feature mentions the variant (e.g. "Djinni" within "The Genie")
-        const lvl1Feats = subclasses[key]?.features?.[1] || [];
-        return lvl1Feats.some(f => normalizeKey(f).includes(normSub));
-    });
-
-    return subKey ? { key: subKey, obj: subclasses[subKey], resolved } : null;
-}
-
-function generateProgressionTree(className, subclassName, charProgressionMap = {}) {
-    const foundClass = findCompendiumClass(className);
-    const classObj = foundClass?.obj || null;
-    const foundSub = findCompendiumSubclass(classObj, subclassName);
-    const subObj = foundSub?.obj || null;
-
-    // Check if character sheet defines progression for this class
-    const normClass = normalizeKey(className);
-    const charProgKey = Object.keys(charProgressionMap || {}).find(
-        k => normalizeKey(k) === normClass || (foundClass && normalizeKey(k) === normalizeKey(foundClass.key))
-    );
-    const customLevels = Array.isArray(charProgressionMap?.[charProgKey]) ? charProgressionMap[charProgKey] : [];
-    const customByLevel = new Map();
-    customLevels.forEach(item => {
-        if (item && typeof item.level === 'number' && Array.isArray(item.feats) && item.feats.length > 0) {
-            customByLevel.set(item.level, item);
-        }
-    });
-
-    const levels = [];
-    for (let lvl = 1; lvl <= 20; lvl++) {
-        if (customByLevel.has(lvl)) {
-            const custom = customByLevel.get(lvl);
-            levels.push({
-                level: lvl,
-                title: custom.title || `Level ${lvl}`,
-                feats: [...custom.feats]
-            });
-            continue;
-        }
-
-        const feats = [];
-        if (classObj?.baseFeatures?.[lvl]) feats.push(...classObj.baseFeatures[lvl]);
-        if (subObj?.features?.[lvl]) feats.push(...subObj.features[lvl]);
-        if (feats.length > 0) {
-            levels.push({ level: lvl, title: `Level ${lvl}`, feats });
-        }
-    }
-    return levels;
-}
-
-function resolveAttributeMod(attributes, attrKey) {
-    if (!attributes || !attrKey) return 0;
-    const canonKey = String(attrKey).toUpperCase();
-    const raw = attributes[canonKey];
-    const score = typeof raw?.score === 'number' ? raw.score : (parseInt(raw?.score, 10) || 10);
-    return Math.floor((score - 10) / 2);
-}
-
-function calculateExpectedSlots(classes = []) {
-    const list = [];
-    const pactCasters = [];
-    const nonPactCasters = [];
-
-    classes.forEach(c => {
-        const lvl = parseInt(c?.level, 10) || 0;
-        if (lvl <= 0) return;
-        const found = findCompendiumClass(c?.name);
-        let casterType = found?.obj?.spellcasting?.casterType;
-        if (!casterType && c?.subclass) {
-            const foundSub = findCompendiumSubclass(found?.obj, c.subclass, c.name);
-            casterType = foundSub?.obj?.spellcasting?.casterType;
-        }
-
-        if (casterType === 'pact') {
-            pactCasters.push({ name: c.name, level: lvl });
-        } else if (casterType) {
-            nonPactCasters.push({ type: casterType, name: c.name, level: lvl });
-        }
-    });
-
-    pactCasters.forEach(pc => {
-        const pLvl = Math.min(20, Math.max(1, pc.level));
-        const pInfo = SPELL_SLOTS_TABLES.warlockPactSlots?.[pLvl];
-        if (pInfo) {
-            list.push({
-                id: 'pact',
-                level: `Pact (${capitalizeWord(pc.name)} ${pLvl})`,
-                max: pInfo.count,
-                reset: 'short'
-            });
-        }
-    });
-
-    const ordinals = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'];
-    if (nonPactCasters.length === 1) {
-        const caster = nonPactCasters[0];
-        const lvl = Math.min(20, Math.max(1, caster.level));
-        const tableMap = {
-            full: SPELL_SLOTS_TABLES.fullCaster,
-            half: SPELL_SLOTS_TABLES.halfCaster,
-            artificer: SPELL_SLOTS_TABLES.artificer,
-            third: SPELL_SLOTS_TABLES.thirdCaster
-        };
-        const counts = tableMap[caster.type]?.[lvl] || [];
-        const classTag = ` (${capitalizeWord(caster.name)})`;
-        counts.forEach((max, idx) => {
-            if (max > 0) {
-                list.push({
-                    id: `lvl${idx + 1}`,
-                    level: `${ordinals[idx]} Level${classTag}`,
-                    max: max,
-                    reset: 'long'
-                });
-            }
-        });
-    } else if (nonPactCasters.length > 1) {
-        let combinedLvl = 0;
-        nonPactCasters.forEach(c => {
-            if (c.type === 'full') combinedLvl += c.level;
-            else if (c.type === 'half') combinedLvl += Math.floor(c.level / 2);
-            else if (c.type === 'artificer') combinedLvl += Math.ceil(c.level / 2);
-            else if (c.type === 'third') combinedLvl += Math.floor(c.level / 3);
-        });
-        if (combinedLvl > 0) {
-            const counts = SPELL_SLOTS_TABLES.multiclassSpellSlots?.[Math.min(20, combinedLvl)] || [];
-            counts.forEach((max, idx) => {
-                if (max > 0) {
-                    list.push({
-                        id: `lvl${idx + 1}`,
-                        level: `${ordinals[idx]} Level`,
-                        max: max,
-                        reset: 'long'
-                    });
-                }
-            });
-        }
-    }
-    return list;
-}
-
-function syncCharacterSpellSlots(d) {
-    if (!d || !d.identity || !Array.isArray(d.identity.classes)) return;
-    const expected = calculateExpectedSlots(d.identity.classes);
-    if (!d.magic) d.magic = { slots: [], spells: [] };
-    if (!Array.isArray(d.magic.slots)) d.magic.slots = [];
-
-    const existingMap = new Map();
-    d.magic.slots.forEach(s => {
-        if (s.id) existingMap.set(s.id, s);
-    });
-
-    const newSlots = [];
-    expected.forEach(exp => {
-        const exist = existingMap.get(exp.id);
-        existingMap.delete(exp.id);
-        const max = exp.max;
-        const spent = [];
-        for (let i = 0; i < max; i++) {
-            spent.push(Boolean(exist && Array.isArray(exist.spent) && exist.spent[i] === true));
-        }
-        newSlots.push({
-            id: exp.id,
-            level: exp.level,
-            max: max,
-            reset: exp.reset,
-            spent: spent
-        });
-    });
-
-    // Retain custom slots that the user manually created
-    existingMap.forEach(customSlot => {
-        if (!String(customSlot.id).startsWith('lvl') && customSlot.id !== 'pact') {
-            newSlots.push(customSlot);
-        }
-    });
-
-    d.magic.slots = newSlots;
-}
-
-function resolveDiceScale(className, scaleName, level) {
-    const found = findCompendiumClass(className);
-    const scale = found?.obj?.diceScales?.[scaleName];
-    if (!scale || level <= 0) return null;
-
-    let currentDie = null;
-    const thresholds = Object.keys(scale).map(Number).sort((a, b) => a - b);
-    for (const threshold of thresholds) {
-        if (level >= threshold) currentDie = scale[threshold];
-    }
-    return currentDie;
-}
-
-function resolveBardicDie(d) {
-    const classes = d?.identity?.classes || [];
-    const bard = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'bard');
-    const lvl = bard ? (parseInt(bard.level, 10) || 0) : 0;
-    return resolveDiceScale('bard', 'bardicDie', lvl) || '1d6';
-}
-
-function detectClassFeaturesToSync(d) {
-    const classes = d?.identity?.classes || [];
-    const newResources = [];
-    const newTraits = [];
-    const staleResourceIds = new Set();
-    const staleTraitNames = new Set();
-    const existingResourceIds = new Set((d.combat?.resources || []).map(r => r.id));
-    const existingTraitNames = new Set((d.combat?.traits || []).map(t => normalizeKey(t.name)));
-
-    classes.forEach(cls => {
-        const found = findCompendiumClass(cls.name);
-        const classKey = found?.key || normalizeKey(cls.name);
-        const currentLvl = parseInt(cls.level, 10) || 1;
-
-        const classRules = CLASS_FEATURES_SYNC?.[classKey];
-        if (!classRules) return;
-
-        // 1. Base class features
-        if (classRules.base) {
-            (classRules.base.traits || []).forEach(trait => {
-                const reqLvl = trait.minLevel || 1;
-                const traitNorm = normalizeKey(trait.name);
-                if (currentLvl >= reqLvl && !existingTraitNames.has(traitNorm)) {
-                    newTraits.push(JSON.parse(JSON.stringify(trait)));
-                    existingTraitNames.add(traitNorm);
-                } else if (currentLvl < reqLvl && existingTraitNames.has(traitNorm)) {
-                    staleTraitNames.add(traitNorm);
-                }
-            });
-            (classRules.base.resources || []).forEach(res => {
-                const reqLvl = res.minLevel || 1;
-                if (currentLvl >= reqLvl && !existingResourceIds.has(res.id)) {
-                    newResources.push(JSON.parse(JSON.stringify(res)));
-                    existingResourceIds.add(res.id);
-                } else if (currentLvl < reqLvl && existingResourceIds.has(res.id)) {
-                    staleResourceIds.add(res.id);
-                }
-            });
-        }
-
-        // 2. Subclass features
-        if (cls.subclass && classRules.subclasses) {
-            const resolvedSub = resolveSubclassInfo(cls.name, cls.subclass);
-            const targetSubKey = resolvedSub?.key || normalizeKey(cls.subclass || '');
-            const matchingSubKey = Object.keys(classRules.subclasses).find(sk => {
-                const normSk = normalizeKey(sk);
-                return normSk === targetSubKey || targetSubKey.includes(normSk) || normSk.includes(targetSubKey);
-            });
-
-            if (matchingSubKey && classRules.subclasses[matchingSubKey]) {
-                const subData = classRules.subclasses[matchingSubKey];
-                (subData.traits || []).forEach(trait => {
-                    const reqLvl = trait.minLevel || 1;
-                    const traitNorm = normalizeKey(trait.name);
-                    if (currentLvl >= reqLvl && !existingTraitNames.has(traitNorm)) {
-                        newTraits.push(JSON.parse(JSON.stringify(trait)));
-                        existingTraitNames.add(traitNorm);
-                    } else if (currentLvl < reqLvl && existingTraitNames.has(traitNorm)) {
-                        staleTraitNames.add(traitNorm);
-                    }
-                });
-                (subData.resources || []).forEach(res => {
-                    const reqLvl = res.minLevel || 1;
-                    if (currentLvl >= reqLvl && !existingResourceIds.has(res.id)) {
-                        newResources.push(JSON.parse(JSON.stringify(res)));
-                        existingResourceIds.add(res.id);
-                    } else if (currentLvl < reqLvl && existingResourceIds.has(res.id)) {
-                        staleResourceIds.add(res.id);
-                    }
-                });
-            }
-        }
-    });
-
-    return { newResources, newTraits, staleResourceIds, staleTraitNames };
-}
-
-function applyClassFeaturesSync(d) {
-    syncCharacterSpellSlots(d);
-    const syncResult = detectClassFeaturesToSync(d);
-    const { newResources, newTraits, staleResourceIds, staleTraitNames } = syncResult;
-
-    if (staleResourceIds.size > 0) {
-        d.combat.resources = (d.combat.resources || []).filter(r => !staleResourceIds.has(r.id));
-    }
-    if (staleTraitNames.size > 0) {
-        d.combat.traits = (d.combat.traits || []).filter(t => !staleTraitNames.has(normalizeKey(t.name)));
-    }
-    if (newResources.length > 0) {
-        d.combat.resources.push(...newResources);
-    }
-    if (newTraits.length > 0) {
-        d.combat.traits.push(...newTraits);
-    }
-
-    sanitizeTracking(d);
-    return syncResult;
-}
-
-function getResourceMaxUses(res, attributes, pb = 2) {
-    if (typeof res?.uses === 'number' && res.uses > 0) return res.uses;
-    if (res?.usesKey) {
-        const u = String(res.usesKey).toUpperCase();
-        if (u === 'PB') return Math.max(1, pb);
-        return Math.max(1, resolveAttributeMod(attributes, res.usesKey));
-    }
-    if (Array.isArray(res?.spent) && res.spent.length > 0) return res.spent.length;
-    return 1;
-}
-
-function sanitizeTracking(d) {
-    if (!d || typeof d !== 'object') d = JSON.parse(JSON.stringify(CHARACTER_DATA));
-    if (!d.identity || typeof d.identity !== 'object') d.identity = {};
-    if (!d.vitals || typeof d.vitals !== 'object') d.vitals = {};
-    d.vitals.inspiration = Math.max(0, parseInt(d.vitals.inspiration, 10) || 0);
-    if (!Array.isArray(d.quests)) d.quests = [];
-    if (typeof d.campaignNotes !== 'string') d.campaignNotes = '';
-    if (!d.combat || typeof d.combat !== 'object') d.combat = {};
-    if (!d.inventory || typeof d.inventory !== 'object') d.inventory = {};
-
-    if (!Array.isArray(d.identity.classes) || d.identity.classes.length === 0) {
-        d.identity.classes = [{ name: "Character", subclass: "", level: 1, hitDie: "d8" }];
-    }
-    d.identity.classes = d.identity.classes.map(c => ({
-        ...c,
-        name: capitalizeWord(c.name || "Character"),
-        subclass: c.subclass ? capitalizeWord(c.subclass) : ''
-    }));
-
-    const totalHd = d.identity.classes.reduce((a, b) => a + (b.level || 0), 0) || 1;
-    const pb = Math.floor((totalHd - 1) / 4) + 2;
-
-    if (!Array.isArray(d.vitals.hitDiceSpent)) d.vitals.hitDiceSpent = [];
-    while (d.vitals.hitDiceSpent.length < totalHd) d.vitals.hitDiceSpent.push(false);
-    if (d.vitals.hitDiceSpent.length > totalHd) d.vitals.hitDiceSpent = d.vitals.hitDiceSpent.slice(0, totalHd);
-
-    if (!d.deathSaves || !Array.isArray(d.deathSaves.successes) || !Array.isArray(d.deathSaves.failures)) {
-        d.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-    }
-    if (!d.concentration) d.concentration = { active: false, spellName: "" };
-    if (!Array.isArray(d.conditions)) d.conditions = [];
-    d.conditions = d.conditions.map(c => {
-        if (typeof c === 'string') return { id: c, source: 'General' };
-        if (c && typeof c === 'object' && c.id) return { id: c.id, source: c.source || 'General' };
-        return null;
-    }).filter(Boolean);
-    if (!Array.isArray(d.sessionLog)) d.sessionLog = [];
-    if (!Array.isArray(d.combat.resources)) d.combat.resources = [];
-    if (!Array.isArray(d.combat.traits)) d.combat.traits = [];
-
-    d.combat.resources.forEach(r => {
-        const uses = getResourceMaxUses(r, d.attributes, pb);
-        if (!Array.isArray(r.spent)) r.spent = [];
-        while (r.spent.length < uses) r.spent.push(false);
-        if (r.spent.length > uses) r.spent = r.spent.slice(0, uses);
-    });
-
-    // Auto-sync spell slots according to official class tables
-    syncCharacterSpellSlots(d);
-
-    if (!d.magic) d.magic = { slots: [], spells: [] };
-    if (!Array.isArray(d.magic.slots)) d.magic.slots = [];
-    d.magic.slots.forEach(slot => {
-        const max = slot.max || 1;
-        if (!Array.isArray(slot.spent)) slot.spent = [];
-        while (slot.spent.length < max) slot.spent.push(false);
-        if (slot.spent.length > max) slot.spent = slot.spent.slice(0, max);
-    });
-
-    if (!Array.isArray(d.magic.spells)) d.magic.spells = [];
-    d.magic.spells = d.magic.spells.map(sp => ({
-        ...sp,
-        name: sp.name || "Spell",
-        source: sp.source || 'Custom',
-        sourceType: sp.sourceType || 'other'
-    }));
-
-    if (!d.inventory.wealth) d.inventory.wealth = { cp: 0, sp: 0, ep: 0, gp: 0 };
-    ['armors', 'weapons', 'consumables', 'tools', 'story'].forEach(k => {
-        if (!Array.isArray(d.inventory[k])) d.inventory[k] = [];
-    });
-
-    return d;
-}
+const calculateExpectedSlots = ClassSyncService.calculateExpectedSlots.bind(ClassSyncService);
+const syncCharacterSpellSlots = ClassSyncService.syncCharacterSpellSlots.bind(ClassSyncService);
+const detectClassFeaturesToSync = ClassSyncService.detectClassFeaturesToSync.bind(ClassSyncService);
+const applyClassFeaturesSync = (d) => ClassSyncService.applyClassFeaturesSync(d, sanitizeTracking);
+const getResourceMaxUses = ClassSyncService.resolveResourceMaxUses.bind(ClassSyncService);
+const sanitizeTracking = (d) => CharacterSanitizerService.sanitize(d);
 
 function loadInitialData() {
     const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
@@ -609,169 +173,56 @@ function hasCharacterFeature(d, keywords = []) {
     return false;
 }
 
-function resolveGenieDamage(d, pb) {
-    const traits = d?.combat?.traits || [];
-    const genieTrait = traits.find(t => normalizeKey(t.name).includes('genieswrath'));
-
-    const classes = d?.identity?.classes || [];
-    const warlockClass = classes.find(c => normalizeKey(c.name) === 'warlock');
-    const resolvedSub = warlockClass ? resolveSubclassInfo('warlock', warlockClass.subclass) : null;
-
-    if (!genieTrait && (!resolvedSub || resolvedSub.key !== 'genie')) return null;
-
-    let dmgType = resolvedSub?.specInfo?.damageType;
-    if (!dmgType && genieTrait) {
-        const text = `${genieTrait.badge || ''} ${genieTrait.desc || ''}`;
-        const foundDt = DAMAGE_TYPES.find(dt => new RegExp(`\\b${dt.name}\\b`, 'i').test(text));
-        dmgType = foundDt ? foundDt.name : 'Elemental';
-    }
-    if (!dmgType) dmgType = 'Elemental';
-
-    return `+${pb} ${dmgType} damage`;
-}
+const resolveGenieDamage = ClassProgressionService.resolveGenieDamage.bind(ClassProgressionService);
 
 
-function getAllEquippedItems(d) {
-    if (!d || !d.inventory) return [];
-    return [
-        ...(d.inventory.armors || []),
-        ...(d.inventory.story || []),
-        ...(d.inventory.weapons || [])
-    ].filter(a => a && a.equipped);
-}
 
-function resolveCharacterResistances(d) {
-    const map = new Map();
 
-    const addRes = (idOrName, source) => {
-        const norm = normalizeKey(idOrName);
-        if (!norm) return;
-        const dt = DAMAGE_TYPES.find(t => normalizeKey(t.id) === norm || normalizeKey(t.name) === norm);
-        const id = dt ? dt.id : norm;
-        const name = dt ? dt.name : (idOrName.charAt(0).toUpperCase() + idOrName.slice(1));
-        const icon = dt ? dt.icon : '🛡️';
 
-        if (!map.has(id)) {
-            map.set(id, { id, name, icon, sources: [source] });
-        } else {
-            const entry = map.get(id);
-            if (!entry.sources.includes(source)) {
-                entry.sources.push(source);
-            }
-        }
-    };
 
-    // 1. Explicit array in d.vitals.damageResistances if defined
-    if (Array.isArray(d?.vitals?.damageResistances)) {
-        d.vitals.damageResistances.forEach(r => addRes(r, 'Character Sheet / Race'));
-    }
-
-    // 2. Scan combat traits (e.g. Tiefling Infernal Resistance, class features)
-    const traits = d?.combat?.traits || [];
-    traits.forEach(t => {
-        const text = `${t.name || ''} ${t.desc || ''}`.toLowerCase();
-        DAMAGE_TYPES.forEach(dt => {
-            const typeName = dt.id;
-            const reg = new RegExp(`(?:resistance|resistant)\\s+to\\s+[^.]*?\\b${typeName}\\b`, 'i');
-            if (reg.test(text)) {
-                addRes(dt.id, t.name || 'Trait');
-            }
-        });
-    });
-
-    // 3. Scan all equipped items (armors, accessories, story items, weapons)
-    const allEquipped = getAllEquippedItems(d);
-
-    allEquipped.forEach(item => {
-        const itemRes = Array.isArray(item.resistances) ? item.resistances : [];
-        itemRes.forEach(r => {
-            addRes(r, item.name || 'Equipment');
-        });
-    });
-
-    return Array.from(map.values()).map(r => ({
-        ...r,
-        source: r.sources.join(', ')
-    }));
-}
-
-function resolveClassHitDie(cls) {
-    if (cls?.hitDie) return cls.hitDie;
-    const found = findCompendiumClass(cls?.name);
-    return found?.obj?.hitDie || 'd8';
-}
-
-function resolveSpellcastingAttrKey(d) {
-    if (d?.magic?.spellcastingAttr) return String(d.magic.spellcastingAttr).toUpperCase();
-    if (d?.identity?.spellcastingAbility) return String(d.identity.spellcastingAbility).toUpperCase();
-    const classes = d?.identity?.classes || [];
-    for (const cls of classes) {
-        const found = findCompendiumClass(cls?.name);
-        if (found?.obj?.spellcasting?.ability) {
-            return String(found.obj.spellcasting.ability).toUpperCase();
-        }
-        if (cls?.subclass) {
-            const sub = findCompendiumSubclass(found?.obj, cls.subclass, cls.name);
-            if (sub?.obj?.spellcasting?.ability) {
-                return String(sub.obj.spellcasting.ability).toUpperCase();
-            }
-        }
-    }
-    return 'CHA';
-}
-
-function resolveSongOfRestDie(d) {
-    const classes = d?.identity?.classes || [];
-    const bardClass = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'bard');
-    const bardLevel = bardClass ? (parseInt(bardClass.level, 10) || 0) : 0;
-    const die = resolveDiceScale('bard', 'songOfRestDie', bardLevel);
-    if (die) return die;
-
-    if (hasCharacterFeature(d, ['songofrest'])) {
-        return '1d6';
-    }
-    return null;
-}
+const resolveClassHitDie = ClassProgressionService.resolveClassHitDie.bind(ClassProgressionService);
+const resolveSpellcastingAttrKey = ClassProgressionService.resolveSpellcastingAttrKey.bind(ClassProgressionService);
+const resolveSongOfRestDie = ClassProgressionService.resolveSongOfRestDie.bind(ClassProgressionService);
 
 function computeStats(d) {
     const classes = d?.identity?.classes || [];
-    const totalLevel = classes.reduce((acc, c) => acc + (c.level || 0), 0) || 1;
-    const pb = Math.floor((totalLevel - 1) / 4) + 2;
+    const totalLevel = classes.reduce((acc, c) => acc + (c.level || 0), 0) || MIN_CHARACTER_LEVEL;
+    const pb = Math.floor((totalLevel - MIN_CHARACTER_LEVEL) / PROFICIENCY_LEVEL_STEP) + BASE_PROFICIENCY_BONUS;
 
-    const hasJackOfAllTrades = hasCharacterFeature(d, ['jackofalltrades']);
-    const jackOfAllTrades = hasJackOfAllTrades ? Math.floor(pb / 2) : 0;
+    const raceInfo = RaceProvider.resolveRace(d?.identity?.race);
+    const bonusHpFromRace = (raceInfo.bonusHpPerLevel || 0) * totalLevel;
+
+    const skillRules = ClassFeatureProvider.resolveSkillRules(d, pb, hasCharacterFeature);
+    const { jackOfAllTrades, hasJackOfAllTrades } = skillRules;
 
     const allEquipped = getAllEquippedItems(d);
 
     const computedAttrs = calculateAttributes(d?.attributes, allEquipped, pb);
 
-    const hasSilverTongue = hasCharacterFeature(d, ['silvertongue']);
-    const hasReliableTalent = hasCharacterFeature(d, ['reliabletalent', 'reliable talent']);
     const computedSkills = calculateSkills(
         d?.skills,
         computedAttrs,
         pb,
-        jackOfAllTrades,
-        hasSilverTongue,
-        hasReliableTalent,
+        skillRules,
         allEquipped
     );
 
     const percSkill = computedSkills.find(s => s.id === 'perception');
-    const percAdvBonus = percSkill?.hasAdvantage ? 5 : 0;
-    const passivePerception = 10 + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades)) + percAdvBonus;
+    const percAdvBonus = percSkill?.hasAdvantage ? PASSIVE_ADVANTAGE_BONUS : 0;
+    const passivePerception = BASE_PASSIVE_SCORE + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades)) + percAdvBonus;
     const initNum = computedAttrs.DEX.mod + jackOfAllTrades;
     const initDesc = hasJackOfAllTrades
         ? `DEX (${computedAttrs.DEX.modStr}) + Jack of All Trades (+${jackOfAllTrades})`
         : `DEX (${computedAttrs.DEX.modStr})`;
 
-    const { ac: calculatedAc, armorDesc } = calculateArmorClass(
+    const { ac: calculatedAc, armorDesc, ignoresHeavyArmorStrPenalty } = calculateArmorClass(
         d?.inventory?.armors,
         d?.inventory?.story,
-        computedAttrs
+        computedAttrs,
+        d
     );
 
-    const computedWeapons = calculateWeapons(d?.inventory?.weapons, computedAttrs, pb);
+    const computedWeapons = calculateWeapons(d?.inventory?.weapons, computedAttrs, pb, d);
 
     const spellcastingAttrKey = resolveSpellcastingAttrKey(d);
     const { spellDC, spellAtkStr } = calculateSpellStats(
@@ -781,16 +232,30 @@ function computeStats(d) {
         allEquipped
     );
 
-    const bardicUses = Math.max(1, computedAttrs.CHA.mod);
+    const bardicUses = Math.max(MIN_RESOURCE_USES, computedAttrs.CHA.mod);
     const hitDiceList = classes.map(c => `${c.level} ${resolveClassHitDie(c)}`).join(' + ');
     const songOfRestDie = resolveSongOfRestDie(d);
     const bardicDie = resolveBardicDie(d);
+    const sneakAttackDie = resolveSneakAttackDie(d);
+    const martialArtsDie = resolveMartialArtsDie(d);
+    const superiorityDie = resolveSuperiorityDie(d);
+    const rageDamage = resolveRageDamage(d);
+    const psionicDie = resolvePsionicEnergyDie(d);
 
     const genieDamage = resolveGenieDamage(d, pb);
     const combatBadges = [];
     (d?.combat?.traits || []).forEach(t => {
         if (t.badge) {
-            let badgeText = TemplateHelper.interpolate(t.badge, { pb });
+            let badgeText = TemplateHelper.interpolate(t.badge, {
+                pb,
+                bardicDie,
+                songOfRestDie,
+                sneakAttackDie,
+                martialArtsDie,
+                superiorityDie,
+                rageDamage,
+                psionicDie
+            });
             combatBadges.push({
                 icon: t.badgeIcon || '⚡',
                 text: badgeText,
@@ -820,6 +285,7 @@ function computeStats(d) {
         initDesc,
         ac: calculatedAc,
         armorDesc,
+        ignoresHeavyArmorStrPenalty,
         spellStat: spellcastingAttrKey,
         spellcastingAttrKey,
         spellAtkStr,
@@ -828,493 +294,51 @@ function computeStats(d) {
         combatBadges,
         songOfRestDie,
         bardicDie,
+        sneakAttackDie,
+        martialArtsDie,
+        superiorityDie,
+        rageDamage,
+        psionicDie,
         bardicUses,
+        bonusHpFromRace,
         hitDiceList,
         hitDiceBreakdown: classes.map(c => `${c.level} ${capitalizeWord(c.name)}`).join(' + '),
         classesSummary: classes.map(c => `${capitalizeWord(c.name)}${c.subclass ? ` (${capitalizeWord(c.subclass)})` : ''} ${c.level}`).join(' / '),
         computedWeapons,
+        raceInfo,
         resistances: resolveCharacterResistances(d)
     };
 }
 
 
 // ================= SPELL PARSER & COMPENDIUM =================
-
-
-function clean5eToolsText(text) {
-    if (!text) return '';
-    if (Array.isArray(text)) return text.map(clean5eToolsText).filter(Boolean).join('\n\n');
-    if (typeof text === 'object') {
-        const title = text.name ? `${text.name}:\n` : '';
-        if (text.entries) return (title + clean5eToolsText(text.entries)).trim();
-        if (text.items) return (title + text.items.map(clean5eToolsText).join('\n')).trim();
-        return JSON.stringify(text);
-    }
-    return String(text).replace(/\{@([a-zA-Z]+) ([^}]+)\}/gi, (_, tag, content) => {
-        const parts = content.split('|');
-        const t = tag.toLowerCase();
-        if (t === 'scaledamage' || t === 'scaledice') return parts[2] || parts[0];
-        return parts[0];
-    });
-}
-
-function parse5eToolsSpell(raw) {
-    if (!raw || typeof raw !== 'object' || !raw.name) return null;
-    try {
-        let actionType = 'action';
-        const at = String(raw.actionType || '').toLowerCase();
-        if (at.includes('bonus')) actionType = 'bonus';
-        else if (at.includes('react')) actionType = 'reaction';
-        else {
-            const timeList = Array.isArray(raw.time) ? raw.time : (raw.time ? [raw.time] : []);
-            for (const t of timeList) {
-                const unit = String(t.unit || t || '').toLowerCase();
-                if (unit.includes('bonus')) actionType = 'bonus';
-                if (unit.includes('react')) actionType = 'reaction';
-            }
-        }
-
-        let conc = false;
-        if (raw.conc === true || raw.concentration === true) conc = true;
-        const durationList = Array.isArray(raw.duration) ? raw.duration : (raw.duration ? [raw.duration] : []);
-        for (const d of durationList) {
-            if (d.concentration === true || String(d.type || '').toLowerCase().includes('conc')) conc = true;
-        }
-
-        let rangeStr = 'Self';
-        if (raw.range?.distance) {
-            rangeStr = `${raw.range.distance.amount || ''} ${raw.range.distance.type || 'ft'}`.trim();
-        } else if (raw.range?.type) {
-            rangeStr = raw.range.type === 'touch' ? 'Touch' : (raw.range.type === 'self' ? 'Self' : raw.range.type);
-        }
-
-        let saveStat = '';
-        let useSpellDc = false;
-        if (Array.isArray(raw.savingThrow) && raw.savingThrow.length > 0) {
-            useSpellDc = true;
-            const sMap = { strength: 'STR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'WIS', charisma: 'CHA' };
-            saveStat = sMap[String(raw.savingThrow[0]).toLowerCase()] || String(raw.savingThrow[0]).toUpperCase();
-        }
-
-        const descEntries = clean5eToolsText(raw.entries || '');
-        const higherLevelEntries = raw.entriesHigherLevel ? clean5eToolsText(raw.entriesHigherLevel) : '';
-        const fullDesc = [descEntries, higherLevelEntries].filter(Boolean).join('\n\n');
-
-        const isHealing = (Array.isArray(raw.miscTags) && raw.miscTags.includes('HL')) ||
-            /regains?\s+(?:hit points equal to|\d+d\d+)/i.test(descEntries) ||
-            /\b(?:heal|cure|healing)\b/i.test(raw.name);
-        const isTeleport = Array.isArray(raw.miscTags) && raw.miscTags.includes('TP');
-        const hasDamageInflict = Array.isArray(raw.damageInflict) && raw.damageInflict.length > 0;
-
-        let damageStr = '—';
-        if (isHealing) {
-            const healMatch = descEntries.match(/(\d+d\d+)/i);
-            const hasMod = /spellcasting ability modifier/i.test(descEntries);
-            if (healMatch) {
-                damageStr = hasMod ? `${healMatch[1]} + MOD` : healMatch[1];
-            } else {
-                damageStr = 'Heal';
-            }
-        } else if (!isTeleport) {
-            const dmgMatch = descEntries.match(/(\d+d\d+(?:\s*[+-]\s*\d+)?)/i);
-            if (dmgMatch && (hasDamageInflict || raw.spellAttack || useSpellDc)) {
-                damageStr = dmgMatch[1];
-            }
-        }
-
-        const multiBeamCantrip = /more than one beam|two beams at 5th level/i.test(descEntries);
-
-        // Extract higher level scaling formula (At Higher Levels / scaledamage / scaledice)
-        let higherLevelScale = null;
-        if (raw.entriesHigherLevel) {
-            const rawHlStr = JSON.stringify(raw.entriesHigherLevel);
-            const mScale = rawHlStr.match(/@scaledamage ([^}]+)/) || rawHlStr.match(/@scaledice ([^}]+)/);
-            if (mScale) {
-                const parts = mScale[1].split('|');
-                higherLevelScale = parts[2] || parts[0];
-            } else {
-                const mDmg = higherLevelEntries.match(/(?:damage|healing) increases by (\d+d\d+)/i);
-                if (mDmg) higherLevelScale = mDmg[1];
-            }
-        }
-
-        return {
-            name: raw.name,
-            sourceBook: raw.source || '5eTools',
-            level: typeof raw.level === 'number' ? raw.level : (parseInt(raw.level, 10) || 0),
-            actionType,
-            range: rangeStr,
-            duration: conc ? 'Concentration' : (raw.duration?.[0]?.type === 'instant' ? 'Instantaneous' : '1 min'),
-            useSpellDc,
-            saveStat: saveStat.trim(),
-            conc,
-            isHealing,
-            damage: damageStr,
-            scalingLevelDice: raw.scalingLevelDice || null,
-            multiBeamCantrip,
-            higherLevelScale,
-            desc: fullDesc || 'No description available.'
-        };
-    } catch (err) {
-        return null;
-    }
-}
-
-let spellsCompendium = [];
-
-function buildSpellsCompendium() {
-    const rawSources = [];
-    if (Array.isArray(SPELL_SOURCES)) rawSources.push(...SPELL_SOURCES);
-    if (typeof window !== 'undefined') {
-        ['SPELLS_PHB', 'SPELLS_TCE', 'SPELLS_XGE'].forEach(v => {
-            if (window[v] && !rawSources.includes(window[v])) rawSources.push(window[v]);
-        });
-    }
-
-    const flatSpells = rawSources.flatMap(source => {
-        if (Array.isArray(source)) return source;
-        if (source && Array.isArray(source.spell)) return source.spell;
-        return [];
-    });
-
-    const map = new Map();
-    flatSpells.forEach(raw => {
-        const parsed = parse5eToolsSpell(raw);
-        if (parsed && parsed.name && !map.has(normalizeKey(parsed.name))) {
-            map.set(normalizeKey(parsed.name), parsed);
-        }
-    });
-
-    spellsCompendium = Array.from(map.values());
-    return spellsCompendium.length;
-}
-
-function findSpellInCompendium(name) {
-    if (!name || spellsCompendium.length === 0) return null;
-    const target = normalizeKey(name);
-
-    let found = spellsCompendium.find(s => normalizeKey(s.name) === target);
-    if (found) return found;
-
-    return spellsCompendium.find(s => {
-        const sKey = normalizeKey(s.name);
-        return sKey && (target.includes(sKey) || sKey.includes(target));
-    }) || null;
-}
-
-function getCantripScalingTier(totalLevel) {
-    if (totalLevel >= 17) return { tier: '17', multiplier: 4 };
-    if (totalLevel >= 11) return { tier: '11', multiplier: 3 };
-    if (totalLevel >= 5) return { tier: '5', multiplier: 2 };
-    return { tier: '1', multiplier: 1 };
-}
-
-function resolveScaledSpellDamage(comp, charSpell, totalLevel = 1, lvlNum = 1) {
-    const baseDmg = charSpell?.damage || comp?.damage || '—';
-    if (lvlNum !== 0) return baseDmg;
-
-    const { tier, multiplier } = getCantripScalingTier(totalLevel);
-
-    // 1. Si el compendio de 5eTools trae scalingLevelDice (ej. Chill Touch, Vicious Mockery, Toll the Dead)
-    if (comp?.scalingLevelDice) {
-        const list = Array.isArray(comp.scalingLevelDice) ? comp.scalingLevelDice : [comp.scalingLevelDice];
-        const scaledParts = list
-            .map(item => item?.scaling?.[tier] || item?.scaling?.['1'])
-            .filter(Boolean);
-        if (scaledParts.length > 0) return scaledParts.join(' / ');
-    }
-
-    if (baseDmg === '—') return '—';
-
-    // 2. If it is a cantrip with multiple rays per level (e.g. Eldritch Blast)
-    if (comp?.multiBeamCantrip) {
-        return multiplier > 1 ? `${multiplier}×${baseDmg}` : baseDmg;
-    }
-
-    // 3. Standard cantrip die scaling if mentions levels 5/11/17
-    if (multiplier > 1 && /5th level/i.test(comp?.desc || '')) {
-        return baseDmg.replace(/^(\d+)d(\d+)/i, (_, count, faces) => `${(parseInt(count, 10) || 1) * multiplier}d${faces}`);
-    }
-
-    return baseDmg;
-}
-
-function calculateSlotDamage(baseDmg, scaleDice, baseLevel, targetLevel) {
-    if (!baseDmg || baseDmg === '—' || !scaleDice || targetLevel <= baseLevel) return baseDmg;
-    const diff = targetLevel - baseLevel;
-    const baseMatch = baseDmg.match(/^(\d+)d(\d+)(.*)$/i);
-    const scaleMatch = scaleDice.match(/^(\d+)d(\d+)/i);
-    if (baseMatch && scaleMatch && baseMatch[2] === scaleMatch[2]) {
-        const total = (parseInt(baseMatch[1], 10) || 0) + (parseInt(scaleMatch[1], 10) || 1) * diff;
-        return `${total}d${baseMatch[2]}${baseMatch[3]}`;
-    }
-    return `${baseDmg} (+${diff}×${scaleDice})`;
-}
-
-function resolveSpellData(charSpell, totalLevel = 1, maxCastLevel = 3, spellAttrMod = null) {
-    const comp = findSpellInCompendium(charSpell.name) || {};
-
-    let lvlNum = 1;
-    const rawLvl = charSpell.level !== undefined ? charSpell.level : comp.level;
-    if (rawLvl === 0 || rawLvl === "0" || rawLvl === "T") lvlNum = 0;
-    else lvlNum = parseInt(rawLvl, 10) || 1;
-
-    const actionType = charSpell.actionType || comp.actionType || 'action';
-    const conc = charSpell.conc !== undefined ? !!charSpell.conc : !!comp.conc;
-    const isHealing = charSpell.isHealing !== undefined ? !!charSpell.isHealing : !!comp.isHealing;
-    let damage = resolveScaledSpellDamage(comp, charSpell, totalLevel, lvlNum);
-    if (damage && damage.includes('MOD')) {
-        const modNum = typeof spellAttrMod === 'number' ? spellAttrMod : 0;
-        damage = damage.replace(/MOD/g, modNum >= 0 ? `${modNum}` : `${modNum}`);
-    }
-    const higherLevelScale = charSpell.higherLevelScale || comp.higherLevelScale || null;
-
-    // Calculate scaling for higher available slots
-    const slotScaling = [];
-    if (lvlNum > 0 && higherLevelScale && damage !== '—') {
-        const topLevel = Math.max(lvlNum, maxCastLevel);
-        for (let sl = lvlNum + 1; sl <= topLevel; sl++) {
-            slotScaling.push({
-                slotLevel: sl,
-                label: `Lvl ${sl}`,
-                damage: calculateSlotDamage(damage, higherLevelScale, lvlNum, sl)
-            });
-        }
-    }
-
-    const baseDesc = comp.desc || charSpell.desc || 'Description not available in loaded compendiums.';
-    const finalDesc = (charSpell.desc && comp.desc && charSpell.desc !== comp.desc)
-        ? `${baseDesc}\n\n*Character Note:* ${charSpell.desc}`
-        : baseDesc;
-
-    return {
-        name: charSpell.name,
-        source: charSpell.source || 'Spell',
-        sourceType: charSpell.sourceType || 'other',
-        sourceBook: comp.sourceBook || '',
-        level: lvlNum,
-        actionType,
-        range: charSpell.range || comp.range || 'Self',
-        duration: charSpell.duration || comp.duration || (conc ? 'Concentration' : 'Instantaneous'),
-        useSpellDc: charSpell.useSpellDc !== undefined ? charSpell.useSpellDc : (comp.useSpellDc !== undefined ? comp.useSpellDc : false),
-        saveStat: (charSpell.saveStat || comp.saveStat || '').trim(),
-        conc,
-        isHealing,
-        damage,
-        higherLevelScale,
-        slotScaling,
-        isFavorite: !!charSpell.favorite,
-        isItemGranted: !!charSpell.isItemGranted || charSpell.sourceType === 'item',
-        desc: finalDesc
-    };
-}
+const clean5eToolsText = SpellService.clean5eToolsText.bind(SpellService);
+const parse5eToolsSpell = SpellService.parse5eToolsSpell.bind(SpellService);
+const buildSpellsCompendium = (sources = []) => SpellService.buildSpellsCompendium(sources);
+const findSpellInCompendium = SpellService.findSpellInCompendium.bind(SpellService);
+const getCantripScalingTier = SpellService.getCantripScalingTier.bind(SpellService);
+const resolveScaledSpellDamage = SpellService.resolveScaledSpellDamage.bind(SpellService);
+const calculateSlotDamage = SpellService.calculateSlotDamage.bind(SpellService);
+const resolveSpellData = SpellService.resolveSpellData.bind(SpellService);
 
 // ================= COMPONENTE ALPINE.JS =================
 function createCharacterSheet() {
-    return {
-        data: loadInitialData(),
-        activeTab: 'profile',
-        currentSpellFilter: 'all',
-        showFullSpellbook: false,
-        compendiumCount: 0,
-
-        // Estado de Modales
-        modalWeaponOpen: false,
-        editingWeaponIndex: null,
-        weaponForm: {
-            name: '',
-            attrMode: 'finesse',
-            dice: '1d8',
-            damageType: 'Piercing',
-            propsRaw: ''
-        },
-
-        equipRevision: 0,
-        selectedSpellToAdd: '',
-        selectedResToAdd: '',
-        selectedSkillAdvToAdd: '',
-        storySpellToAdd: '',
-        storyResToAdd: '',
-        storySkillAdvToAdd: '',
-
-        modalArmorOpen: false,
-        editingArmorIndex: null,
-        armorForm: {
-            name: '',
-            type: 'light',
-            baseAc: 12,
-            stealthDisadv: false,
-            special: '',
-            grantedSpells: [],
-            resistances: [],
-            bonusAttr: '',
-            attrMode: 'bonus', // 'bonus' | 'advantage'
-            bonusAttrVal: 0,
-            saveType: '',
-            saveMode: 'bonus', // 'bonus' | 'advantage'
-            saveVal: 0,
-            advantageSkills: [],
-            equipped: false
-        },
-
-        modalShortRestOpen: false,
-        shortRestDiceSelected: 0,
-        shortRestClassIndex: 0,
-
-        modalConcOverrideOpen: false,
-        pendingConcentrationSpell: null,
-
-        modalDialog: {
-            open: false,
-            title: '',
-            message: '',
-            icon: 'ℹ️',
-            showCancel: false,
-            showInput: false,
-            inputValue: '',
-            inputPlaceholder: '',
-            confirmText: 'OK',
-            cancelText: 'Cancel',
-            confirmClass: 'bg-brand-600 hover:bg-brand-500',
-            resolve: null
-        },
-
-        // Session Event Log
-        modalLogOpen: false,
-
-        // Damage / Heal Manager
-        modalHpManagerOpen: false,
-        hpManagerMode: 'damage', // 'damage' | 'heal' | 'temp'
-        hpManagerAmount: 1,
-        hpManagerResistedAmount: 0,
-        hpManagerResistanceType: '',
-
-        // Conditions
-        allConditions: DND_CONDITIONS,
-        modalConditionsOpen: false,
-        conditionDetailItem: null,
-
-        // Background Compendium
-        allBackgrounds: BACKGROUND_COMPENDIUM,
-        modalBackgroundsOpen: false,
-        backgroundSearchQuery: '',
-        backgroundDetailItem: null,
-
-        // Inventory & Wealth Modals
-        modalWealthOpen: false,
-        wealthManagerMode: 'add', // 'add' | 'spend'
-        wealthForm: { gp: 0, sp: 0, ep: 0, cp: 0, reason: '' },
-
-        modalCastSpellOpen: false,
-        castSpellForm: {
-            spellName: '',
-            selectedSlotKey: '',
-            slotKey: '',
-            note: ''
-        },
-
-        modalConsumableOpen: false,
-        editingConsumableIndex: null,
-        consumableForm: { name: '', qty: '1' },
-
-        modalStoryItemOpen: false,
-        editingStoryItemIndex: null,
-        storyItemForm: {
-            name: '',
-            desc: '',
-            isSpecial: false,
-            isMagic: true,
-            equipped: false,
-            grantedSpells: [],
-            resistances: [],
-            bonusAttr: '',
-            attrMode: 'bonus', // 'bonus' | 'advantage'
-            bonusAttrVal: 0,
-            saveType: '',
-            saveMode: 'bonus', // 'bonus' | 'advantage'
-            saveVal: 0,
-            advantageSkills: []
-        },
-
-        modalToolOpen: false,
-        editingToolIndex: null,
-        toolForm: { name: '', desc: '', icon: '🎒', isInstrument: false },
-
-        // Quests & Story Modal
-        questFilter: 'active', // 'active' | 'completed' | 'all'
-        modalQuestOpen: false,
-        editingQuestId: null,
-        questForm: { title: '', desc: '', location: '', reward: '', status: 'active' },
-
-        // Spell Management Modal
-        modalSpellAddOpen: false,
-        spellAddTab: 'compendium', // 'compendium' | 'manual'
-        spellCompendiumSearch: '',
-        spellCompendiumLevelFilter: 'all',
-        selectedCompendiumSpell: null,
-        spellCompendiumSource: 'Class',
-        spellManualForm: {
-            name: '',
-            level: 1,
-            actionType: 'action',
-            range: '60 ft.',
-            duration: 'Instantaneous',
-            damage: '',
-            conc: false,
-            desc: '',
-            source: 'Class'
-        },
-
-        // Level Up & Character Sheet Modal
-        modalLevelUpOpen: false,
-        levelUpForm: {
-            classes: [],
-            maxHp: 0,
-            attributes: {},
-            newClassName: '',
-            newClassSubclass: '',
-            newClassHitDie: 'd8'
-        },
-
-        init() {
-            this.compendiumCount = buildSpellsCompendium();
-        },
-
-        // Getters Reactivos
-        get stats() {
-            const _rev = this.equipRevision;
+    const memoizedStats = createMemo(
+        function() {
             return computeStats(this.data);
         },
+        function() {
+            const classesSig = (this.data?.identity?.classes || []).map(c => `${c.name}:${c.level}:${c.subclass}`).join(',');
+            const attrsSig = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map(k => this.data?.attributes?.[k]?.score || DEFAULT_ABILITY_SCORE).join(',');
+            return `${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}`;
+        }
+    );
 
-        get allCompendiumSpellsList() {
-            if (!spellsCompendium || spellsCompendium.length === 0) {
-                buildSpellsCompendium();
-            }
-            return [...spellsCompendium].sort((a, b) =>
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
-        },
-
-        get allDamageTypesList() {
-            return DAMAGE_TYPES;
-        },
-
-        get allSkillsList() {
-            return DND_5E_SKILLS;
-        },
-
-        get availableCompendiumClasses() {
-            return Object.keys(CLASS_COMPENDIUM || {}).map(k => ({
-                key: k,
-                name: CLASS_COMPENDIUM[k].name,
-                hitDie: CLASS_COMPENDIUM[k].hitDie || 'd8'
-            })).sort((a, b) => a.name.localeCompare(b.name));
-        },
-
-        get computedCombatResources() {
+    const memoizedCombatResources = createMemo(
+        function() {
             const _rev = this.equipRevision;
             const bardicDie = this.stats.bardicDie || '1d8';
-            const pb = this.stats.pb || 2;
+            const pb = this.stats.pb || BASE_PROFICIENCY_BONUS;
             const vesselHours = pb * 2;
             const equippedItemNames = new Set((this.allEquipped || []).map(i => normalizeKey(i.name)));
 
@@ -1323,7 +347,17 @@ function createCharacterSheet() {
                     return null;
                 }
 
-                let displayName = r.name || 'Resource';
+                let displayName = TemplateHelper.interpolate(r.name || 'Resource', {
+                    pb,
+                    bardicDie,
+                    songOfRestDie: this.stats.songOfRestDie,
+                    sneakAttackDie: this.stats.sneakAttackDie,
+                    martialArtsDie: this.stats.martialArtsDie,
+                    superiorityDie: this.stats.superiorityDie,
+                    rageDamage: this.stats.rageDamage,
+                    psionicDie: this.stats.psionicDie,
+                    vesselHours
+                });
                 let displayReset = r.reset || 'Rest';
                 const norm = normalizeKey(r.name || '');
 
@@ -1346,29 +380,37 @@ function createCharacterSheet() {
                 };
             }).filter(Boolean);
         },
+        function() {
+            const rCount = this.data.combat?.resources?.length || 0;
+            return `${this.equipRevision}|${this.stats.bardicDie}|${this.stats.pb}|${rCount}`;
+        }
+    );
 
-        get allEquipped() {
-            return getAllEquippedItems(this.data);
-        },
-
-        get computedTraits() {
+    const memoizedTraits = createMemo(
+        function() {
             const bardicDie = this.stats.bardicDie || '1d8';
-            const pb = this.stats.pb || 3;
+            const pb = this.stats.pb || BASE_PROFICIENCY_BONUS;
             const songOfRestDie = this.stats.songOfRestDie || '1d6';
             const spellDC = this.stats.spellDC || 15;
             const spellAtk = this.stats.spellAtkStr || '+7';
             const vesselHours = pb * 2;
+            const interpCtx = {
+                pb,
+                spellDC,
+                spellAtk,
+                bardicDie,
+                songOfRestDie,
+                sneakAttackDie: this.stats.sneakAttackDie,
+                martialArtsDie: this.stats.martialArtsDie,
+                superiorityDie: this.stats.superiorityDie,
+                rageDamage: this.stats.rageDamage,
+                psionicDie: this.stats.psionicDie,
+                vesselHours
+            };
 
             return (this.data.combat?.traits || []).map((t, idx) => {
-                const displayName = t.name || '';
-                const displayDesc = TemplateHelper.interpolate(t.desc, {
-                    pb,
-                    spellDC,
-                    spellAtk,
-                    bardicDie,
-                    songOfRestDie,
-                    vesselHours
-                });
+                const displayName = TemplateHelper.interpolate(t.name || '', interpCtx);
+                const displayDesc = TemplateHelper.interpolate(t.desc, interpCtx);
 
                 return {
                     ...t,
@@ -1378,453 +420,70 @@ function createCharacterSheet() {
                 };
             });
         },
+        function() {
+            const tCount = this.data.combat?.traits?.length || 0;
+            const tNames = (this.data.combat?.traits || []).map(t => t.name).join(',');
+            return `${this.equipRevision}|${this.stats.bardicDie}|${this.stats.songOfRestDie}|${this.stats.pb}|${this.stats.spellDC}|${this.stats.spellAtkStr}|${tCount}|${tNames}`;
+        }
+    );
 
-        get maxSlotLevel() {
-            const slots = this.data.magic?.slots || [];
-            let maxLvl = 1;
-            for (const s of slots) {
-                const match = String(s.level || s.id || '').match(/(\d+)/);
-                if (match) {
-                    const lvl = parseInt(match[1], 10);
-                    if (!isNaN(lvl) && lvl > maxLvl) maxLvl = lvl;
-                }
-            }
-            return maxLvl;
+    const base = {
+        data: loadInitialData(),
+        activeTab: 'profile',
+        compendiumCount: 0,
+
+        modalDialog: {
+            open: false,
+            title: '',
+            message: '',
+            icon: 'ℹ️',
+            showCancel: false,
+            showInput: false,
+            inputValue: '',
+            inputPlaceholder: '',
+            confirmText: 'OK',
+            cancelText: 'Cancel',
+            confirmClass: 'bg-brand-600 hover:bg-brand-500',
+            resolve: null
         },
 
-        get allResolvedSpells() {
-            const _rev = this.equipRevision;
-            const totalLevel = this.stats.totalLevel;
-            const maxSlot = this.maxSlotLevel;
-            const spellAttrKey = this.stats.spellStat || this.stats.spellcastingAttrKey || 'CHA';
-            const spellAttrMod = (this.stats.computedAttrs?.[spellAttrKey] || this.stats.computedAttrs?.CHA)?.mod ?? 0;
-
-            // 1. Spells defined on the character (exclude any static sourceType === 'item')
-            const list = (this.data.magic?.spells || []).filter(sp => sp && sp.sourceType !== 'item');
-            const seen = new Set(list.map(s => normalizeKey(s.name)));
-
-            // 2. Spells dynamically granted by ALL EQUIPPED armors / accessories / story items / weapons
-            const allEquipped = this.allEquipped;
-
-            allEquipped.forEach(item => {
-                const granted = Array.isArray(item.grantedSpells) ? item.grantedSpells : [];
-                granted.forEach(spellName => {
-                    const cleanName = String(spellName).trim();
-                    const norm = normalizeKey(cleanName);
-                    if (cleanName && !seen.has(norm)) {
-                        seen.add(norm);
-                        list.push({
-                            name: cleanName,
-                            source: item.name,
-                            sourceType: 'item',
-                            isItemGranted: true
-                        });
-                    }
-                });
-            });
-
-            return list.map(sp => {
-                const resolved = resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod);
-                resolved.isFavorite = this.isSpellFavorite(sp.name);
-                resolved.isItemGranted = !!sp.isItemGranted || sp.sourceType === 'item';
-                return resolved;
-            });
-        },
-
-        get favoriteSpells() {
-            const list = this.allResolvedSpells.filter(sp => sp.isFavorite);
-            return this.sortSpellsByCategory(list);
-        },
-
-        sortSpellsByCategory(spellsList) {
-            const getCategoryRank = (sp) => {
-                const hasDamage = sp.damage && sp.damage !== '—';
-                if (hasDamage) return 1;    // 1: Damage
-                if (sp.isHealing) return 2;  // 2: Heal
-                return 3;                   // 3: Utility
-            };
-
-            return [...spellsList].sort((a, b) => {
-                const rankA = getCategoryRank(a);
-                const rankB = getCategoryRank(b);
-                if (rankA !== rankB) return rankA - rankB;
-                return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
-            });
-        },
-
-        get combatSpells() {
-            return this.favoriteSpells;
-        },
-
-        get castableSpellsList() {
-            return [...this.allResolvedSpells].sort((a, b) => {
-                if (a.level !== b.level) return a.level - b.level;
-                return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' });
-            });
-        },
-
-        get selectedCastSpell() {
-            const list = this.castableSpellsList;
-            if (list.length === 0) return null;
-            if (this.castSpellForm.spellName) {
-                const found = list.find(s => normalizeKey(s.name) === normalizeKey(this.castSpellForm.spellName));
-                if (found) return found;
-            }
-            return list[0];
-        },
-
-        resolveSlotNumericLevel(slot) {
-            if (!slot) return 1;
-            const idStr = String(slot.id || '').toLowerCase();
-            const lvlStr = String(slot.level || '').toLowerCase();
-            if (idStr === 'pact' || lvlStr.includes('pact')) {
-                const classes = this.data.identity?.classes || [];
-                const warlock = classes.find(c => (findCompendiumClass(c?.name)?.key || normalizeKey(c?.name)) === 'warlock');
-                const wLvl = Math.min(20, Math.max(1, parseInt(warlock?.level, 10) || 1));
-                return SPELL_SLOTS_TABLES.warlockPactSlots?.[wLvl]?.level || 1;
-            }
-            const idMatch = idStr.match(/lvl(\d+)/);
-            if (idMatch) return parseInt(idMatch[1], 10) || 1;
-            const lvlMatch = lvlStr.match(/(\d+)(?:st|nd|rd|th)/);
-            if (lvlMatch) return parseInt(lvlMatch[1], 10) || 1;
-            return 1;
-        },
-
-        get castSpellSlotOptions() {
-            const sp = this.selectedCastSpell;
-            if (!sp) return [];
-
-            if (sp.level === 0) {
-                return [{
-                    key: 'cantrip',
-                    type: 'cantrip',
-                    label: '✨ Cantrip — At Will (0 Slots Required)',
-                    available: 1,
-                    max: 1,
-                    canCast: true,
-                    castLevel: 0,
-                    scaledDamage: sp.damage
-                }];
-            }
-
-            const options = [];
-            const normSpell = normalizeKey(sp.name);
-
-            // 1. Check matching combat resources (Item / Feat / Racial innate uses)
-            (this.computedCombatResources || []).forEach(r => {
-                if (!r || !r.name) return;
-                const resetLower = String(r.reset || '').toLowerCase();
-                if (resetLower.includes('cantrip')) return;
-                if (normalizeKey(r.name).includes(normSpell)) {
-                    const spentArr = this.data.combat?.resources?.[r.originalIndex]?.spent || [];
-                    const avail = spentArr.filter(s => !s).length;
-                    const max = spentArr.length || 1;
-                    options.push({
-                        key: `res:${r.originalIndex}`,
-                        type: 'resource',
-                        resIndex: r.originalIndex,
-                        resourceName: r.displayName || r.name,
-                        label: `${r.displayName || r.name} (${avail}/${max} available)${avail === 0 ? ' — ❌ No charges remaining' : ' — Free Cast (Item/Feat)'}`,
-                        available: avail,
-                        max,
-                        canCast: avail > 0,
-                        castLevel: sp.level,
-                        scaledDamage: sp.damage
-                    });
-                }
-            });
-
-            // 2. Check all spell slots of level >= spell.level (never hidden when 0 available)
-            (this.data.magic?.slots || []).forEach((slot, sIdx) => {
-                const slotLvl = this.resolveSlotNumericLevel(slot);
-                if (slotLvl >= sp.level) {
-                    const spentArr = Array.isArray(slot.spent) ? slot.spent : [];
-                    const avail = spentArr.filter(s => !s).length;
-                    const max = spentArr.length || slot.max || 0;
-                    const isUpcast = slotLvl > sp.level;
-                    const scaledDmg = (isUpcast && sp.higherLevelScale && sp.damage && sp.damage !== '—')
-                        ? calculateSlotDamage(sp.damage, sp.higherLevelScale, sp.level, slotLvl)
-                        : sp.damage;
-                    const upcastTag = isUpcast
-                        ? ` [Upcast Lvl ${slotLvl}${scaledDmg && scaledDmg !== sp.damage ? ` → ${scaledDmg}` : ''}]`
-                        : '';
-                    const statusTag = avail === 0 ? ' — ❌ No slots remaining' : '';
-                    options.push({
-                        key: `slot:${sIdx}`,
-                        type: 'slot',
-                        slotIndex: sIdx,
-                        slotName: slot.level,
-                        slotLevel: slotLvl,
-                        label: `${slot.level}${upcastTag} (${avail}/${max} available)${statusTag}`,
-                        available: avail,
-                        max,
-                        canCast: avail > 0,
-                        castLevel: slotLvl,
-                        scaledDamage: scaledDmg
-                    });
-                }
-            });
-
-            if (options.length === 0) {
-                options.push({
-                    key: 'none',
-                    type: 'none',
-                    label: `❌ No Level ${sp.level}+ spell slots or item charges available`,
-                    available: 0,
-                    max: 0,
-                    canCast: false,
-                    castLevel: sp.level,
-                    scaledDamage: sp.damage
+        init() {
+            if (SpellService.spellsCompendium.length > 0) {
+                this.compendiumCount = SpellService.spellsCompendium.length;
+            } else {
+                SpellService.loadCompendium().then(count => {
+                    this.compendiumCount = count;
                 });
             }
-
-            return options;
         },
 
-        get selectedCastSlotOption() {
-            const opts = this.castSpellSlotOptions;
-            if (opts.length === 0) return null;
-            const chosenKey = this.castSpellForm.selectedSlotKey || this.castSpellForm.slotKey;
-            if (chosenKey) {
-                const found = opts.find(o => o.key === chosenKey);
-                if (found) return found;
-            }
-            return opts.find(o => o.canCast) || opts[0];
+        // Reactive Getters (Memoized)
+        get stats() {
+            return memoizedStats.call(this);
         },
 
-        get sortedTools() {
-            return [...(this.data.inventory?.tools || [])].sort((a, b) =>
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
+        get allDamageTypesList() {
+            return DAMAGE_TYPES;
         },
 
-        get sortedStoryItems() {
-            return [...(this.data.inventory?.story || [])].sort((a, b) =>
-                (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
-            );
+        get allSkillsList() {
+            return DND_5E_SKILLS;
         },
 
-        get activeConditionsList() {
-            if (!Array.isArray(this.data.conditions)) return [];
-            return this.data.conditions.map(entry => {
-                const id = typeof entry === 'string' ? entry : entry.id;
-                const source = (typeof entry === 'object' && entry && entry.source) ? entry.source : '';
-                const condObj = this.allConditions.find(c => c.id === id);
-                if (!condObj) return null;
-                return {
-                    ...condObj,
-                    source: source || 'General / Unknown'
-                };
-            }).filter(Boolean);
+        get availableCompendiumClasses() {
+            return Object.keys(CLASS_COMPENDIUM || {}).map(k => ({
+                key: k,
+                name: CLASS_COMPENDIUM[k].name,
+                hitDie: CLASS_COMPENDIUM[k].hitDie || 'd8'
+            })).sort((a, b) => a.name.localeCompare(b.name));
         },
 
-        get damageCalculation() {
-            const total = Math.max(0, parseInt(this.hpManagerAmount, 10) || 0);
-            const resistedPart = Math.max(0, Math.min(total, parseInt(this.hpManagerResistedAmount, 10) || 0));
-            const normalPart = Math.max(0, total - resistedPart);
-            const halvedPart = Math.floor(resistedPart / 2);
-            const finalDamage = normalPart + halvedPart;
-            return {
-                total,
-                resistedPart,
-                normalPart,
-                halvedPart,
-                finalDamage,
-                hasResistanceReduction: resistedPart > 0
-            };
+        get computedCombatResources() {
+            return memoizedCombatResources.call(this);
         },
 
-        get filteredSpells() {
-            return this.allResolvedSpells.filter(sp => {
-                const act = (sp.actionType || 'action').toLowerCase();
-                const isBonus = act.includes('bonus');
-                const isReaction = act.includes('react');
-                const isAction = !isBonus && !isReaction;
-
-                if (this.currentSpellFilter === 'action') return isAction;
-                if (this.currentSpellFilter === 'bonus') return isBonus;
-                if (this.currentSpellFilter === 'reaction') return isReaction;
-                if (this.currentSpellFilter === 'conc') return sp.conc;
-                return true;
-            });
-        },
-
-        get filteredCompendiumSpells() {
-            const currentSpellKeys = new Set();
-            (this.data.magic?.spells || []).forEach(s => {
-                if (!s || !s.name) return;
-                currentSpellKeys.add(normalizeKey(s.name));
-            });
-
-            const q = normalizeKey(this.spellCompendiumSearch);
-            const lvl = this.spellCompendiumLevelFilter;
-            let list = spellsCompendium;
-
-            // Exclude spells already owned by character
-            list = list.filter(s => {
-                const k = normalizeKey(s.name);
-                return !currentSpellKeys.has(k);
-            });
-
-            if (lvl !== 'all') {
-                const targetLvl = parseInt(lvl, 10);
-                list = list.filter(s => s.level === targetLvl);
-            }
-            if (q) {
-                list = list.filter(s => normalizeKey(s.name).includes(q));
-            }
-            return list.slice(0, 50);
-        },
-
-        get actionCantrips() {
-            return this.allResolvedSpells.filter(sp => {
-                const act = (sp.actionType || 'action').toLowerCase();
-                const isBonus = act.includes('bonus');
-                const isReaction = act.includes('react');
-                return sp.level === 0 && !isBonus && !isReaction;
-            });
-        },
-
-        get bonusSpells() {
-            return this.allResolvedSpells.filter(sp => {
-                const act = (sp.actionType || '').toLowerCase();
-                return act.includes('bonus');
-            });
-        },
-
-        get reactionSpells() {
-            return this.allResolvedSpells.filter(sp => {
-                const act = (sp.actionType || '').toLowerCase();
-                return act.includes('react');
-            });
-        },
-
-        get dynamicBonusActions() {
-            return collectActionFeatures('bonus', {
-                resources: this.computedCombatResources,
-                traits: this.data.combat?.traits,
-                equipped: this.allEquipped,
-                bardicDie: this.stats.bardicDie || '1d8'
-            });
-        },
-
-        get dynamicReactionActions() {
-            return collectActionFeatures('reaction', {
-                resources: this.computedCombatResources,
-                traits: this.data.combat?.traits,
-                equipped: this.allEquipped,
-                bardicDie: this.stats.bardicDie || '1d8'
-            });
-        },
-
-        get bonusResourcesAndTraits() {
-            const items = [];
-            (this.data.combat?.resources || []).forEach(r => {
-                const cost = (r.actionCost || '').toLowerCase();
-                if (cost.includes('bonus')) items.push(r.name);
-            });
-            (this.data.combat?.traits || []).forEach(t => {
-                const desc = (t.desc || '').toLowerCase();
-                if (desc.includes('action: bonus') || desc.includes('bonus action')) items.push(t.name);
-            });
-            return items;
-        },
-
-        get shortRestHealingBonus() {
-            if (this.stats.songOfRestDie) {
-                return { name: "Song of Rest", die: this.stats.songOfRestDie };
-            }
-            const feat = (this.data.combat?.traits || []).find(t => /short rest.*extra.*(?:hp|hit points)/i.test(t.desc || ''));
-            if (feat) {
-                return { name: feat.name, die: '1d6' };
-            }
-            return null;
-        },
-
-        get primaryHitDie() {
-            return resolveClassHitDie(this.data.identity?.classes?.[0]);
-        },
-
-        get shortRestSelectedHitDie() {
-            const cls = this.data.identity?.classes?.[this.shortRestClassIndex] || this.data.identity?.classes?.[0];
-            return resolveClassHitDie(cls) || 'd8';
-        },
-
-        getClassHitDie(cls) {
-            return resolveClassHitDie(cls) || 'd8';
-        },
-
-        get songOfRestDie() {
-            return this.stats.songOfRestDie;
-        },
-
-        get hasSongOfRest() {
-            return !!this.songOfRestDie;
-        },
-
-        get availableHitDiceCount() {
-            return (this.data.vitals?.hitDiceSpent || []).filter(s => !s).length;
-        },
-
-        get totalHitDiceCount() {
-            return (this.data.identity?.classes || []).reduce((acc, c) => acc + (c.level || 0), 0);
-        },
-
-        get shortRestRecharges() {
-            const list = [];
-            (this.data.magic?.slots || []).forEach(s => {
-                const r = (s.reset || '').toLowerCase();
-                if (r.includes('short')) list.push(s.level);
-            });
-            (this.data.combat?.resources || []).forEach(r => {
-                const res = (r.reset || '').toLowerCase();
-                if (res.includes('short')) list.push(r.name);
-            });
-            return list;
-        },
-
-        get progressionTrees() {
-            const activeClasses = this.data.identity?.classes || [];
-            return activeClasses.map(cls => ({
-                name: capitalizeWord(cls.name),
-                subclass: cls.subclass ? capitalizeWord(cls.subclass) : '',
-                currentLevel: cls.level || 1,
-                tree: generateProgressionTree(cls.name, cls.subclass, this.data.progression)
-            }));
-        },
-
-        get filteredBackgrounds() {
-            const q = normalizeKey(this.backgroundSearchQuery || '');
-            const list = Object.entries(this.allBackgrounds || {}).map(([key, bg]) => ({ key, ...bg }));
-            if (!q) return list;
-            return list.filter(bg => {
-                const name = normalizeKey(bg.name);
-                const desc = normalizeKey(bg.desc);
-                const feat = normalizeKey(bg.feature?.name || '');
-                const source = normalizeKey(bg.source || '');
-                return name.includes(q) || desc.includes(q) || feat.includes(q) || source.includes(q);
-            });
-        },
-
-        get filteredQuests() {
-            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
-            if (this.questFilter === 'active') {
-                return list.filter(q => q.status !== 'completed');
-            }
-            if (this.questFilter === 'completed') {
-                return list.filter(q => q.status === 'completed');
-            }
-            return list;
-        },
-
-        get activeQuestsCount() {
-            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
-            return list.filter(q => q.status !== 'completed').length;
-        },
-
-        get completedQuestsCount() {
-            const list = Array.isArray(this.data.quests) ? this.data.quests : [];
-            return list.filter(q => q.status === 'completed').length;
+        get computedTraits() {
+            return memoizedTraits.call(this);
         },
 
         // Persistence
@@ -1850,27 +509,6 @@ function createCharacterSheet() {
                     resolve
                 };
             });
-        },
-
-        openSpellDetail(spell) {
-            if (!spell) return;
-            const meta = [];
-            meta.push(spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`);
-            meta.push(spell.actionType === 'bonus' ? 'Bonus Action' : (spell.actionType === 'reaction' ? 'Reaction' : 'Action'));
-            if (spell.range) meta.push(`Range: ${spell.range}`);
-            if (spell.duration) meta.push(`Duration: ${spell.duration}`);
-            if (spell.useSpellDc) meta.push(`Save: ${spell.saveStat || ''} (DC ${this.stats.spellDC})`);
-            if (spell.damage && spell.damage !== '—') meta.push(`Base Damage: ${spell.damage}`);
-
-            const header = meta.join(' • ');
-
-            let scalingText = '';
-            if (spell.slotScaling && spell.slotScaling.length > 0) {
-                scalingText = '\n\n✨ Higher Level Scaling:\n' + spell.slotScaling.map(s => `• ${s.label}: ${s.damage}`).join('\n');
-            }
-
-            const fullMessage = `${header}\n\n${spell.desc}${scalingText}`;
-            this.uiAlert(fullMessage, `${spell.name}`, '📜');
         },
 
         uiConfirm(message, title = "Confirmation", icon = "❓", confirmText = "Confirm", confirmClass = "bg-brand-600 hover:bg-brand-500") {
@@ -1922,1396 +560,6 @@ function createCharacterSheet() {
             this.modalDialog.open = false;
         },
 
-        // Session Event Log
-        logEvent(icon, title, text, comment = '') {
-            if (!Array.isArray(this.data.sessionLog)) this.data.sessionLog = [];
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            this.data.sessionLog.unshift({
-                id: Date.now() + Math.random().toString(36).substring(2, 6),
-                time,
-                icon: icon || '📜',
-                title: title || 'Event',
-                text: text || '',
-                comment: (comment || '').trim()
-            });
-            if (this.data.sessionLog.length > 60) {
-                this.data.sessionLog.length = 60;
-            }
-            this.saveState();
-        },
-
-        async editLogComment(id) {
-            if (!Array.isArray(this.data.sessionLog)) return;
-            const entry = this.data.sessionLog.find(e => e.id === id);
-            if (!entry) return;
-            const res = await this.uiPrompt(
-                `Add or edit a note/clarification for "${entry.title}":`,
-                "Event Comment / Note",
-                entry.comment || '',
-                "e.g. Crit roll, Boss fight, Tavern purchase...",
-                "💬",
-                "Save Note"
-            );
-            if (res === null) return;
-            entry.comment = res.trim();
-            this.saveState();
-        },
-
-        onToggleResourceSlot(resIndex, slotIndex) {
-            const r = this.data.combat?.resources?.[resIndex];
-            if (!r || !Array.isArray(r.spent)) {
-                this.saveState();
-                return;
-            }
-            const spent = !!r.spent[slotIndex];
-            const rem = r.spent.filter(s => !s).length;
-            const max = r.spent.length;
-            this.logEvent(
-                spent ? '🔥' : '♻️',
-                spent ? 'Resource Used' : 'Resource Restored',
-                `${spent ? 'Used' : 'Restored'} 1 charge of "${r.name}" (${rem}/${max} available).`
-            );
-        },
-
-        onToggleSpellSlot(slotIndex, boxIndex) {
-            const s = this.data.magic?.slots?.[slotIndex];
-            if (!s || !Array.isArray(s.spent)) {
-                this.saveState();
-                return;
-            }
-            const spent = !!s.spent[boxIndex];
-            const rem = s.spent.filter(x => !x).length;
-            const max = s.spent.length;
-            this.logEvent(
-                spent ? '🔮' : '♻️',
-                spent ? 'Spell Slot Spent' : 'Spell Slot Restored',
-                `${spent ? 'Marked' : 'Restored'} 1 slot of ${s.level} (${rem}/${max} available).`
-            );
-        },
-
-        onToggleHitDie(index) {
-            const spent = !!this.data.vitals?.hitDiceSpent?.[index];
-            this.logEvent(
-                '🎲',
-                spent ? 'Hit Die Spent' : 'Hit Die Restored',
-                `${spent ? 'Marked' : 'Restored'} 1 Hit Die (${this.availableHitDiceCount}/${this.totalHitDiceCount} available).`
-            );
-        },
-
-        async clearSessionLog() {
-            const ok = await this.uiConfirm("Are you sure you want to clear the session history log?", "Clear History", "🗑️", "Clear Log", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            this.data.sessionLog = [];
-            this.saveState();
-        },
-
-        removeLogEntry(id) {
-            if (!Array.isArray(this.data.sessionLog)) return;
-            this.data.sessionLog = this.data.sessionLog.filter(e => e.id !== id);
-            this.saveState();
-        },
-
-        // Concentration
-        isConcentratingOn(name) {
-            return this.data.concentration?.active &&
-                this.data.concentration?.spellName?.toLowerCase() === name?.toLowerCase();
-        },
-
-        setConcentration(name, reason = '') {
-            const prevSpell = this.data.concentration?.spellName;
-            const wasActive = !!this.data.concentration?.active;
-            this.data.concentration = name ? { active: true, spellName: name } : { active: false, spellName: "" };
-
-            if (name && (!wasActive || prevSpell !== name)) {
-                this.logEvent('🧠', 'Concentration Started', `Started concentrating on "${name}".`);
-            } else if (!name && wasActive && prevSpell) {
-                const title = reason ? 'Concentration Broken' : 'Concentration Dropped';
-                const desc = reason ? `Concentration on "${prevSpell}" was broken (${reason}).` : `Stopped concentrating on "${prevSpell}".`;
-                this.logEvent('🧠', title, desc);
-            } else {
-                this.saveState();
-            }
-        },
-
-        breakConcentration(reason = '') {
-            this.setConcentration("", reason);
-        },
-
-        requestCastConcentration(spellName) {
-            if (this.data.concentration.active && this.data.concentration.spellName) {
-                if (this.data.concentration.spellName.toLowerCase() === spellName.toLowerCase()) {
-                    this.breakConcentration();
-                    return;
-                }
-                this.pendingConcentrationSpell = spellName;
-                this.modalConcOverrideOpen = true;
-                return;
-            }
-            this.setConcentration(spellName);
-        },
-
-        closeConcentrationModal(proceed) {
-            this.modalConcOverrideOpen = false;
-            if (proceed && this.pendingConcentrationSpell) {
-                this.setConcentration(this.pendingConcentrationSpell);
-            }
-            this.pendingConcentrationSpell = null;
-        },
-
-        // Armas
-        openWeaponModal(index = null) {
-            this.editingWeaponIndex = index;
-            if (index !== null) {
-                const w = this.data.inventory.weapons[index];
-                this.weaponForm = {
-                    name: w.name || '',
-                    attrMode: w.attrMode || 'finesse',
-                    dice: w.dice || '1d8',
-                    damageType: w.damageType || 'Piercing',
-                    propsRaw: (w.properties || []).join(', ')
-                };
-            } else {
-                this.weaponForm = {
-                    name: '',
-                    attrMode: 'finesse',
-                    dice: '1d8',
-                    damageType: 'Piercing',
-                    propsRaw: ''
-                };
-            }
-            this.modalWeaponOpen = true;
-        },
-
-        handleSaveWeapon() {
-            const name = this.weaponForm.name.trim();
-            if (!name) return;
-
-            const properties = this.weaponForm.propsRaw
-                ? this.weaponForm.propsRaw.split(',').map(s => s.trim()).filter(Boolean)
-                : [];
-
-            const weaponObj = {
-                name,
-                attrMode: this.weaponForm.attrMode,
-                dice: this.weaponForm.dice.trim(),
-                damageType: this.weaponForm.damageType.trim(),
-                proficient: true,
-                properties
-            };
-
-            const isEdit = this.editingWeaponIndex !== null;
-            if (isEdit) {
-                this.data.inventory.weapons[this.editingWeaponIndex] = weaponObj;
-                this.logEvent('⚔️', 'Weapon Edited', `Updated weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
-            } else {
-                this.data.inventory.weapons.push(weaponObj);
-                this.logEvent('⚔️', 'Weapon Added', `Added weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
-            }
-
-            this.modalWeaponOpen = false;
-            this.editingWeaponIndex = null;
-        },
-
-        async removeWeapon(index) {
-            const w = this.data.inventory.weapons[index];
-            const ok = await this.uiConfirm(`Do you want to remove the weapon "${w.name}"?`, "Remove Weapon", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-
-            this.data.inventory.weapons.splice(index, 1);
-            this.logEvent('🗑️', 'Weapon Removed', `Removed weapon "${w.name}".`);
-        },
-
-        // Armor, Protection & Magic Accessories
-        openArmorModal(index = null) {
-            this.editingArmorIndex = index;
-            this.selectedSpellToAdd = '';
-            this.selectedResToAdd = '';
-            this.selectedSkillAdvToAdd = '';
-            if (index !== null && this.data.inventory?.armors?.[index]) {
-                const a = this.data.inventory.armors[index];
-                this.armorForm = {
-                    name: a.name || '',
-                    type: a.type || 'light',
-                    baseAc: a.baseAc !== undefined ? a.baseAc : 12,
-                    stealthDisadv: !!a.stealthDisadv,
-                    special: a.special || '',
-                    grantedSpells: Array.isArray(a.grantedSpells) ? [...a.grantedSpells] : [],
-                    resistances: Array.isArray(a.resistances) ? [...a.resistances] : [],
-                    bonusAttr: a.statBonuses?.attr || '',
-                    attrMode: a.statBonuses?.attrMode || (a.statBonuses?.attrVal ? 'bonus' : 'advantage'),
-                    bonusAttrVal: a.statBonuses?.attrVal || 0,
-                    saveType: a.statBonuses?.saveType || '',
-                    saveMode: a.statBonuses?.saveMode || (a.statBonuses?.saveVal ? 'bonus' : 'advantage'),
-                    saveVal: a.statBonuses?.saveVal || 0,
-                    advantageSkills: Array.isArray(a.advantageSkills) ? [...a.advantageSkills] : [],
-                    equipped: a.equipped !== undefined ? !!a.equipped : false
-                };
-            } else {
-                this.armorForm = {
-                    name: '',
-                    type: 'light',
-                    baseAc: 12,
-                    stealthDisadv: false,
-                    special: '',
-                    grantedSpells: [],
-                    resistances: [],
-                    bonusAttr: '',
-                    attrMode: 'bonus',
-                    bonusAttrVal: 0,
-                    saveType: '',
-                    saveMode: 'bonus',
-                    saveVal: 0,
-                    advantageSkills: [],
-                    equipped: false
-                };
-            }
-            this.modalArmorOpen = true;
-        },
-
-        addSpellToArmorForm() {
-            ItemBonusHelper.addUniqueItem(this.armorForm.grantedSpells, this.selectedSpellToAdd);
-            this.selectedSpellToAdd = '';
-        },
-
-        removeSpellFromArmorForm(idx) {
-            ItemBonusHelper.removeIndex(this.armorForm.grantedSpells, idx);
-        },
-
-        addResToArmorForm() {
-            ItemBonusHelper.addUniqueItem(this.armorForm.resistances, this.selectedResToAdd);
-            this.selectedResToAdd = '';
-        },
-
-        removeResFromArmorForm(idx) {
-            ItemBonusHelper.removeIndex(this.armorForm.resistances, idx);
-        },
-
-        addSkillAdvToArmorForm() {
-            ItemBonusHelper.addUniqueItem(this.armorForm.advantageSkills, this.selectedSkillAdvToAdd);
-            this.selectedSkillAdvToAdd = '';
-        },
-
-        removeSkillAdvFromArmorForm(idx) {
-            ItemBonusHelper.removeIndex(this.armorForm.advantageSkills, idx);
-        },
-
-        handleSaveArmor() {
-            const name = this.armorForm.name.trim();
-            if (!name) return;
-            if (!Array.isArray(this.data.inventory.armors)) this.data.inventory.armors = [];
-
-            const isEdit = this.editingArmorIndex !== null;
-            const existing = isEdit ? this.data.inventory.armors[this.editingArmorIndex] : null;
-
-            const parsedAc = parseInt(this.armorForm.baseAc, 10);
-            const baseAc = isNaN(parsedAc) ? (this.armorForm.type === 'shield' ? 2 : (this.armorForm.type === 'accessory' ? 0 : 10)) : Math.max(0, parsedAc);
-
-            const grantedSpells = [...(this.armorForm.grantedSpells || [])];
-            const resistances = [...(this.armorForm.resistances || [])];
-            const advantageSkills = [...(this.armorForm.advantageSkills || [])];
-
-            const statBonuses = ItemBonusHelper.parseStatBonuses(this.armorForm);
-
-            const armorObj = {
-                name,
-                type: this.armorForm.type,
-                baseAc,
-                stealthDisadv: !!this.armorForm.stealthDisadv,
-                equipped: existing ? !!existing.equipped : (this.armorForm.equipped || false),
-                special: this.armorForm.special.trim(),
-                grantedSpells,
-                resistances,
-                advantageSkills,
-                statBonuses
-            };
-
-            this.equipRevision++;
-            if (isEdit) {
-                this.data.inventory.armors[this.editingArmorIndex] = armorObj;
-                this.logEvent('🛡️', 'Armor/Item Edited', `Updated "${name}" (${armorObj.type}).`);
-            } else {
-                this.data.inventory.armors.push(armorObj);
-                this.logEvent('🛡️', 'Armor/Item Added', `Added "${name}" (${armorObj.type}).`);
-            }
-
-            this.modalArmorOpen = false;
-            this.editingArmorIndex = null;
-        },
-
-        async removeArmor(index) {
-            const a = this.data.inventory?.armors?.[index];
-            if (!a) return;
-            const ok = await this.uiConfirm(`Do you want to remove the armor/protection "${a.name}"?`, "Remove Armor", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-
-            this.data.inventory.armors.splice(index, 1);
-            this.logEvent('🗑️', 'Armor/Item Removed', `Removed "${a.name}".`);
-        },
-
-        // ================= CONDITIONS =================
-        hasCondition(id) {
-            if (!Array.isArray(this.data.conditions)) return false;
-            return this.data.conditions.some(c => (typeof c === 'string' ? c : c.id) === id);
-        },
-
-        getConditionSource(id) {
-            if (!Array.isArray(this.data.conditions)) return '';
-            const entry = this.data.conditions.find(c => (typeof c === 'string' ? c : c.id) === id);
-            if (!entry) return '';
-            return (typeof entry === 'object' && entry.source) ? entry.source : '';
-        },
-
-        async toggleCondition(id) {
-            if (!Array.isArray(this.data.conditions)) this.data.conditions = [];
-            const condObj = this.allConditions.find(c => c.id === id);
-            const condName = condObj ? condObj.name : id;
-            const condIcon = condObj ? condObj.icon : '✨';
-            const existingIdx = this.data.conditions.findIndex(c => (typeof c === 'string' ? c : c.id) === id);
-
-            if (existingIdx >= 0) {
-                this.data.conditions.splice(existingIdx, 1);
-                this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
-            } else {
-                const source = await this.uiPrompt(
-                    `Enter the source or cause for the "${condName}" condition (e.g. Poison Spray spell, Ghoul attack, Trap):`,
-                    `Apply Condition: ${condName}`,
-                    "",
-                    "e.g. Enemy Spell, Poison Trap, Monster Attack...",
-                    condIcon,
-                    "Apply Condition"
-                );
-                if (source === null) return; // User clicked Cancel
-
-                const finalSource = (source || '').trim() || 'Unknown';
-                this.data.conditions.push({
-                    id,
-                    source: finalSource
-                });
-                this.logEvent(condIcon, 'Condition Gained', `Gained "${condName}" condition (Source: ${finalSource}).`);
-
-                // If condition incapacitates or makes unconscious, notify and break concentration
-                if (['incapacitated', 'unconscious', 'paralyzed', 'petrified', 'stunned'].includes(id)) {
-                    if (this.data.concentration?.active) {
-                        const spName = this.data.concentration.spellName;
-                        this.breakConcentration(`incapacitated by ${condName}`);
-                        this.uiAlert(`The "${condName}" condition incapacitates you. Concentration on "${spName}" was broken!`, "Concentration Broken", "🧠");
-                    }
-                }
-            }
-            this.saveState();
-        },
-
-        clearCondition(id) {
-            if (!Array.isArray(this.data.conditions)) return;
-            const condObj = this.allConditions.find(c => c.id === id);
-            const condName = condObj ? condObj.name : id;
-            this.data.conditions = this.data.conditions.filter(c => (typeof c === 'string' ? c : c.id) !== id);
-            this.logEvent('✨', 'Condition Removed', `Cleared "${condName}" condition.`);
-            this.saveState();
-        },
-
-        clearAllConditions() {
-            if (this.data.conditions && this.data.conditions.length > 0) {
-                this.logEvent('✨', 'Conditions Cleared', `Cleared all active conditions.`);
-            }
-            this.data.conditions = [];
-            this.saveState();
-        },
-
-        showConditionDetail(cond) {
-            this.conditionDetailItem = cond;
-            const srcText = cond.source ? `\n\n🎯 Source: ${cond.source}` : '';
-            this.uiAlert(`${cond.summary}${srcText}`, `${cond.icon} Condition: ${cond.name}`, cond.icon);
-        },
-
-        // ================= BACKGROUND COMPENDIUM =================
-        showCurrentBackgroundDetail() {
-            const currentName = this.data.identity?.background || '';
-            const norm = normalizeKey(currentName);
-            const foundKey = Object.keys(this.allBackgrounds || {}).find(k => {
-                const bg = this.allBackgrounds[k];
-                return normalizeKey(bg.name) === norm || norm.includes(normalizeKey(bg.name)) || normalizeKey(bg.name).includes(norm);
-            });
-            if (foundKey) {
-                this.backgroundDetailItem = this.allBackgrounds[foundKey];
-            } else {
-                this.backgroundDetailItem = Object.values(this.allBackgrounds || {})[0] || null;
-            }
-            this.modalBackgroundsOpen = true;
-        },
-
-        selectBackground(bg) {
-            this.backgroundDetailItem = bg;
-        },
-
-        // ================= DAMAGE / HEAL MANAGER =================
-        openHpManager(mode = 'damage') {
-            this.hpManagerMode = mode;
-            this.hpManagerAmount = 1;
-            this.hpManagerResistedAmount = 0;
-            const resList = this.stats.resistances || [];
-            this.hpManagerResistanceType = resList.length > 0 ? resList[0].name : '';
-            this.modalHpManagerOpen = true;
-        },
-
-        applyHpManagerAction() {
-            const amt = Math.max(0, parseInt(this.hpManagerAmount, 10) || 0);
-            if (amt <= 0 && this.hpManagerMode !== 'temp') return;
-
-            if (this.hpManagerMode === 'damage') {
-                const calc = this.damageCalculation;
-                if (calc.hasResistanceReduction) {
-                    const resName = this.hpManagerResistanceType || 'Resisted';
-                    const note = ` (${calc.normalPart} normal + ${calc.halvedPart} ${resName} [halved from ${calc.resistedPart}])`;
-                    this.applyDamage(calc.finalDamage, note);
-                } else {
-                    this.applyDamage(calc.finalDamage);
-                }
-            } else if (this.hpManagerMode === 'heal') {
-                this.applyHeal(amt);
-            } else if (this.hpManagerMode === 'temp') {
-                this.applyTempHp(amt);
-            }
-        },
-
-        applyDamage(amount, note = '') {
-            amount = Math.max(0, parseInt(amount, 10) || 0);
-            if (amount <= 0) return;
-
-            const prevTemp = this.data.vitals.tempHp || 0;
-            let remainingDamage = amount;
-
-            if (prevTemp > 0) {
-                if (remainingDamage >= prevTemp) {
-                    remainingDamage -= prevTemp;
-                    this.data.vitals.tempHp = 0;
-                } else {
-                    this.data.vitals.tempHp -= remainingDamage;
-                    remainingDamage = 0;
-                }
-            }
-
-            const prevHp = this.data.vitals.currentHp || 0;
-            if (remainingDamage > 0) {
-                this.data.vitals.currentHp = Math.max(0, prevHp - remainingDamage);
-            }
-
-            const curHp = this.data.vitals.currentHp;
-            const maxHp = this.data.vitals.maxHp || 1;
-            const curTemp = this.data.vitals.tempHp || 0;
-            const tempStr = curTemp > 0 ? ` (Temp HP: ${curTemp})` : '';
-
-            this.logEvent('💥', 'Damage Taken', `Took ${amount} damage${note}. Current HP: ${curHp}/${maxHp}${tempStr}.`);
-            this.modalHpManagerOpen = false;
-
-            if (this.data.vitals.currentHp === 0) {
-                if (this.data.concentration?.active) {
-                    const spellName = this.data.concentration.spellName;
-                    this.breakConcentration('dropped to 0 HP');
-                    this.logEvent('☠️', 'Fell Unconscious', `Dropped to 0 HP. Death saves required.`);
-                    this.uiAlert(`You dropped to 0 HP (Unconscious). Concentration on "${spellName}" was lost immediately.`, "Fell Unconscious!", "☠️");
-                } else {
-                    this.logEvent('☠️', 'Fell Unconscious', `Dropped to 0 HP. Death saves required.`);
-                    this.uiAlert("You dropped to 0 HP. You must now make death saving throws on your turns.", "0 Hit Points!", "☠️");
-                }
-                return;
-            }
-
-            // Concentration check if damage taken and still conscious
-            if (amount > 0 && this.data.concentration?.active) {
-                const dc = Math.max(10, Math.floor(amount / 2));
-                const conModStr = this.stats.computedAttrs.CON.saveStr;
-                this.uiAlert(
-                    `You took ${amount} damage${note}.\n\n⚠️ You must make a CONCENTRATION (CON) SAVING THROW with DC ${dc} to maintain concentration on "${this.data.concentration.spellName}".\n(Your CON save bonus is ${conModStr}).`,
-                    "Concentration Check",
-                    "🧠"
-                );
-            } else if (note) {
-                this.uiAlert(`Applied ${amount} damage${note}.`, "Damage Applied", "🔥");
-            }
-        },
-
-        applyHeal(amount) {
-            amount = Math.max(0, parseInt(amount, 10) || 0);
-            if (amount <= 0) return;
-
-            const max = this.data.vitals.maxHp || 1;
-            const prev = this.data.vitals.currentHp || 0;
-            this.data.vitals.currentHp = Math.min(max, prev + amount);
-
-            if (prev === 0 && this.data.vitals.currentHp > 0) {
-                this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-            }
-
-            this.logEvent('💚', 'Healing Received', `Restored ${amount} HP. Current HP: ${this.data.vitals.currentHp}/${max}.`);
-            this.modalHpManagerOpen = false;
-        },
-
-        applyTempHp(amount) {
-            amount = Math.max(0, parseInt(amount, 10) || 0);
-            this.data.vitals.tempHp = amount;
-            this.logEvent('🛡️', 'Temp HP', `Set Temporary HP to ${amount}.`);
-            this.modalHpManagerOpen = false;
-        },
-
-        onDeathSaveChange(type = '', index = 0) {
-            this.saveState();
-            const fails = (this.data.deathSaves?.failures || []).filter(Boolean).length;
-            const succs = (this.data.deathSaves?.successes || []).filter(Boolean).length;
-
-            if (type === 'success') {
-                const marked = !!this.data.deathSaves?.successes?.[index];
-                this.logEvent('💚', 'Death Save', `${marked ? 'Marked' : 'Cleared'} Death Save Success (${succs}/3 successes, ${fails}/3 failures).`);
-            } else if (type === 'failure') {
-                const marked = !!this.data.deathSaves?.failures?.[index];
-                this.logEvent('💀', 'Death Save', `${marked ? 'Marked' : 'Cleared'} Death Save Failure (${succs}/3 successes, ${fails}/3 failures).`);
-            }
-
-            if (fails >= 3) {
-                this.logEvent('☠️', 'Character Died', 'Accumulated 3 death saving throw failures. Character is deceased.');
-                this.uiAlert('You have accumulated 3 Death Saving Throw Failures. Under D&D 5e rules, your character has died.', 'Character Deceased', '☠️');
-            } else if (succs >= 3) {
-                this.logEvent('✨', 'Stabilized', 'Accumulated 3 death saving throw successes. Character is stable.');
-                this.uiAlert('You have accumulated 3 Death Saving Throw Successes! Your character is now stable at 0 HP.', 'Stabilized!', '✨');
-            }
-        },
-
-        // ================= WEALTH / COINS MANAGEMENT =================
-        openWealthModal(mode = 'add') {
-            this.wealthManagerMode = mode === 'spend' ? 'spend' : 'add';
-            this.wealthForm = { gp: 0, sp: 0, ep: 0, cp: 0, reason: '' };
-            this.modalWealthOpen = true;
-        },
-
-        async applyWealthChange() {
-            if (!this.data.inventory) this.data.inventory = {};
-            if (!this.data.inventory.wealth) {
-                this.data.inventory.wealth = { gp: 0, sp: 0, ep: 0, cp: 0 };
-            }
-            const w = this.data.inventory.wealth;
-            const dGp = Math.max(0, parseInt(this.wealthForm.gp, 10) || 0);
-            const dSp = Math.max(0, parseInt(this.wealthForm.sp, 10) || 0);
-            const dEp = Math.max(0, parseInt(this.wealthForm.ep, 10) || 0);
-            const dCp = Math.max(0, parseInt(this.wealthForm.cp, 10) || 0);
-
-            if (dGp === 0 && dSp === 0 && dEp === 0 && dCp === 0) {
-                await this.uiAlert("Please enter at least 1 coin to add or spend.", "No Amount Entered", "🪙");
-                return;
-            }
-
-            if (this.wealthManagerMode === 'spend') {
-                if (dGp > (w.gp || 0) || dSp > (w.sp || 0) || dEp > (w.ep || 0) || dCp > (w.cp || 0)) {
-                    await this.uiAlert(
-                        `Insufficient coins for this transaction.\nCurrent balance: ${w.gp || 0} GP, ${w.sp || 0} SP, ${w.ep || 0} EP, ${w.cp || 0} CP.`,
-                        "Insufficient Funds",
-                        "⚠️"
-                    );
-                    return;
-                }
-                w.gp = (w.gp || 0) - dGp;
-                w.sp = (w.sp || 0) - dSp;
-                w.ep = (w.ep || 0) - dEp;
-                w.cp = (w.cp || 0) - dCp;
-            } else {
-                w.gp = (w.gp || 0) + dGp;
-                w.sp = (w.sp || 0) + dSp;
-                w.ep = (w.ep || 0) + dEp;
-                w.cp = (w.cp || 0) + dCp;
-            }
-
-            const parts = [];
-            if (dGp > 0) parts.push(`${dGp} GP`);
-            if (dSp > 0) parts.push(`${dSp} SP`);
-            if (dEp > 0) parts.push(`${dEp} EP`);
-            if (dCp > 0) parts.push(`${dCp} CP`);
-
-            const reason = (this.wealthForm.reason || '').trim();
-            const isSpend = this.wealthManagerMode === 'spend';
-            this.logEvent(
-                '🪙',
-                isSpend ? 'Coins Spent' : 'Coins Gained',
-                `${isSpend ? 'Spent' : 'Gained'} ${parts.join(', ')}. Balance: ${w.gp} GP, ${w.sp} SP, ${w.ep} EP, ${w.cp} CP.`,
-                reason
-            );
-
-            this.saveState();
-            this.modalWealthOpen = false;
-        },
-
-        // ================= CONSUMABLES MANAGEMENT =================
-        openConsumableModal(index = null) {
-            this.editingConsumableIndex = index;
-            if (index !== null && this.data.inventory?.consumables?.[index]) {
-                const c = this.data.inventory.consumables[index];
-                this.consumableForm = { name: c.name || '', qty: c.qty || '1' };
-            } else {
-                this.consumableForm = { name: '', qty: '1' };
-            }
-            this.modalConsumableOpen = true;
-        },
-
-        handleSaveConsumable() {
-            const name = this.consumableForm.name.trim();
-            if (!name) return;
-            if (!Array.isArray(this.data.inventory.consumables)) this.data.inventory.consumables = [];
-
-            const item = { name, qty: this.consumableForm.qty.trim() || '1' };
-            const isEdit = this.editingConsumableIndex !== null;
-            if (isEdit) {
-                this.data.inventory.consumables[this.editingConsumableIndex] = item;
-                this.logEvent('🧪', 'Consumable Edited', `Updated "${name}" (Qty: ${item.qty}).`);
-            } else {
-                this.data.inventory.consumables.push(item);
-                this.logEvent('🧪', 'Consumable Added', `Added "${name}" (Qty: ${item.qty}).`);
-            }
-            this.modalConsumableOpen = false;
-            this.editingConsumableIndex = null;
-        },
-
-        async removeConsumable(index) {
-            const c = this.data.inventory?.consumables?.[index];
-            if (!c) return;
-            const ok = await this.uiConfirm(`Do you want to remove "${c.name}" from your consumables?`, "Remove Consumable", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            this.data.inventory.consumables.splice(index, 1);
-            this.logEvent('🗑️', 'Consumable Removed', `Removed consumable "${c.name}".`);
-        },
-
-        adjustConsumableQty(index, delta) {
-            const c = this.data.inventory?.consumables?.[index];
-            if (!c) return;
-            const prevQty = c.qty;
-            const match = String(c.qty || '').match(/^(\d+)(.*)$/);
-            if (match) {
-                const num = parseInt(match[1], 10);
-                const suffix = match[2];
-                const newNum = Math.max(0, num + delta);
-                if (newNum === num) return;
-                c.qty = `${newNum}${suffix}`;
-            } else {
-                const num = parseInt(c.qty, 10) || 0;
-                const newNum = Math.max(0, num + delta);
-                if (newNum === num) return;
-                c.qty = String(newNum);
-            }
-            if (delta < 0) {
-                this.logEvent('🧪', 'Consumable Used', `Used "${c.name}" (${prevQty} → ${c.qty} remaining).`);
-            } else if (delta > 0) {
-                this.logEvent('🧪', 'Consumable Restocked', `Increased "${c.name}" (${prevQty} → ${c.qty}).`);
-            }
-        },
-
-        // ================= STORY ITEMS MANAGEMENT =================
-        openStoryItemModal(target = null) {
-            let index = null;
-            if (typeof target === 'number') {
-                index = target;
-            } else if (target && typeof target === 'object') {
-                index = this.data.inventory?.story?.indexOf(target);
-            }
-            this.editingStoryItemIndex = (index !== null && index >= 0) ? index : null;
-            this.storySpellToAdd = '';
-            this.storyResToAdd = '';
-            this.storySkillAdvToAdd = '';
-            if (this.editingStoryItemIndex !== null && this.data.inventory?.story?.[this.editingStoryItemIndex]) {
-                const st = this.data.inventory.story[this.editingStoryItemIndex];
-                this.storyItemForm = {
-                    name: st.name || '',
-                    desc: st.desc || '',
-                    isSpecial: !!st.isSpecial,
-                    isMagic: st.isMagic !== undefined ? !!st.isMagic : true,
-                    equipped: st.equipped !== undefined ? !!st.equipped : false,
-                    grantedSpells: Array.isArray(st.grantedSpells) ? [...st.grantedSpells] : [],
-                    resistances: Array.isArray(st.resistances) ? [...st.resistances] : [],
-                    bonusAttr: st.statBonuses?.attr || '',
-                    attrMode: st.statBonuses?.attrMode || (st.statBonuses?.attrVal ? 'bonus' : 'advantage'),
-                    bonusAttrVal: st.statBonuses?.attrVal || 0,
-                    saveType: st.statBonuses?.saveType || '',
-                    saveMode: st.statBonuses?.saveMode || (st.statBonuses?.saveVal ? 'bonus' : 'advantage'),
-                    saveVal: st.statBonuses?.saveVal || 0,
-                    advantageSkills: Array.isArray(st.advantageSkills) ? [...st.advantageSkills] : []
-                };
-            } else {
-                this.storyItemForm = {
-                    name: '',
-                    desc: '',
-                    isSpecial: false,
-                    isMagic: true,
-                    equipped: false,
-                    grantedSpells: [],
-                    resistances: [],
-                    bonusAttr: '',
-                    attrMode: 'bonus',
-                    bonusAttrVal: 0,
-                    saveType: '',
-                    saveMode: 'bonus',
-                    saveVal: 0,
-                    advantageSkills: []
-                };
-            }
-            this.modalStoryItemOpen = true;
-        },
-
-        addSpellToStoryForm() {
-            ItemBonusHelper.addUniqueItem(this.storyItemForm.grantedSpells, this.storySpellToAdd);
-            this.storySpellToAdd = '';
-        },
-
-        removeSpellFromStoryForm(idx) {
-            ItemBonusHelper.removeIndex(this.storyItemForm.grantedSpells, idx);
-        },
-
-        addResToStoryForm() {
-            ItemBonusHelper.addUniqueItem(this.storyItemForm.resistances, this.storyResToAdd);
-            this.storyResToAdd = '';
-        },
-
-        removeResFromStoryForm(idx) {
-            ItemBonusHelper.removeIndex(this.storyItemForm.resistances, idx);
-        },
-
-        addSkillAdvToStoryForm() {
-            ItemBonusHelper.addUniqueItem(this.storyItemForm.advantageSkills, this.storySkillAdvToAdd);
-            this.storySkillAdvToAdd = '';
-        },
-
-        removeSkillAdvFromStoryForm(idx) {
-            ItemBonusHelper.removeIndex(this.storyItemForm.advantageSkills, idx);
-        },
-
-        handleSaveStoryItem() {
-            const name = this.storyItemForm.name.trim();
-            if (!name) return;
-            if (!Array.isArray(this.data.inventory.story)) this.data.inventory.story = [];
-
-            const isEdit = this.editingStoryItemIndex !== null && this.editingStoryItemIndex >= 0;
-            const existing = isEdit ? this.data.inventory.story[this.editingStoryItemIndex] : null;
-
-            const grantedSpells = [...(this.storyItemForm.grantedSpells || [])];
-            const resistances = [...(this.storyItemForm.resistances || [])];
-            const advantageSkills = [...(this.storyItemForm.advantageSkills || [])];
-
-            const statBonuses = ItemBonusHelper.parseStatBonuses(this.storyItemForm);
-
-            const item = {
-                name,
-                desc: this.storyItemForm.desc.trim(),
-                isSpecial: !!this.storyItemForm.isSpecial,
-                isMagic: !!this.storyItemForm.isMagic,
-                equipped: existing ? !!existing.equipped : (this.storyItemForm.equipped || false),
-                grantedSpells,
-                resistances,
-                advantageSkills,
-                statBonuses
-            };
-
-            this.equipRevision++;
-            if (isEdit) {
-                this.data.inventory.story[this.editingStoryItemIndex] = item;
-                this.logEvent('✨', 'Item Edited', `Updated item "${name}".`);
-            } else {
-                this.data.inventory.story.push(item);
-                this.logEvent('✨', 'Item Added', `Added item "${name}".`);
-            }
-            this.modalStoryItemOpen = false;
-            this.editingStoryItemIndex = null;
-        },
-
-        toggleEquipItem(item) {
-            if (!item) return;
-            item.equipped = !item.equipped;
-            this.equipRevision++;
-            this.saveState();
-        },
-
-        onEquipChange(item) {
-            if (!item) return;
-            this.equipRevision++;
-            this.saveState();
-        },
-
-        async removeStoryItem(target) {
-            const index = typeof target === 'number' ? target : this.data.inventory?.story?.indexOf(target);
-            if (index === null || index === undefined || index < 0) return;
-            const st = this.data.inventory?.story?.[index];
-            if (!st) return;
-            const ok = await this.uiConfirm(`Do you want to remove "${st.name}"?`, "Remove Item", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            this.data.inventory.story.splice(index, 1);
-            this.logEvent('🗑️', 'Item Removed', `Removed item "${st.name}".`);
-        },
-
-        // ================= TOOLS & EQUIPMENT MANAGEMENT =================
-        openToolModal(target = null) {
-            let index = null;
-            if (typeof target === 'number') {
-                index = target;
-            } else if (target && typeof target === 'object') {
-                index = this.data.inventory?.tools?.indexOf(target);
-            }
-            this.editingToolIndex = (index !== null && index >= 0) ? index : null;
-            if (this.editingToolIndex !== null && this.data.inventory?.tools?.[this.editingToolIndex]) {
-                const t = this.data.inventory.tools[this.editingToolIndex];
-                this.toolForm = {
-                    name: t.name || '',
-                    desc: t.desc || '',
-                    icon: t.icon || '🎒',
-                    isInstrument: !!t.isInstrument
-                };
-            } else {
-                this.toolForm = { name: '', desc: '', icon: '🎒', isInstrument: false };
-            }
-            this.modalToolOpen = true;
-        },
-
-        handleSaveTool() {
-            const name = this.toolForm.name.trim();
-            if (!name) return;
-            if (!Array.isArray(this.data.inventory.tools)) this.data.inventory.tools = [];
-
-            const item = {
-                name,
-                desc: this.toolForm.desc.trim(),
-                icon: this.toolForm.icon || '🎒',
-                isInstrument: !!this.toolForm.isInstrument
-            };
-
-            const isEdit = this.editingToolIndex !== null && this.editingToolIndex >= 0;
-            if (isEdit) {
-                this.data.inventory.tools[this.editingToolIndex] = item;
-                this.logEvent('🎒', 'Tool Edited', `Updated tool/equipment "${name}".`);
-            } else {
-                this.data.inventory.tools.push(item);
-                this.logEvent('🎒', 'Tool Added', `Added tool/equipment "${name}".`);
-            }
-            this.modalToolOpen = false;
-            this.editingToolIndex = null;
-        },
-
-        async removeTool(target) {
-            const index = typeof target === 'number' ? target : this.data.inventory?.tools?.indexOf(target);
-            if (index === null || index === undefined || index < 0) return;
-            const t = this.data.inventory?.tools?.[index];
-            if (!t) return;
-            const ok = await this.uiConfirm(`Do you want to remove "${t.name}" from your tools & equipment?`, "Remove Tool", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            this.data.inventory.tools.splice(index, 1);
-            this.logEvent('🗑️', 'Tool Removed', `Removed tool/equipment "${t.name}".`);
-        },
-
-        // ================= CAST SPELL MODAL =================
-        openCastSpellModal(preselectedSpellName = null) {
-            const list = this.castableSpellsList;
-            let chosenName = '';
-            if (preselectedSpellName) {
-                const found = list.find(s => normalizeKey(s.name) === normalizeKey(preselectedSpellName));
-                if (found) chosenName = found.name;
-            }
-            if (!chosenName && list.length > 0) {
-                chosenName = list[0].name;
-            }
-            this.castSpellForm = {
-                spellName: chosenName,
-                selectedSlotKey: '',
-                slotKey: '',
-                note: ''
-            };
-            this.onCastSpellSelectionChange();
-            this.modalCastSpellOpen = true;
-        },
-
-        onCastSpellSelectionChange() {
-            const opts = this.castSpellSlotOptions;
-            const firstAvailable = opts.find(o => o.canCast);
-            const key = firstAvailable ? firstAvailable.key : (opts[0]?.key || '');
-            this.castSpellForm.selectedSlotKey = key;
-            this.castSpellForm.slotKey = key;
-        },
-
-        async executeCastSpell() {
-            const sp = this.selectedCastSpell;
-            const opt = this.selectedCastSlotOption;
-            if (!sp || !opt) return;
-
-            if (!opt.canCast) {
-                await this.uiAlert(
-                    `Cannot cast "${sp.name}": the selected slot or resource (${opt.label}) has 0 uses remaining.`,
-                    "No Slots Available",
-                    "⚠️"
-                );
-                return;
-            }
-
-            let slotSummary = 'as a Cantrip (0 slots)';
-            if (opt.type === 'slot') {
-                const slotObj = this.data.magic?.slots?.[opt.slotIndex];
-                if (slotObj && Array.isArray(slotObj.spent)) {
-                    const freeIdx = slotObj.spent.findIndex(s => !s);
-                    if (freeIdx === -1) {
-                        await this.uiAlert(`No available slots remaining in ${slotObj.level}.`, "No Slots Available", "⚠️");
-                        return;
-                    }
-                    slotObj.spent[freeIdx] = true;
-                    const rem = slotObj.spent.filter(s => !s).length;
-                    slotSummary = `using ${slotObj.level}${opt.castLevel > sp.level ? ` [Upcast Lvl ${opt.castLevel}]` : ''} (${rem}/${slotObj.spent.length} slots left)`;
-                }
-            } else if (opt.type === 'resource') {
-                const resObj = this.data.combat?.resources?.[opt.resIndex];
-                if (resObj && Array.isArray(resObj.spent)) {
-                    const freeIdx = resObj.spent.findIndex(s => !s);
-                    if (freeIdx === -1) {
-                        await this.uiAlert(`No charges remaining for ${opt.resourceName}.`, "No Charges Available", "⚠️");
-                        return;
-                    }
-                    resObj.spent[freeIdx] = true;
-                    const rem = resObj.spent.filter(s => !s).length;
-                    slotSummary = `using "${opt.resourceName}" (${rem}/${resObj.spent.length} charges left)`;
-                }
-            }
-
-            const effectParts = [];
-            if (opt.scaledDamage && opt.scaledDamage !== '—') {
-                effectParts.push(sp.isHealing ? `Heal: ${opt.scaledDamage}` : `Dmg: ${opt.scaledDamage}`);
-            }
-            if (sp.useSpellDc) {
-                effectParts.push(`Save: DC ${this.stats.spellDC} ${sp.saveStat}`);
-            } else if (!sp.isHealing && opt.scaledDamage && opt.scaledDamage !== '—') {
-                effectParts.push(`Atk: ${this.stats.spellAtkStr}`);
-            }
-            const effectStr = effectParts.length > 0 ? ` [${effectParts.join(' • ')}]` : '';
-
-            this.logEvent(
-                '✨',
-                `Spell Cast: ${sp.name}`,
-                `Cast "${sp.name}" ${slotSummary}${effectStr}.`,
-                this.castSpellForm.note
-            );
-
-            if (sp.conc) {
-                this.setConcentration(sp.name);
-            }
-
-            this.modalCastSpellOpen = false;
-        },
-
-        // ================= SPELLS MANAGEMENT =================
-        openAddSpellModal() {
-            this.spellCompendiumSearch = '';
-            this.spellCompendiumLevelFilter = 'all';
-            this.selectedCompendiumSpell = null;
-            const defaultSource = this.data.identity?.classes?.[0]?.name || 'Class';
-            this.spellCompendiumSource = defaultSource;
-            this.spellManualForm = {
-                name: '',
-                level: 1,
-                actionType: 'action',
-                range: '60 ft',
-                duration: 'Instantaneous',
-                damage: '',
-                conc: false,
-                desc: '',
-                source: defaultSource
-            };
-            this.modalSpellAddOpen = true;
-        },
-
-        addSpellFromCompendium(compSpell) {
-            if (!compSpell || !compSpell.name) return;
-            if (!Array.isArray(this.data.magic.spells)) this.data.magic.spells = [];
-
-            const compKey = normalizeKey(compSpell.name);
-            const exists = this.data.magic.spells.some(s => normalizeKey(s.name) === compKey);
-            if (exists) {
-                this.uiAlert(`"${compSpell.name}" is already in your spellbook.`, "Already Known", "ℹ️");
-                return;
-            }
-
-            this.data.magic.spells.push({
-                name: compSpell.name,
-                source: this.spellCompendiumSource,
-                sourceType: this.spellCompendiumSource.toLowerCase()
-            });
-            this.logEvent('📖', 'Spell Learned', `Added "${compSpell.name}" to spellbook (Source: ${this.spellCompendiumSource}).`);
-            this.modalSpellAddOpen = false;
-            this.uiAlert(`Added "${compSpell.name}" to your spellbook.`, "Spell Added", "✨");
-        },
-
-        handleSaveManualSpell() {
-            const name = this.spellManualForm.name.trim();
-            if (!name) return;
-            if (!Array.isArray(this.data.magic.spells)) this.data.magic.spells = [];
-
-            const exists = this.data.magic.spells.some(s => normalizeKey(s.name) === normalizeKey(name));
-            if (exists) {
-                this.uiAlert(`A spell named "${name}" already exists.`, "Notice", "⚠️");
-                return;
-            }
-
-            const lvl = parseInt(this.spellManualForm.level, 10) || 0;
-            this.data.magic.spells.push({
-                name,
-                level: lvl,
-                actionType: this.spellManualForm.actionType,
-                range: this.spellManualForm.range.trim(),
-                duration: this.spellManualForm.duration.trim(),
-                damage: this.spellManualForm.damage.trim() || '—',
-                conc: !!this.spellManualForm.conc,
-                desc: this.spellManualForm.desc.trim(),
-                source: this.spellManualForm.source.trim() || 'Custom',
-                sourceType: 'custom'
-            });
-
-            this.logEvent('📖', 'Custom Spell Created', `Created custom spell "${name}" (Level ${lvl}).`);
-            this.modalSpellAddOpen = false;
-            this.uiAlert(`Custom spell "${name}" created.`, "Spell Created", "✨");
-        },
-
-        async removeSpell(spellName) {
-            if (!spellName) return;
-            const isGrantedByItem = this.allEquipped.some(item =>
-                (item.grantedSpells || []).some(s => normalizeKey(s) === normalizeKey(spellName))
-            );
-            if (isGrantedByItem) {
-                await this.uiAlert(`"${spellName}" is granted by an equipped item. To remove it, unequip the item.`, "Item Spell", "📦");
-                return;
-            }
-            const ok = await this.uiConfirm(`Do you want to remove "${spellName}" from your spellbook?`, "Remove Spell", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-
-            this.data.magic.spells = (this.data.magic.spells || []).filter(s => normalizeKey(s.name) !== normalizeKey(spellName));
-            this.logEvent('🗑️', 'Spell Removed', `Removed spell "${spellName}" from spellbook.`);
-        },
-
-        toggleSpellFavorite(spellName) {
-            if (!spellName) return;
-            const norm = normalizeKey(spellName);
-            if (!Array.isArray(this.data.magic.favorites)) this.data.magic.favorites = [];
-            const idx = this.data.magic.favorites.indexOf(norm);
-            if (idx >= 0) {
-                this.data.magic.favorites.splice(idx, 1);
-            } else {
-                this.data.magic.favorites.push(norm);
-            }
-
-            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
-            if (sp) {
-                sp.favorite = this.data.magic.favorites.includes(norm);
-            }
-            this.saveState();
-        },
-
-        isSpellFavorite(spellName) {
-            if (!spellName) return false;
-            const norm = normalizeKey(spellName);
-            if (Array.isArray(this.data.magic?.favorites) && this.data.magic.favorites.includes(norm)) {
-                return true;
-            }
-            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
-            return !!sp?.favorite;
-        },
-
-        // ================= LEVEL UP & ATTRIBUTES =================
-        openLevelUpModal() {
-            this.levelUpForm.classes = JSON.parse(JSON.stringify(this.data.identity?.classes || []));
-            this.levelUpForm.maxHp = this.data.vitals?.maxHp || 10;
-            this.levelUpForm.attributes = {};
-            ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(k => {
-                this.levelUpForm.attributes[k] = this.data.attributes?.[k]?.score || 10;
-            });
-            this.levelUpForm.newClassName = '';
-            this.levelUpForm.newClassSubclass = '';
-            this.levelUpForm.newClassHitDie = 'd8';
-            this.modalLevelUpOpen = true;
-        },
-
-        levelUpClass(cIdx, delta = 1) {
-            const cls = this.levelUpForm.classes[cIdx];
-            if (!cls) return;
-            const current = cls.level || 1;
-            const target = Math.max(1, Math.min(20, current + delta));
-            if (target === current) return;
-            cls.level = target;
-
-            const hitDieFaces = parseInt(String(cls.hitDie || resolveClassHitDie(cls)).replace('d', ''), 10) || 8;
-            const avgRoll = Math.floor(hitDieFaces / 2) + 1;
-            const conMod = Math.floor(((this.levelUpForm.attributes.CON || 10) - 10) / 2);
-            const hpChange = Math.max(1, avgRoll + conMod);
-
-            if (delta > 0) {
-                this.levelUpForm.maxHp = (parseInt(this.levelUpForm.maxHp, 10) || 0) + hpChange;
-            } else if (delta < 0) {
-                this.levelUpForm.maxHp = Math.max(1, (parseInt(this.levelUpForm.maxHp, 10) || 0) - hpChange);
-            }
-        },
-
-        onNewClassSelected() {
-            const found = findCompendiumClass(this.levelUpForm.newClassName);
-            if (found?.obj?.hitDie) {
-                this.levelUpForm.newClassHitDie = found.obj.hitDie;
-            }
-        },
-
-        addNewClassToLevelUpForm() {
-            const name = this.levelUpForm.newClassName.trim();
-            if (!name) return;
-            const compClass = findCompendiumClass(name);
-            const resolvedHitDie = compClass?.obj?.hitDie || this.levelUpForm.newClassHitDie || 'd8';
-            this.levelUpForm.classes.push({
-                name: capitalizeWord(name),
-                subclass: capitalizeWord(this.levelUpForm.newClassSubclass.trim()),
-                level: 1,
-                hitDie: resolvedHitDie
-            });
-            this.levelUpForm.newClassName = '';
-            this.levelUpForm.newClassSubclass = '';
-            this.levelUpForm.newClassHitDie = 'd8';
-        },
-
-        removeClassFromLevelUpForm(cIdx) {
-            if (this.levelUpForm.classes.length <= 1) return;
-            this.levelUpForm.classes.splice(cIdx, 1);
-        },
-
-        handleSaveLevelUp() {
-            this.data.identity.classes = JSON.parse(JSON.stringify(this.levelUpForm.classes)).map(c => ({
-                ...c,
-                name: capitalizeWord(c.name),
-                subclass: c.subclass ? capitalizeWord(c.subclass) : ''
-            }));
-            const newMaxHp = parseInt(this.levelUpForm.maxHp, 10) || this.data.vitals.maxHp;
-            this.data.vitals.maxHp = newMaxHp;
-            if (this.data.vitals.currentHp > newMaxHp) {
-                this.data.vitals.currentHp = newMaxHp;
-            }
-
-            ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].forEach(k => {
-                if (this.data.attributes[k]) {
-                    this.data.attributes[k].score = parseInt(this.levelUpForm.attributes[k], 10) || 10;
-                }
-            });
-
-            // 1. Sync Spell Slots & 2. Auto-sync class features & clean stale
-            const { newResources, newTraits } = applyClassFeaturesSync(this.data);
-            this.modalLevelUpOpen = false;
-
-            const totalLevel = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
-            const addedNames = [...newResources.map(r => r.name), ...newTraits.map(t => t.name)];
-            let alertMsg = `Advanced to Level ${totalLevel}! HP, Hit Dice, and Spell Slots have been automatically synchronized.`;
-            if (addedNames.length > 0) {
-                alertMsg += `\n\n✨ Unlocked new class features added:\n• ` + addedNames.join('\n• ');
-            }
-            this.logEvent('⭐', 'Level Up', `Reached Level ${totalLevel}. Max HP: ${newMaxHp}.${addedNames.length > 0 ? ` Unlocked: ${addedNames.join(', ')}.` : ''}`);
-            this.uiAlert(alertMsg, "Level Up Complete", "🎉");
-        },
-
-        syncClassFeatures() {
-            const { newResources, newTraits } = applyClassFeaturesSync(this.data);
-            const addedCount = newResources.length + newTraits.length;
-            this.saveState();
-
-            if (addedCount > 0) {
-                const names = [...newResources.map(r => r.name), ...newTraits.map(t => t.name)].join(', ');
-                this.logEvent('✨', 'Features Synchronized', `Added: ${names}.`);
-                this.uiAlert(`Synchronized ${addedCount} unlocked class features and spell slots:\n• ${names}`, "Features Synchronized", "✨");
-            } else {
-                this.uiAlert("All class features, tactical resources, and spell slots are already up to date with your current levels.", "Already Up to Date", "✅");
-            }
-        },
-
-        // Rests
-        openShortRestModal() {
-            this.shortRestClassIndex = 0;
-            this.shortRestDiceSelected = 0;
-            this.modalShortRestOpen = true;
-        },
-
-        async applyShortRest(diceCount) {
-            const count = parseInt(diceCount, 10) || 0;
-            let availableIndices = [];
-            this.data.vitals.hitDiceSpent.forEach((spent, i) => { if (!spent) availableIndices.push(i); });
-
-            if (count > availableIndices.length) {
-                await this.uiAlert(`You only have ${availableIndices.length} hit dice available.`, "Notice", "⚠️");
-                return;
-            }
-
-            let totalHealed = 0;
-            const conMod = resolveAttributeMod(this.data.attributes, 'CON');
-            const hitDieFaces = parseInt(this.shortRestSelectedHitDie.replace('d', ''), 10) || 8;
-
-            if (count > 0) {
-                for (let i = 0; i < count; i++) {
-                    const roll = Math.floor(Math.random() * hitDieFaces) + 1;
-                    totalHealed += Math.max(1, roll + conMod);
-                    this.data.vitals.hitDiceSpent[availableIndices[i]] = true;
-                }
-                if (this.hasSongOfRest) {
-                    const songFaces = parseInt(String(this.songOfRestDie).replace(/^1?d/i, ''), 10) || 6;
-                    totalHealed += (Math.floor(Math.random() * songFaces) + 1);
-                }
-                this.data.vitals.currentHp = Math.min(this.data.vitals.maxHp, this.data.vitals.currentHp + totalHealed);
-            }
-
-            this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-
-            (this.data.magic?.slots || []).forEach(slot => {
-                const r = (slot.reset || '').toLowerCase();
-                if (r.includes('short')) slot.spent = slot.spent.map(() => false);
-            });
-
-            (this.data.combat?.resources || []).forEach(resource => {
-                const r = (resource.reset || '').toLowerCase();
-                if (r.includes('short')) resource.spent = resource.spent.map(() => false);
-            });
-
-            this.saveState();
-            this.modalShortRestOpen = false;
-
-            const rechargedList = this.shortRestRecharges.length > 0 ? this.shortRestRecharges.join(', ') : 'None';
-            this.logEvent('⛺', 'Short Rest', `Spent ${count} Hit Dice. Restored ${totalHealed} HP (HP: ${this.data.vitals.currentHp}/${this.data.vitals.maxHp}). Recharged: ${rechargedList}.`);
-
-            const rechargedStr = this.shortRestRecharges.length > 0
-                ? `• Recharged resources: ${this.shortRestRecharges.join(', ')}.`
-                : '• No short rest resources configured.';
-            await this.uiAlert(`Short Rest complete:\n• Death saves reset.\n${rechargedStr}\n• Health: ${this.data.vitals.currentHp}/${this.data.vitals.maxHp} HP.`, "Short Rest", "⛺");
-        },
-
-        async executeLongRest() {
-            const ok = await this.uiConfirm("This will restore all Hit Points, Hit Dice, Spell Slots, and class resources.", "Take a Long Rest?", "🌙", "Rest");
-            if (!ok) return;
-
-            this.data.vitals.currentHp = this.data.vitals.maxHp;
-            this.data.vitals.tempHp = 0;
-            this.data.vitals.hitDiceSpent = this.data.vitals.hitDiceSpent.map(() => false);
-            this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-            this.data.concentration = { active: false, spellName: "" };
-
-            (this.data.magic?.slots || []).forEach(s => s.spent = s.spent.map(() => false));
-            (this.data.combat?.resources || []).forEach(r => r.spent = r.spent.map(() => false));
-
-            this.logEvent('🌙', 'Long Rest', `Full rest. Restored all HP (${this.data.vitals.maxHp}), Hit Dice, Spell Slots, and Class Resources.`);
-
-            this.saveState();
-            await this.uiAlert("Long Rest completed. Health and resources fully restored.", "Long Rest", "✨");
-        },
-
-        // Heroic Inspiration
-        adjustInspiration(delta) {
-            if (!this.data.vitals) this.data.vitals = {};
-            const cur = Math.max(0, parseInt(this.data.vitals.inspiration, 10) || 0);
-            const next = Math.max(0, cur + delta);
-            if (next === cur) return;
-            this.data.vitals.inspiration = next;
-            if (delta > 0) {
-                this.logEvent('⭐', 'Heroic Inspiration', `Gained 1 Inspiration point (Total: ${next}).`);
-            } else {
-                this.logEvent('⭐', 'Heroic Inspiration', `Expended 1 Inspiration point (Remaining: ${next}).`);
-            }
-            this.saveState();
-        },
-
-        // Custom Freeform Log Entry
-        async addCustomLogEntry() {
-            const text = await this.uiPrompt(
-                "Enter your custom event, milestone, or story note to record in the session log:",
-                "Add Session Note / Entry",
-                "",
-                "e.g. Discovered the hidden tunnel, Met with the guildmaster...",
-                "✍️",
-                "Add Entry"
-            );
-            if (!text || !text.trim()) return;
-            this.logEvent('✍️', 'Story / Note', text.trim());
-        },
-
-        // Quests & Story Management
-        openQuestModal(target = null) {
-            if (target && typeof target === 'object') {
-                this.editingQuestId = target.id;
-                this.questForm = {
-                    title: target.title || '',
-                    desc: target.desc || '',
-                    location: target.location || '',
-                    reward: target.reward || '',
-                    status: target.status || 'active'
-                };
-            } else {
-                this.editingQuestId = null;
-                this.questForm = {
-                    title: '',
-                    desc: '',
-                    location: '',
-                    reward: '',
-                    status: 'active'
-                };
-            }
-            this.modalQuestOpen = true;
-        },
-
-        handleSaveQuest() {
-            const title = (this.questForm.title || '').trim();
-            if (!title) return;
-            if (!Array.isArray(this.data.quests)) this.data.quests = [];
-
-            if (this.editingQuestId) {
-                const idx = this.data.quests.findIndex(q => q.id === this.editingQuestId);
-                if (idx >= 0) {
-                    this.data.quests[idx] = {
-                        ...this.data.quests[idx],
-                        title,
-                        desc: (this.questForm.desc || '').trim(),
-                        location: (this.questForm.location || '').trim(),
-                        reward: (this.questForm.reward || '').trim(),
-                        status: this.questForm.status || 'active'
-                    };
-                    this.logEvent('🗺️', 'Quest Updated', `Updated quest "${title}".`);
-                }
-            } else {
-                const newQuest = {
-                    id: 'quest_' + Date.now() + Math.random().toString(36).substring(2, 6),
-                    title,
-                    desc: (this.questForm.desc || '').trim(),
-                    location: (this.questForm.location || '').trim(),
-                    reward: (this.questForm.reward || '').trim(),
-                    status: this.questForm.status || 'active',
-                    createdAt: new Date().toLocaleDateString()
-                };
-                this.data.quests.unshift(newQuest);
-                this.logEvent('🗺️', 'New Quest Accepted', `Added quest "${title}".`);
-            }
-            this.modalQuestOpen = false;
-            this.editingQuestId = null;
-            this.saveState();
-        },
-
-        toggleQuestStatus(id) {
-            if (!Array.isArray(this.data.quests)) return;
-            const q = this.data.quests.find(item => item.id === id);
-            if (!q) return;
-            q.status = q.status === 'completed' ? 'active' : 'completed';
-            if (q.status === 'completed') {
-                this.logEvent('✅', 'Quest Completed', `Marked quest "${q.title}" as completed!`);
-            } else {
-                this.logEvent('🗺️', 'Quest Reopened', `Reopened quest "${q.title}".`);
-            }
-            this.saveState();
-        },
-
-        async removeQuest(id) {
-            if (!Array.isArray(this.data.quests)) return;
-            const q = this.data.quests.find(item => item.id === id);
-            if (!q) return;
-            const ok = await this.uiConfirm(`Do you want to delete the quest "${q.title}"?`, "Delete Quest", "🗑️", "Delete", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            this.data.quests = this.data.quests.filter(item => item.id !== id);
-            this.logEvent('🗑️', 'Quest Deleted', `Deleted quest "${q.title}".`);
-            this.saveState();
-        },
-
-        saveCampaignNotes() {
-            this.saveState();
-        },
-
         // Export / Import compatible with JSON (and legacy JS format)
         exportJSON() {
             const jsonStr = JSON.stringify(this.data, null, 2);
@@ -3342,17 +590,17 @@ function createCharacterSheet() {
             };
             reader.readAsText(file);
             event.target.value = '';
-        },
-
-        async resetDefaults() {
-            const ok = await this.uiConfirm("Reset character sheet to default starting state? All current modifications will be lost.", "Reset Character", "⚠️", "Reset", "bg-red-600 hover:bg-red-500");
-            if (!ok) return;
-            StorageService.remove(STORAGE_KEY);
-            this.data = sanitizeTracking(JSON.parse(JSON.stringify(CHARACTER_DATA)));
-            this.saveState();
-            await this.uiAlert("Character sheet reset to defaults.", "Reset Done", "🔄");
         }
     };
+
+    return composeSlices(
+        base,
+        createQuestsSlice(),
+        createProgressionSlice(),
+        createVitalsSlice(),
+        createInventorySlice(),
+        createSpellsSlice()
+    );
 }
 
 if (typeof document !== 'undefined') {

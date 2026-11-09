@@ -1,0 +1,864 @@
+{
+  "customlineage": {
+    "name": "Custom Lineage",
+    "speed": "30 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [],
+    "languages": [
+      "Common"
+    ],
+    "traits": [
+      {
+        "name": "Creature Type",
+        "desc": "You are a humanoid. You determine your appearance and whether you resemble any of your kin."
+      },
+      {
+        "name": "Feat",
+        "desc": "You gain one {@5etools feat|feats.html} of your choice for which you qualify."
+      },
+      {
+        "name": "Variable Trait",
+        "desc": "You gain one of the following options of your choice: (a) darkvision with a range of 60 feet or (b) proficiency in one skill of your choice."
+      }
+    ],
+    "subraces": {}
+  },
+  "dragonborn": {
+    "name": "Dragonborn",
+    "speed": "30 ft.",
+    "senses": "",
+    "darkvision": 0,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Draconic"
+    ],
+    "traits": [
+      {
+        "name": "Draconic Ancestry",
+        "desc": "You have draconic ancestry. Choose one type of dragon from the Draconic Ancestry table. Your breath weapon and damage resistance are determined by the dragon type, as shown in the table.\n\nDragon | Damage Type | Breath Weapon\nBlack | Acid | 5 by 30 ft. line (Dex. save)\nBlue | Lightning | 5 by 30 ft. line (Dex. save)\nBrass | Fire | 5 by 30 ft. line (Dex. save)\nBronze | Lightning | 5 by 30 ft. line (Dex. save)\nCopper | Acid | 5 by 30 ft. line (Dex. save)\nGold | Fire | 15 ft. cone (Dex. save)\nGreen | Poison | 15 ft. cone (Con. save)\nRed | Fire | 15 ft. cone (Dex. save)\nSilver | Cold | 15 ft. cone (Con. save)\nWhite | Cold | 15 ft. cone (Con. save)"
+      },
+      {
+        "name": "Breath Weapon",
+        "desc": "You can use your action to exhale destructive energy. Your draconic ancestry determines the size, shape, and damage type of the exhalation.\n\nWhen you use your breath weapon, each creature in the area of the exhalation must make a saving throw, the type of which is determined by your draconic ancestry. The DC for this saving throw equals 8 + your Constitution modifier + your proficiency bonus. A creature takes 2d6 damage on a failed save, and half as much damage on a successful one. The damage increases to 3d6 at 6th level, 4d6 at 11th level, and 5d6 at 16th level.\n\nAfter you use your breath weapon, you can't use it again until you complete a short or long rest."
+      },
+      {
+        "name": "Damage Resistance",
+        "desc": "You have resistance to the damage type associated with your draconic ancestry."
+      }
+    ],
+    "subraces": {}
+  },
+  "dwarf": {
+    "name": "Dwarf",
+    "speed": "25 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [
+      "poison"
+    ],
+    "languages": [
+      "Common",
+      "Dwarvish"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Dwarven Resilience",
+        "desc": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+      },
+      {
+        "name": "Dwarven Combat Training",
+        "desc": "You have proficiency with the battleaxe, handaxe, light hammer, and warhammer."
+      },
+      {
+        "name": "Tool Proficiency",
+        "desc": "You gain proficiency with the artisan's tools of your choice: Smith's tools, brewer's supplies, or mason's tools."
+      },
+      {
+        "name": "Stonecunning",
+        "desc": "Whenever you make an Intelligence (History) check related to the origin of stonework, you are considered proficient in the History skill and add double your proficiency bonus to the check, instead of your normal proficiency bonus."
+      }
+    ],
+    "subraces": {
+      "duergar": {
+        "name": "Dwarf (Duergar)",
+        "traits": [
+          {
+            "name": "Superior Darkvision",
+            "desc": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+          },
+          {
+            "name": "Duergar Resilience",
+            "desc": "You have advantage on saving throws against poison, and you have resistance against poison damage. You also have advantage on saving throws against illusions and against being charmed or paralyzed."
+          },
+          {
+            "name": "Duergar Magic",
+            "desc": "When you reach 3rd level, you can cast the Enlarge/Reduce spell on yourself once with this trait, using only the spell's enlarge option. When you reach 5th level, you can cast the Invisibility spell on yourself once with this trait. You don't need material components for either spell, and you can't cast them while you're in direct sunlight, although sunlight has no effect on them once cast. You regain the ability to cast these spells with this trait when you finish a long rest. Intelligence is your spellcasting ability for these spells."
+          },
+          {
+            "name": "Sunlight Sensitivity",
+            "desc": "You have disadvantage on attack rolls and Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight."
+          }
+        ],
+        "darkvision": 120,
+        "senses": "Darkvision (120 ft.)",
+        "innateSpells": [
+          {
+            "name": "Enlarge/reduce",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Invisibility",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "hill": {
+        "name": "Dwarf (Hill)",
+        "traits": [
+          {
+            "name": "Dwarven Toughness",
+            "desc": "Your hit point maximum increases by 1, and it increases by 1 every time you gain a level."
+          }
+        ]
+      },
+      "mountain": {
+        "name": "Dwarf (Mountain)",
+        "traits": [
+          {
+            "name": "Dwarven Armor Training",
+            "desc": "You have proficiency with light and medium armor."
+          }
+        ]
+      }
+    }
+  },
+  "elf": {
+    "name": "Elf",
+    "speed": "30 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Elvish"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Accustomed to twilit forests and the night sky, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Keen Senses",
+        "desc": "You have proficiency in the Perception skill."
+      },
+      {
+        "name": "Fey Ancestry",
+        "desc": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+      },
+      {
+        "name": "Trance",
+        "desc": "Elves don't need to sleep. Instead, they meditate deeply, remaining semiconscious, for 4 hours a day. (The Common word for such meditation is \"trance.\") While meditating, you can dream after a fashion; such dreams are actually mental exercises that have become reflexive through years of practice. After resting in this way, you gain the same benefit that a human does from 8 hours of sleep.\n\nIf you meditate during a long rest, you finish the rest after only 4 hours. You otherwise obey all the rules for a long rest; only the duration is changed."
+      }
+    ],
+    "subraces": {
+      "drow": {
+        "name": "Elf (Drow)",
+        "traits": [
+          {
+            "name": "Superior Darkvision",
+            "desc": "Accustomed to the depths of the Underdark, you have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+          },
+          {
+            "name": "Sunlight Sensitivity",
+            "desc": "You have disadvantage on attack rolls and on Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight."
+          },
+          {
+            "name": "Drow Magic",
+            "desc": "You know the dancing lights cantrip. When you reach 3rd level, you can cast the faerie fire spell once with this trait; you regain the ability to cast it when you finish a long rest. When you reach 5th level, you can also cast the darkness spell once per day with this trait; you regain the ability to cast it when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          },
+          {
+            "name": "Drow Weapon Training",
+            "desc": "You have proficiency with rapier, shortsword, and hand crossbow."
+          }
+        ],
+        "darkvision": 120,
+        "senses": "Darkvision (120 ft.)",
+        "innateSpells": [
+          {
+            "name": "Dancing Lights",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Faerie Fire",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Darkness",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "eladrin": {
+        "name": "Elf (Eladrin)",
+        "traits": [
+          {
+            "name": "Fey Step",
+            "desc": "As a bonus action, you can magically teleport up to 30 feet to an unoccupied space you can see. Once you use this trait, you can't do so again until you finish a short or long rest.\n\nWhen you reach 3rd level, your Fey Step gains an additional effect based on your season; if the effect requires a saving throw, the DC equals 8 + your proficiency bonus + your Charisma modifier:"
+          }
+        ]
+      },
+      "high": {
+        "name": "Elf (High)",
+        "traits": [
+          {
+            "name": "Elf Weapon Training",
+            "desc": "You have proficiency with the longsword, shortsword, shortbow, and longbow."
+          },
+          {
+            "name": "Cantrip",
+            "desc": "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
+          },
+          {
+            "name": "Extra Language",
+            "desc": "You can speak, read, and write one extra language of your choosing."
+          }
+        ],
+        "speed": "30 ft."
+      },
+      "sea": {
+        "name": "Elf (Sea)",
+        "traits": [
+          {
+            "name": "Sea Elf Training",
+            "desc": "You have proficiency with the spear, trident, light crossbow, and net."
+          },
+          {
+            "name": "Child of the Sea",
+            "desc": "You have a swimming speed of 30 feet, and you can breathe air and water."
+          },
+          {
+            "name": "Friend of the Sea",
+            "desc": "Using gestures and sounds, you can communicate simple ideas with any beast that has an innate swimming speed."
+          },
+          {
+            "name": "Extra Language",
+            "desc": "You can speak, read, and write Aquan."
+          }
+        ],
+        "speed": "30 ft."
+      },
+      "shadarkai": {
+        "name": "Elf (Shadar-kai)",
+        "traits": [
+          {
+            "name": "Necrotic Resistance",
+            "desc": "You have resistance to necrotic damage."
+          },
+          {
+            "name": "Blessing of the Raven Queen",
+            "desc": "As a bonus action, you can magically teleport up to 30 feet to an unoccupied space you can see. Once you use this trait, you can't do so again until you finish a long rest.\n\nStarting at 3rd level, you also gain resistance to all damage when you teleport using this trait. The resistance lasts until the start of your next turn. During that time, you appear ghostly and translucent."
+          }
+        ],
+        "resistances": [
+          "necrotic"
+        ]
+      },
+      "wood": {
+        "name": "Elf (Wood)",
+        "traits": [
+          {
+            "name": "Elf Weapon Training",
+            "desc": "You have proficiency with the longsword, shortsword, shortbow, and longbow."
+          },
+          {
+            "name": "Fleet of Foot",
+            "desc": "Your base walking speed increases to 35 feet."
+          },
+          {
+            "name": "Mask of the Wild",
+            "desc": "You can attempt to hide even when you are only lightly obscured by foliage, heavy rain, falling snow, mist, and other natural phenomena."
+          }
+        ],
+        "speed": "35 ft."
+      }
+    }
+  },
+  "gith": {
+    "name": "Gith",
+    "speed": "30 ft.",
+    "senses": "",
+    "darkvision": 0,
+    "resistances": [],
+    "languages": [
+      "Common"
+    ],
+    "traits": [],
+    "subraces": {
+      "githyanki": {
+        "name": "Gith (Githyanki)",
+        "traits": [
+          {
+            "name": "Decadent Mastery",
+            "desc": "You learn one language of your choice, and you are proficient with one skill or tool of your choice. In the timeless city of Tu'narath, githyanki have bountiful time to master odd bits of knowledge."
+          },
+          {
+            "name": "Martial Prodigy",
+            "desc": "You are proficient with light and medium armor and with shortsword, longsword, and greatsword."
+          },
+          {
+            "name": "Githyanki Psionics",
+            "desc": "You know the mage hand cantrip, and the hand is invisible when you cast the cantrip with this trait.\n\nWhen you reach 3rd level, you can cast jump once with this trait, and you regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the misty step spell once with this trait, and you regain the ability to do so when you finish a long rest.\n\nIntelligence is your spellcasting ability for these spells. When you cast them with this trait, they don't require components."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Mage Hand",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Jump",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Misty Step",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "githzerai": {
+        "name": "Gith (Githzerai)",
+        "traits": [
+          {
+            "name": "Mental Discipline",
+            "desc": "You have advantage on saving throws against the charmed and frightened conditions. Under the tutelage of monastic masters, githzerai learn to govern their own minds."
+          },
+          {
+            "name": "Githzerai Psionics",
+            "desc": "You know the mage hand cantrip, and the hand is invisible when you cast the cantrip with this trait.\n\nWhen you reach 3rd level, you can cast shield once with this trait, and you regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the detect thoughts spell once with this trait, and you regain the ability to do so when you finish a long rest.\n\nWisdom is your spellcasting ability for these spells. When you cast them with this trait, they don't require components."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Mage Hand",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Shield",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Detect Thoughts",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      }
+    }
+  },
+  "gnome": {
+    "name": "Gnome",
+    "speed": "25 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Gnomish"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Gnome Cunning",
+        "desc": "You have advantage on all Intelligence, Wisdom, and Charisma saving throws against magic."
+      }
+    ],
+    "subraces": {
+      "deep": {
+        "name": "Gnome (Deep)",
+        "traits": [
+          {
+            "name": "Superior Darkvision",
+            "desc": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+          },
+          {
+            "name": "Stone Camouflage",
+            "desc": "You have advantage on Dexterity (Stealth) checks to hide in rocky terrain."
+          }
+        ],
+        "darkvision": 120,
+        "senses": "Darkvision (120 ft.)"
+      },
+      "forest": {
+        "name": "Gnome (Forest)",
+        "traits": [
+          {
+            "name": "Natural Illusionist",
+            "desc": "You know the minor illusion cantrip. Intelligence is your spellcasting ability for it."
+          },
+          {
+            "name": "Speak with Small Beasts",
+            "desc": "Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts. Forest gnomes love animals and often keep squirrels, badgers, rabbits, moles, woodpeckers, and other creatures as beloved pets."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Minor Illusion",
+            "level": 0,
+            "minLevel": 1
+          }
+        ]
+      },
+      "rock": {
+        "name": "Gnome (Rock)",
+        "traits": [
+          {
+            "name": "Artificer's Lore",
+            "desc": "Whenever you make an Intelligence (History) check related to magic items, alchemical objects, or technological devices, you can add twice your proficiency bonus, instead of any proficiency bonus you normally apply."
+          },
+          {
+            "name": "Tinker",
+            "desc": "You have proficiency with artisan's tools (tinker's tools). Using those tools, you can spend 1 hour and 10 gp worth of materials to construct a Tiny clockwork device (AC 5, 1 hp). The device ceases to function after 24 hours (unless you spend 1 hour repairing it to keep the device functioning), or when you use your action to dismantle it; at that time, you can reclaim the materials used to create it. You can have up to three such devices active at a time.\n\nWhen you create a device, choose one of the following options:\n\nClockwork Toy: This toy is a clockwork animal, monster, or person, such as a frog, mouse, bird, dragon, or soldier. When placed on the ground, the toy moves 5 feet across the ground on each of your turns in a random direction. It makes noises as appropriate to the creature it represents.\n\nFire Starter: The device produces a miniature flame, which you can use to light a candle, torch, or campfire. Using the device requires your action.\n\nMusic Box: When opened, this music box plays a single song at a moderate volume. The box stops playing when it reaches the song's end or when it is closed."
+          }
+        ]
+      }
+    }
+  },
+  "halfelf": {
+    "name": "Half-Elf",
+    "speed": "30 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Elvish"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Thanks to your elf blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Fey Ancestry",
+        "desc": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+      },
+      {
+        "name": "Skill Versatility",
+        "desc": "You gain proficiency in two skills of your choice."
+      }
+    ],
+    "subraces": {}
+  },
+  "halforc": {
+    "name": "Half-Orc",
+    "speed": "30 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Orc"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Thanks to your orc blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Menacing",
+        "desc": "You gain proficiency in the Intimidation skill."
+      },
+      {
+        "name": "Relentless Endurance",
+        "desc": "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can't use this feature again until you finish a long rest."
+      },
+      {
+        "name": "Savage Attacks",
+        "desc": "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit."
+      }
+    ],
+    "subraces": {}
+  },
+  "halfling": {
+    "name": "Halfling",
+    "speed": "25 ft.",
+    "senses": "",
+    "darkvision": 0,
+    "resistances": [],
+    "languages": [
+      "Common",
+      "Halfling"
+    ],
+    "traits": [
+      {
+        "name": "Lucky",
+        "desc": "When you roll a 1 on an attack roll, ability check, or saving throw, you can reroll the die and must use the new roll."
+      },
+      {
+        "name": "Brave",
+        "desc": "You have advantage on saving throws against being frightened."
+      },
+      {
+        "name": "Halfling Nimbleness",
+        "desc": "You can move through the space of any creature that is of a size larger than yours."
+      }
+    ],
+    "subraces": {
+      "lightfoot": {
+        "name": "Halfling (Lightfoot)",
+        "traits": [
+          {
+            "name": "Naturally Stealthy",
+            "desc": "You can attempt to hide even when you are obscured only by a creature that is at least one size larger than you."
+          }
+        ]
+      },
+      "stout": {
+        "name": "Halfling (Stout)",
+        "traits": [
+          {
+            "name": "Stout Resilience",
+            "desc": "You have advantage on saving throws against poison, and you have resistance against poison damage."
+          }
+        ],
+        "resistances": [
+          "poison"
+        ]
+      }
+    }
+  },
+  "human": {
+    "name": "Human",
+    "speed": "30 ft.",
+    "senses": "",
+    "darkvision": 0,
+    "resistances": [],
+    "languages": [
+      "Common"
+    ],
+    "traits": [],
+    "subraces": {
+      "variant": {
+        "name": "Human (Variant)",
+        "traits": [
+          {
+            "name": "Skills",
+            "desc": "You gain proficiency in one skill of your choice."
+          },
+          {
+            "name": "Feat",
+            "desc": "You gain one {@5etools feat|feats.html} of your choice."
+          }
+        ]
+      }
+    }
+  },
+  "tiefling": {
+    "name": "Tiefling",
+    "speed": "30 ft.",
+    "senses": "Darkvision (60 ft.)",
+    "darkvision": 60,
+    "resistances": [
+      "fire"
+    ],
+    "languages": [
+      "Common",
+      "Infernal"
+    ],
+    "traits": [
+      {
+        "name": "Darkvision",
+        "desc": "Thanks to your infernal heritage, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Hellish Resistance",
+        "desc": "You have resistance to fire damage."
+      },
+      {
+        "name": "Infernal Legacy",
+        "desc": "You know the thaumaturgy cantrip. Once you reach 3rd level, you can cast the hellish rebuke spell as a 2nd-level spell with this trait; you regain the ability to cast it when you finish a long rest. Once you reach 5th level, you can also cast the darkness spell once per day with this trait; you regain the ability to cast it when you finish a long rest. Charisma is your spellcasting ability for these spells."
+      }
+    ],
+    "subraces": {
+      "asmodeus": {
+        "name": "Tiefling (Asmodeus)",
+        "traits": []
+      },
+      "baalzebul": {
+        "name": "Tiefling (Baalzebul)",
+        "traits": [
+          {
+            "name": "Legacy of Maladomini",
+            "desc": "You know the thaumaturgy cantrip. When you reach 3rd level, you can cast the ray of sickness spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the crown of madness spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Thaumaturgy",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Ray Of Sickness",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Crown Of Madness",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "dispater": {
+        "name": "Tiefling (Dispater)",
+        "traits": [
+          {
+            "name": "Legacy of Dis",
+            "desc": "You know the thaumaturgy cantrip. When you reach 3rd level, you can cast the disguise self spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the detect thoughts spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Thaumaturgy",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Disguise Self",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Detect Thoughts",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "fierna": {
+        "name": "Tiefling (Fierna)",
+        "traits": [
+          {
+            "name": "Legacy of Phlegethos",
+            "desc": "You know the friends cantrip. When you reach 3rd level, you can cast the charm person spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the suggestion spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Friends",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Charm Person",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Suggestion",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "glasya": {
+        "name": "Tiefling (Glasya)",
+        "traits": [
+          {
+            "name": "Legacy of Malbolge",
+            "desc": "You know the minor illusion cantrip. When you reach 3rd level, you can cast the disguise self spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the invisibility spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Minor Illusion",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Disguise Self",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Invisibility",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "levistus": {
+        "name": "Tiefling (Levistus)",
+        "traits": [
+          {
+            "name": "Legacy of Stygia",
+            "desc": "You know the ray of frost cantrip. When you reach 3rd level, you can cast the armor of Agathys spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the darkness spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Ray Of Frost",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Armor Of Agathys",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Darkness",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "mammon": {
+        "name": "Tiefling (Mammon)",
+        "traits": [
+          {
+            "name": "Legacy of Minauros",
+            "desc": "You know the mage hand cantrip. When you reach 3rd level, you can cast the Tenser's floating disk spell once with this trait and regain the ability to do so when you finish a short or long rest. When you reach 5th level, you can cast the arcane lock spell once with this trait, requiring no material component, and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Mage Hand",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Tenser's Floating Disk",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Arcane Lock",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "mephistopheles": {
+        "name": "Tiefling (Mephistopheles)",
+        "traits": [
+          {
+            "name": "Legacy of Cania",
+            "desc": "You know the mage hand cantrip. When you reach 3rd level, you can cast the burning hands spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the flame blade spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Mage Hand",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Burning Hands",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Flame Blade",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      },
+      "zariel": {
+        "name": "Tiefling (Zariel)",
+        "traits": [
+          {
+            "name": "Legacy of Avernus",
+            "desc": "You know the thaumaturgy cantrip. When you reach 3rd level, you can cast the searing smite spell as a 2nd-level spell once with this trait and regain the ability to do so when you finish a long rest. When you reach 5th level, you can cast the branding smite spell once with this trait and regain the ability to do so when you finish a long rest. Charisma is your spellcasting ability for these spells."
+          }
+        ],
+        "innateSpells": [
+          {
+            "name": "Thaumaturgy",
+            "level": 0,
+            "minLevel": 1
+          },
+          {
+            "name": "Searing Smite",
+            "level": 1,
+            "minLevel": 3,
+            "uses": 1,
+            "reset": "Long Rest"
+          },
+          {
+            "name": "Branding Smite",
+            "level": 2,
+            "minLevel": 5,
+            "uses": 1,
+            "reset": "Long Rest"
+          }
+        ]
+      }
+    }
+  }
+}

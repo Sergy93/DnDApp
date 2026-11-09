@@ -1,22 +1,52 @@
+import {
+    DEFAULT_ABILITY_SCORE,
+    ABILITY_MODIFIER_OFFSET,
+    ABILITY_MODIFIER_DIVISOR,
+    BASE_PROFICIENCY_BONUS,
+    ABILITY_KEYS
+} from '../constants/dnd.constants.js';
+
 /**
  * Pure calculation functions for character ability scores and saving throws.
  */
 
-export const ATTR_KEYS = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'];
+export const ATTR_KEYS = ABILITY_KEYS;
+
+/**
+ * Pure helper to resolve single attribute modifier from character attributes.
+ * @param {Object} attributes - Attributes dictionary.
+ * @param {string} attrKey - 3-letter attribute key (e.g. 'STR', 'DEX').
+ * @returns {number} Integer modifier.
+ */
+export function resolveAttributeMod(attributes, attrKey) {
+    if (!attributes || !attrKey) return 0;
+    const canonKey = String(attrKey).toUpperCase();
+    const raw = attributes[canonKey];
+    const score = typeof raw?.score === 'number'
+        ? raw.score
+        : (parseInt(raw?.score, 10) || DEFAULT_ABILITY_SCORE);
+    return Math.floor((score - ABILITY_MODIFIER_OFFSET) / ABILITY_MODIFIER_DIVISOR);
+}
 
 /**
  * Computes ability scores, modifiers, equipment bonuses, and saving throws.
  * @param {Object} attributes - Raw character attributes map.
  * @param {Array} allEquipped - Array of all currently equipped items.
- * @param {number} pb - Proficiency bonus.
+ * @param {number} [pb=BASE_PROFICIENCY_BONUS] - Proficiency bonus.
  * @returns {Object} Computed attributes map.
  */
-export function calculateAttributes(attributes = {}, allEquipped = [], pb = 2) {
+export function calculateAttributes(
+    attributes = {},
+    allEquipped = [],
+    pb = BASE_PROFICIENCY_BONUS
+) {
     const computedAttrs = {};
 
     ATTR_KEYS.forEach(k => {
-        const raw = attributes?.[k] || { score: 10, profSave: false };
-        const baseScore = typeof raw.score === 'number' ? raw.score : (parseInt(raw.score, 10) || 10);
+        const raw = attributes?.[k] || { score: DEFAULT_ABILITY_SCORE, profSave: false };
+        const baseScore = typeof raw.score === 'number'
+            ? raw.score
+            : (parseInt(raw.score, 10) || DEFAULT_ABILITY_SCORE);
         let bonusFromItems = 0;
         let itemSaveBonus = 0;
         let hasAttrAdvantage = false;
@@ -71,7 +101,7 @@ export function calculateAttributes(attributes = {}, allEquipped = [], pb = 2) {
         });
 
         const score = baseScore + bonusFromItems;
-        const mod = Math.floor((score - 10) / 2);
+        const mod = Math.floor((score - ABILITY_MODIFIER_OFFSET) / ABILITY_MODIFIER_DIVISOR);
         const save = mod + (raw.profSave ? pb : 0) + itemSaveBonus;
 
         computedAttrs[k] = {

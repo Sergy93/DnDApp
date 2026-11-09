@@ -41,8 +41,16 @@ import {
     TemplateHelper,
     ItemBonusHelper,
     StorageService,
-    applyClassFeaturesSync
+    applyClassFeaturesSync,
+    ClassFeatureProvider,
+    RaceProvider
 } from '../src/app.js';
+import { calculateSkills } from '../src/domain/calculators/skills.calculator.js';
+import { SpellService } from '../src/domain/spells/spell.service.js';
+import SPELL_COMPENDIUM from '../src/dnd-data/spell-compendium.json' with { type: 'json' };
+
+// Synchronously seed SpellService in headless test runner
+SpellService.buildSpellsCompendium([SPELL_COMPENDIUM]);
 
 test('String & Key Normalization Helpers', () => {
     assert.equal(normalizeKey('College of Swords'), 'collegeofswords');
@@ -832,3 +840,369 @@ test('Inspiration, Custom Log Entry, Quests & Story, and Upcast Spell Deduction'
     assert.equal(lvl1SpentAfter, lvl1SpentBefore, '1st level slots should not be deducted');
     assert.equal(lvl2SpentAfter, lvl2SpentBefore + 1, '2nd level slot must be deducted for upcast');
 });
+
+test('Decoupled Feature Architecture: ClassFeatureProvider, Generic calculateSkills & RaceProvider', () => {
+    // 1. ClassFeatureProvider: Pure resolution of skill modifier rules
+    const bardChar = {
+        identity: { classes: [{ name: 'Bard', level: 3, subclass: 'Eloquence' }] },
+        combat: { traits: [{ name: 'Silver Tongue' }, { name: 'Jack of All Trades' }] }
+    };
+    const bardRules = ClassFeatureProvider.resolveSkillRules(bardChar, 3);
+    assert.equal(bardRules.hasJackOfAllTrades, true);
+    assert.equal(bardRules.jackOfAllTrades, 1); // floor(3 / 2)
+    assert.equal(bardRules.minRollRules.length, 1);
+    assert.ok(bardRules.minRollRules[0].applies({ id: 'persuasion' }));
+    assert.ok(bardRules.minRollRules[0].applies({ id: 'deception' }));
+    assert.ok(!bardRules.minRollRules[0].applies({ id: 'stealth' }));
+
+    const rogueChar = {
+        identity: { classes: [{ name: 'Rogue', level: 11 }] },
+        combat: { traits: [{ name: 'Reliable Talent' }] }
+    };
+    const rogueRules = ClassFeatureProvider.resolveSkillRules(rogueChar, 4);
+    assert.equal(rogueRules.hasJackOfAllTrades, false);
+    assert.equal(rogueRules.jackOfAllTrades, 0);
+    assert.equal(rogueRules.minRollRules.length, 1);
+    assert.ok(rogueRules.minRollRules[0].applies({ id: 'stealth', profType: 'C' }));
+    assert.ok(rogueRules.minRollRules[0].applies({ id: 'acrobatics', profType: 'P' }));
+    assert.ok(!rogueRules.minRollRules[0].applies({ id: 'athletics', profType: '' }));
+
+    // 2. Generic calculateSkills: Decoupled from hardcoded classes
+    const mockSkills = [
+        { id: 'arcana', name: 'Arcana', attr: 'INT', profType: '' },
+        { id: 'history', name: 'History', attr: 'INT', profType: 'C' }
+    ];
+    const mockAttrs = { INT: { mod: 3, modStr: '+3', hasAttrAdvantage: false } };
+    const customRule = {
+        minRoll: 10,
+        source: 'Chronomancy Boon',
+        desc: 'Minimum 10 on Arcana checks',
+        applies: s => s.id === 'arcana'
+    };
+    const computed = calculateSkills(
+        mockSkills,
+        mockAttrs,
+        2,
+        { jackOfAllTrades: 1, minRollRules: [customRule] },
+        []
+    );
+    const arcana = computed.find(s => s.id === 'arcana');
+    const history = computed.find(s => s.id === 'history');
+
+    // Arcana: non-proficient + Jack of all trades (+1) + INT (+3) = +4. MinVal = 10 + 4 = 14
+    assert.equal(arcana.valNum, 4);
+    assert.equal(arcana.minVal, 14);
+    assert.equal(arcana.minTenSource, 'Chronomancy Boon');
+
+    // History: proficient (C) + INT (+3) + PB (+2) = +5. No minVal
+    assert.equal(history.valNum, 5);
+    assert.equal(history.minVal, null);
+
+    // 3. RaceProvider: Compendium lookup, subraces, traits & resistances
+    const tiefling = RaceProvider.resolveRace('Tiefling (Glasya)');
+    assert.equal(tiefling.baseKey, 'tiefling');
+    assert.equal(tiefling.subraceKey, 'glasya');
+    assert.equal(tiefling.speed, '30 ft.');
+    assert.equal(tiefling.darkvision, 60);
+    assert.deepEqual(tiefling.resistances, ['fire']);
+    assert.ok(tiefling.traits.some(t => t.name.includes('Legacy of Malbolge') || t.name === 'Darkvision'));
+    assert.ok(tiefling.innateSpells.some(s => s.name === 'Minor Illusion'));
+
+    const highElf = RaceProvider.resolveRace('High Elf');
+    assert.equal(highElf.baseKey, 'elf');
+    assert.equal(highElf.subraceKey, 'high');
+    assert.ok(highElf.traits.some(t => t.name === 'Elf Weapon Training' || t.name === 'Cantrip'));
+
+    const elf = RaceProvider.resolveRace('Wood Elf');
+    assert.equal(elf.baseKey, 'elf');
+    assert.equal(elf.subraceKey, 'wood');
+    assert.equal(elf.speed, '35 ft.'); // Wood elf racial speed
+    assert.ok(elf.traits.some(t => t.name === 'Fleet of Foot'));
+
+    const dwarf = RaceProvider.resolveRace('Hill Dwarf');
+    assert.equal(dwarf.baseKey, 'dwarf');
+    assert.equal(dwarf.subraceKey, 'hill');
+    assert.deepEqual(dwarf.resistances, ['poison']);
+    assert.equal(dwarf.speed, '25 ft.');
+
+    const unknownRace = RaceProvider.resolveRace('Homebrew Golem');
+    assert.equal(unknownRace.baseKey, null);
+    assert.equal(unknownRace.speed, '30 ft.');
+    assert.deepEqual(unknownRace.resistances, []);
+
+    // 4. Resistance resolution driven by RaceProvider
+    const raceChar = {
+        identity: { race: 'Hill Dwarf' },
+        combat: { traits: [] },
+        vitals: {},
+        inventory: {}
+    };
+    const resList = resolveCharacterResistances(raceChar);
+    assert.ok(resList.some(r => r.id === 'poison' && r.source.includes('Race: Hill Dwarf')));
+
+    // 5. computeStats integration: stats.raceInfo is populated
+    const stats = computeStats({
+        identity: {
+            race: 'Tiefling (Glasya)',
+            classes: [{ name: 'Bard', level: 1 }]
+        },
+        attributes: {},
+        vitals: {},
+        combat: {},
+        skills: [],
+        inventory: {}
+    });
+    assert.ok(stats.raceInfo);
+    assert.equal(stats.raceInfo.baseKey, 'tiefling');
+    assert.equal(stats.raceInfo.subraceKey, 'glasya');
+    assert.ok(stats.resistances.some(r => r.id === 'fire' && r.source.includes('Tiefling')));
+});
+
+test('Modular Architecture: UI Slices Composition & HTML Template Build', async () => {
+    const fs = await import('fs');
+    const path = await import('path');
+
+    // 1. Verify composeSlices helper preserves dynamic getter reactivity
+    const { composeSlices } = await import('../src/helpers/slice.helper.js');
+    const target = { baseVal: 10 };
+    const sliceA = {
+        multiplier: 2,
+        get computedVal() {
+            return this.baseVal * this.multiplier;
+        }
+    };
+    const sliceB = {
+        action() {
+            return this.computedVal + 5;
+        }
+    };
+    composeSlices(target, sliceA, sliceB);
+    assert.equal(target.computedVal, 20);
+    target.baseVal = 20;
+    assert.equal(target.computedVal, 40); // Dynamic getter evaluation preserved!
+    assert.equal(target.action(), 45);
+
+    // 2. Verify all 5 UI state slice factories exist and return valid slices
+    const { createQuestsSlice } = await import('../src/ui/slices/quests.slice.js');
+    const { createProgressionSlice } = await import('../src/ui/slices/progression.slice.js');
+    const { createVitalsSlice } = await import('../src/ui/slices/vitals.slice.js');
+    const { createInventorySlice } = await import('../src/ui/slices/inventory.slice.js');
+    const { createSpellsSlice } = await import('../src/ui/slices/spells.slice.js');
+
+    assert.equal(typeof createQuestsSlice, 'function');
+    assert.equal(typeof createProgressionSlice, 'function');
+    assert.equal(typeof createVitalsSlice, 'function');
+    assert.equal(typeof createInventorySlice, 'function');
+    assert.equal(typeof createSpellsSlice, 'function');
+
+    // 3. Verify HTML template modular files (5 tabs + 17 modals + index.template.html)
+    const templatesDir = path.resolve('src/templates');
+    const requiredTabs = ['tab-profile.html', 'tab-combat.html', 'tab-inventory.html', 'tab-progression.html', 'tab-quests.html'];
+    for (const tab of requiredTabs) {
+        const tabPath = path.join(templatesDir, 'tabs', tab);
+        assert.ok(fs.existsSync(tabPath), `Missing tab template: ${tab}`);
+        const content = fs.readFileSync(tabPath, 'utf8');
+        assert.ok(content.length > 50, `Tab template empty: ${tab}`);
+    }
+
+    const requiredModals = [
+        'modal-dialog.html', 'modal-conc-override.html', 'modal-short-rest.html',
+        'modal-weapon.html', 'modal-armor.html', 'modal-hp.html',
+        'modal-conditions.html', 'modal-log.html', 'modal-backgrounds.html',
+        'modal-consumable.html', 'modal-story-item.html', 'modal-tool.html',
+        'modal-spell-add.html', 'modal-level-up.html', 'modal-cast-spell.html',
+        'modal-wealth.html', 'modal-quest.html'
+    ];
+    for (const modal of requiredModals) {
+        const modalPath = path.join(templatesDir, 'modals', modal);
+        assert.ok(fs.existsSync(modalPath), `Missing modal template: ${modal}`);
+        const content = fs.readFileSync(modalPath, 'utf8');
+        assert.ok(content.length > 20, `Modal template empty: ${modal}`);
+    }
+
+    const indexTemplatePath = path.join(templatesDir, 'index.template.html');
+    assert.ok(fs.existsSync(indexTemplatePath), 'Missing index.template.html');
+    const indexTemplate = fs.readFileSync(indexTemplatePath, 'utf8');
+    assert.ok(indexTemplate.includes('<!-- @include "tabs/tab-profile.html" -->'));
+    assert.ok(indexTemplate.includes('<!-- @include "modals/modal-quest.html" -->'));
+
+    // 4. Verify compiled index.html
+    const compiledIndexPath = path.resolve('src/index.html');
+    assert.ok(fs.existsSync(compiledIndexPath), 'Compiled src/index.html should exist');
+    const compiledHtml = fs.readFileSync(compiledIndexPath, 'utf8');
+    assert.ok(compiledHtml.includes('x-show="activeTab === \'profile\'"'));
+    assert.ok(compiledHtml.includes('x-show="activeTab === \'quests\'"'));
+    assert.ok(compiledHtml.includes('x-show="modalQuestOpen"'));
+});
+
+test('Phase B Calculations (PHB/XGE/TCE/MTF) & Centralized DND_CONSTANTS', async () => {
+    const {
+        DND_CONSTANTS,
+        resolveSneakAttackDie,
+        resolveMartialArtsDie,
+        resolveSuperiorityDie,
+        resolveRageDamage,
+        resolvePsionicEnergyDie
+    } = await import('../src/app.js');
+    const { calculateArmorClass } = await import('../src/domain/calculators/ac.calculator.js');
+    const { calculateWeapons } = await import('../src/domain/calculators/weapons.calculator.js');
+
+    // 1. Centralized constants verification
+    assert.equal(DND_CONSTANTS.BASE_UNARMORED_AC, 10);
+    assert.equal(DND_CONSTANTS.DRACONIC_RESILIENCE_BASE_AC, 13);
+    assert.equal(DND_CONSTANTS.BASE_SPELL_SAVE_DC, 8);
+    assert.equal(DND_CONSTANTS.LAY_ON_HANDS_HP_PER_LEVEL, 5);
+    assert.equal(DND_CONSTANTS.MEDIUM_ARMOR_MAX_DEX_BONUS, 2);
+
+    // 2. Scaling Dice (Sneak Attack, Martial Arts, Superiority, Rage, Psionic)
+    assert.equal(resolveSneakAttackDie({ identity: { classes: [{ name: 'Rogue', level: 1 }] } }), '1d6');
+    assert.equal(resolveSneakAttackDie({ identity: { classes: [{ name: 'Rogue', level: 5 }] } }), '3d6');
+    assert.equal(resolveSneakAttackDie({ identity: { classes: [{ name: 'Rogue', level: 19 }] } }), '10d6');
+
+    assert.equal(resolveMartialArtsDie({ identity: { classes: [{ name: 'Monk', level: 1 }] } }), '1d4');
+    assert.equal(resolveMartialArtsDie({ identity: { classes: [{ name: 'Monk', level: 5 }] } }), '1d6');
+    assert.equal(resolveMartialArtsDie({ identity: { classes: [{ name: 'Monk', level: 11 }] } }), '1d8');
+    assert.equal(resolveMartialArtsDie({ identity: { classes: [{ name: 'Monk', level: 17 }] } }), '1d10');
+
+    assert.equal(resolveSuperiorityDie({ identity: { classes: [{ name: 'Fighter', level: 3 }] } }), '1d8');
+    assert.equal(resolveSuperiorityDie({ identity: { classes: [{ name: 'Fighter', level: 10 }] } }), '1d10');
+    assert.equal(resolveSuperiorityDie({ identity: { classes: [{ name: 'Fighter', level: 18 }] } }), '1d12');
+
+    assert.equal(resolveRageDamage({ identity: { classes: [{ name: 'Barbarian', level: 1 }] } }), '+2');
+    assert.equal(resolveRageDamage({ identity: { classes: [{ name: 'Barbarian', level: 9 }] } }), '+3');
+    assert.equal(resolveRageDamage({ identity: { classes: [{ name: 'Barbarian', level: 16 }] } }), '+4');
+
+    assert.equal(resolvePsionicEnergyDie({ identity: { classes: [{ name: 'Rogue', level: 5 }] } }), '1d8');
+
+    // 3. Tactical Resource Pools (Ki, Sorcery, Lay on Hands, Rages, Channel Divinity, Superiority, Psionic)
+    assert.equal(getResourceMaxUses({ usesKey: 'MONK_LEVEL' }, {}, 3, { identity: { classes: [{ name: 'Monk', level: 6 }] } }), 6);
+    assert.equal(getResourceMaxUses({ usesKey: 'SORCERER_LEVEL' }, {}, 3, { identity: { classes: [{ name: 'Sorcerer', level: 8 }] } }), 8);
+    assert.equal(getResourceMaxUses({ usesKey: 'PALADIN_LAY_ON_HANDS' }, {}, 3, { identity: { classes: [{ name: 'Paladin', level: 5 }] } }), 25);
+    assert.equal(getResourceMaxUses({ usesKey: 'BARBARIAN_RAGES' }, {}, 2, { identity: { classes: [{ name: 'Barbarian', level: 6 }] } }), 4);
+    assert.equal(getResourceMaxUses({ usesKey: 'CHANNEL_DIVINITY' }, {}, 3, { identity: { classes: [{ name: 'Cleric', level: 6 }] } }), 2);
+    assert.equal(getResourceMaxUses({ usesKey: 'SUPERIORITY_DICE' }, {}, 3, { identity: { classes: [{ name: 'Fighter', level: 7 }] } }), 5);
+    assert.equal(getResourceMaxUses({ usesKey: 'PB_X2' }, {}, 3), 6);
+
+    // 4. Alternative Weapon Attack Attributes (Hex Warrior CHA, Battle Ready INT, Monk DEX)
+    const sampleAttrs = {
+        STR: { mod: 0 },
+        DEX: { mod: 3 },
+        INT: { mod: 4 },
+        CHA: { mod: 5 }
+    };
+
+    // Hexblade Warlock uses CHA (+5) + PB (2) = +7 on Longsword
+    const hexChar = { identity: { classes: [{ name: 'Warlock', subclass: 'Hexblade', level: 3 }] } };
+    const hexWpns = calculateWeapons([{ name: 'Longsword', dice: '1d8', damageType: 'slashing' }], sampleAttrs, 2, hexChar);
+    assert.equal(hexWpns[0].usedAttr, 'CHA');
+    assert.equal(hexWpns[0].atkStr, '+7');
+
+    // Battle Smith Artificer uses INT (+4) + PB (2) + Magic (1) = +7 on +1 Warhammer
+    const bsChar = { identity: { classes: [{ name: 'Artificer', subclass: 'Battle Smith', level: 3 }] } };
+    const bsWpns = calculateWeapons([{ name: 'Warhammer +1', dice: '1d8', damageType: 'bludgeoning' }], sampleAttrs, 2, bsChar);
+    assert.equal(bsWpns[0].usedAttr, 'INT');
+    assert.equal(bsWpns[0].atkStr, '+7');
+
+    // Monk uses DEX (+3) + PB (2) = +5 on Quarterstaff
+    const monkChar = { identity: { classes: [{ name: 'Monk', level: 2 }] } };
+    const monkWpns = calculateWeapons([{ name: 'Quarterstaff', dice: '1d6', damageType: 'bludgeoning' }], sampleAttrs, 2, monkChar);
+    assert.equal(monkWpns[0].usedAttr, 'DEX');
+    assert.equal(monkWpns[0].atkStr, '+5');
+
+    // 5. Expanded AC Formulas (Draconic Resilience, Barbarian, Monk, Bladesong) & Racial Extras
+    const acAttrs = {
+        DEX: { mod: 2, modStr: '+2' },
+        CON: { mod: 3, modStr: '+3' },
+        WIS: { mod: 4, modStr: '+4' },
+        INT: { mod: 3, modStr: '+3' }
+    };
+
+    // Draconic Sorcerer: 13 + DEX (2) = 15
+    const draconicChar = { identity: { classes: [{ name: 'Sorcerer', subclass: 'Draconic', level: 1 }] } };
+    const draconicAc = calculateArmorClass([], [], acAttrs, draconicChar);
+    assert.equal(draconicAc.ac, 15);
+
+    // Barbarian Unarmored Defense: 10 + DEX (2) + CON (3) + Shield (2) = 17
+    const barbChar = { identity: { classes: [{ name: 'Barbarian', level: 1 }] } };
+    const barbAc = calculateArmorClass([{ name: 'Shield', type: 'shield', baseAc: 2, equipped: true }], [], acAttrs, barbChar);
+    assert.equal(barbAc.ac, 17);
+
+    // Monk Unarmored Defense: 10 + DEX (2) + WIS (4) = 16 (no shield)
+    const monkAc = calculateArmorClass([], [], acAttrs, monkChar);
+    assert.equal(monkAc.ac, 16);
+
+    // Bladesinging Wizard: Light armor (12 + DEX 2) + Bladesong (INT 3) = 17
+    const bladesingerChar = {
+        identity: { classes: [{ name: 'Wizard', subclass: 'Bladesinging', level: 2 }] },
+        combat: { bladesongActive: true }
+    };
+    const bladesongAc = calculateArmorClass([{ name: 'Studded Leather', type: 'light', baseAc: 12, equipped: true }], [], acAttrs, bladesingerChar);
+    assert.equal(bladesongAc.ac, 17);
+
+    // Dragonborn ancestry resistance & Hill Dwarf HP bonus
+    const redDragonborn = RaceProvider.resolveRace('Dragonborn (Red)');
+    assert.ok(redDragonborn.resistances.includes('fire'));
+
+    const hillDwarf = RaceProvider.resolveRace('Hill Dwarf');
+    assert.equal(hillDwarf.bonusHpPerLevel, 1);
+});
+
+test('Clean Architecture Refactoring & D&D 5e Rules Parity (Phase 1-4)', async () => {
+    const { ABILITY_KEYS, DND_5E_SKILLS, MAX_ATTUNEMENT_SLOTS } = await import('../src/domain/constants/dnd.constants.js');
+    const { CharacterSanitizerService } = await import('../src/domain/character/character-sanitizer.service.js');
+    const { resolveCharacterResistances } = await import('../src/domain/calculators/resistances.calculator.js');
+
+    // 1. Constants verification
+    assert.deepEqual(ABILITY_KEYS, ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']);
+    assert.equal(DND_5E_SKILLS.length, 18);
+    assert.equal(MAX_ATTUNEMENT_SLOTS, 3);
+
+    // 2. CharacterSanitizerService standalone purity
+    const sanitized = CharacterSanitizerService.sanitize({
+        identity: { classes: [{ name: 'bard', level: 6 }] },
+        inventory: { wealth: { gp: 50 } }
+    });
+    assert.ok(sanitized.inventory.wealth.pp !== undefined, 'Sanitizer should initialize PP');
+    assert.equal(sanitized.identity.classes[0].name, 'Bard');
+    assert.equal(sanitized.vitals.hitDiceSpent.length, 6);
+
+    // 3. Decoupled Resistances Calculator
+    const charWithRes = {
+        identity: { race: 'Tiefling' },
+        vitals: { damageResistances: ['cold'] },
+        combat: { traits: [] },
+        inventory: { armors: [], story: [], weapons: [] }
+    };
+    const resList = resolveCharacterResistances(charWithRes);
+    const ids = resList.map(r => r.id);
+    assert.ok(ids.includes('fire'), 'Tiefling should grant Fire resistance');
+    assert.ok(ids.includes('cold'), 'Vitals should grant Cold resistance');
+
+    // 4. Component Attunement & Wealth Platinum Management
+    const sheet = createCharacterSheet();
+    assert.equal(sheet.maxAttunementSlots, 3);
+    assert.equal(sheet.attunedCount, 0);
+
+    // Wealth change with Platinum
+    sheet.wealthManagerMode = 'add';
+    sheet.wealthForm = { pp: 5, gp: 10, sp: 0, ep: 0, cp: 0, reason: 'Treasure' };
+    sheet.applyWealthChange();
+    assert.equal(sheet.data.inventory.wealth.pp, 5);
+    assert.equal(sheet.data.inventory.wealth.gp, 440);
+
+    // 5. D&D 5e RAW Long Rest: regains up to half of total Hit Dice (min 1)
+    // Spend 4 out of 6 Hit Dice
+    sheet.data.vitals.hitDiceSpent = [true, true, true, true, false, false];
+    // Mock uiConfirm to always return true
+    sheet.uiConfirm = async () => true;
+    sheet.uiAlert = async () => {};
+    await sheet.executeLongRest();
+
+    // Out of 6 total HD, 50% is 3 HD regained. So 4 spent - 3 = 1 remaining spent
+    const remainingSpent = sheet.data.vitals.hitDiceSpent.filter(Boolean).length;
+    assert.equal(remainingSpent, 1, 'Long rest should restore half of 6 HD (3 dice), leaving 1 die spent');
+    assert.equal(sheet.data.vitals.currentHp, sheet.data.vitals.maxHp);
+});
+
+
+

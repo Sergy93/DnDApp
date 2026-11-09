@@ -1,0 +1,245 @@
+<!-- TAB: PROFILE -->
+            <section x-show="activeTab === 'profile'" class="tab-view">
+                <!-- CURRENT STATUS -->
+                <div class="bg-dark-800 border-2 border-brand-500/40 rounded-2xl p-4 md:p-6 mb-6 shadow-lg relative">
+                    <div class="absolute -top-3.5 left-5 bg-brand-900 px-3.5 py-1 text-xs font-black text-brand-200 border border-brand-500/50 rounded-md tracking-wider">
+                        CURRENT STATUS
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-2">
+                        <div class="flex flex-col items-center justify-between bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
+                            <span class="text-xs font-bold text-gray-300 uppercase mb-2">🎲 Hit Dice Spent</span>
+                            <div class="flex flex-wrap justify-center gap-2 my-auto">
+                                <template x-for="(spent, i) in data.vitals.hitDiceSpent" :key="i">
+                                    <input type="checkbox" class="cb-custom" x-model="data.vitals.hitDiceSpent[i]" @change="onToggleHitDie(i)">
+                                </template>
+                            </div>
+                            <span class="text-xs text-gray-300 mt-2 font-semibold" x-text="stats.hitDiceBreakdown"></span>
+                        </div>
+
+                        <div class="flex flex-col items-center justify-between bg-dark-900 p-4 rounded-xl border border-gray-700 shadow-inner">
+                            <span class="text-xs font-bold text-gray-300 uppercase mb-2">☠️ Death Saves</span>
+                            <div class="flex gap-5 my-auto">
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="text-xs text-green-400 font-black">SUCCESS</span>
+                                    <div class="flex gap-1.5">
+                                        <template x-for="(val, i) in data.deathSaves.successes" :key="i">
+                                            <input type="checkbox" class="cb-custom cb-success" x-model="data.deathSaves.successes[i]" @change="onDeathSaveChange('success', i)">
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="text-xs text-red-400 font-black">FAILURE</span>
+                                    <div class="flex gap-1.5">
+                                        <template x-for="(val, i) in data.deathSaves.failures" :key="i">
+                                            <input type="checkbox" class="cb-custom cb-danger" x-model="data.deathSaves.failures[i]" @change="onDeathSaveChange('failure', i)">
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-400 mt-2">Cleared on short/long rest</span>
+                        </div>
+
+                        <div class="flex flex-col items-center h-full">
+                            <textarea x-model="data.statusNotes" @input="saveState()" class="status-box"
+                                placeholder="Combat notes, conditions, buffs, active effects..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TACTICAL & CLASS RESOURCES (GENERAL USE) -->
+                <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow mb-6">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                            <span>🔄</span> Resources & Class Features
+                        </h3>
+                        <button type="button" @click="syncClassFeatures()"
+                            class="text-xs px-2.5 py-1 bg-dark-900 hover:bg-dark-950 border border-brand-500/50 hover:border-brand-400 text-brand-300 hover:text-white rounded-lg transition font-semibold flex items-center gap-1 shadow"
+                            title="Auto-scan class levels and synchronize unlocked abilities & spell slots">
+                            <span>⚡</span> Sync Features
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <template x-for="res in computedCombatResources" :key="res.id || res.originalIndex">
+                            <div class="bg-dark-900 border border-gray-800 p-3 rounded-xl flex items-center justify-between gap-3 shadow-inner">
+                                <div class="min-w-0 flex-1">
+                                    <strong class="text-sm font-bold truncate block" :class="res.color || 'text-white'" x-text="res.displayName || res.name"></strong>
+                                    <div class="text-xs text-gray-400 mt-0.5 truncate" x-text="`${res.actionCost || 'Action'} • ${res.displayReset || res.reset || 'Rest'}`"></div>
+                                </div>
+                                <div class="flex gap-2 shrink-0">
+                                    <template x-for="(spent, bIdx) in data.combat.resources[res.originalIndex].spent" :key="bIdx">
+                                        <input type="checkbox" class="cb-custom" x-model="data.combat.resources[res.originalIndex].spent[bIdx]" @change="onToggleResourceSlot(res.originalIndex, bIdx)">
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mb-6 text-center">
+                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
+                        <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.ac"></div>
+                        <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">🛡️ Armor Class</div>
+                        <span class="text-xs text-gray-400 block mt-0.5 truncate" x-text="stats.armorDesc"></span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
+                        <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="data.vitals.speed"></div>
+                        <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">👟 Speed</div>
+                        <span class="text-xs text-gray-400 block mt-0.5" x-text="data.identity?.race || 'Base movement'"></span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
+                        <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>
+                        <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">⚡ Initiative</div>
+                        <span class="text-xs text-gray-400 block mt-0.5" x-text="stats.initDesc"></span>
+                    </div>
+                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow flex flex-col justify-between">
+                        <div>
+                            <div class="text-3xl md:text-5xl text-amber-400 font-black" x-text="data.vitals?.inspiration || 0"></div>
+                            <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">✨ Inspiration</div>
+                            <span class="text-xs text-gray-400 block mt-0.5">Heroic / DM Points</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 mt-2">
+                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
+                                class="w-7 h-7 rounded-lg bg-dark-900 hover:bg-dark-950 disabled:opacity-30 disabled:cursor-not-allowed border border-gray-700 text-gray-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Use 1 Inspiration point">-</button>
+                            <button type="button" @click="adjustInspiration(1)"
+                                class="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Add 1 Inspiration point">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
+                        <h3 class="text-base font-bold text-gray-100 border-b border-gray-700 pb-2 mb-4">💪 Ability Scores & Saves</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <template x-for="(attr, k) in stats.computedAttrs" :key="k">
+                                <div class="bg-dark-900 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-700 rounded-xl p-3 text-center flex flex-col justify-between">
+                                    <div class="flex items-center justify-center gap-1">
+                                        <span class="text-xs font-bold text-gray-400 uppercase" x-text="k"></span>
+                                        <div x-show="attr.hasAttrAdvantage" class="group relative inline-flex items-center">
+                                            <span class="text-[9px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 px-1 rounded font-bold cursor-help"
+                                                :title="`Advantage on ${k} checks (${(attr.attrAdvantageSources || []).join(', ')})`">🎲 Adv</span>
+                                            <!-- Floating Tooltip Card -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[210px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-lg px-2.5 py-1.5 border border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-center">
+                                                    <div class="font-bold text-emerald-300 text-xs" x-text="`Advantage: ${k} Checks`"></div>
+                                                    <div class="text-gray-300 text-[10px] mt-0.5" x-text="`Source: ${(attr.attrAdvantageSources || []).join(', ')}`"></div>
+                                                </div>
+                                                <div class="w-2 h-2 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-2xl font-black text-brand-300 my-1" x-text="attr.modStr"></div>
+                                    <div class="text-xs text-gray-400">Score: <strong class="text-white" x-text="attr.score"></strong></div>
+                                    <div class="mt-2 pt-1 border-t border-gray-800 text-xs flex justify-between items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-gray-400">Save</span>
+                                            <div x-show="attr.hasSaveAdvantage" class="group relative inline-flex items-center">
+                                                <span class="text-[9px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 px-1 rounded font-bold cursor-help"
+                                                    :title="`Advantage on ${k} saves (${(attr.saveAdvantageSources || []).join(', ')})`">🎲 Adv</span>
+                                                <!-- Floating Tooltip Card -->
+                                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[210px]">
+                                                    <div class="bg-dark-950 text-white text-[11px] rounded-lg px-2.5 py-1.5 border border-emerald-500/80 shadow-[0_0_15px_rgba(16,185,129,0.35)] text-center">
+                                                        <div class="font-bold text-emerald-300 text-xs" x-text="`Advantage: ${k} Saves`"></div>
+                                                        <div class="text-gray-300 text-[10px] mt-0.5" x-text="`Source: ${(attr.saveAdvantageSources || []).join(', ')}`"></div>
+                                                    </div>
+                                                    <div class="w-2 h-2 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span class="font-bold" :class="attr.profSave ? 'text-brand-300' : 'text-gray-200'" x-text="attr.saveStr"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-4 p-3 bg-dark-900 rounded-xl border border-gray-700 text-xs md:text-sm text-gray-300 space-y-1.5">
+                            <div><strong class="text-gray-400">Senses:</strong> <span x-text="data.identity?.senses || 'None'"></span> • Passive Perception: <strong x-text="stats.passivePerception"></strong></div>
+                            <div><strong class="text-gray-400">Languages:</strong> <span x-text="(data.identity?.languages || []).join(', ')"></span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg flex flex-col">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
+                            <h3 class="text-base font-bold text-gray-100">🎭 Skills</h3>
+                            <span x-show="stats.hasJackOfAllTrades" class="text-xs text-gray-300 bg-dark-900 px-2 py-1 rounded border border-gray-700" x-text="`Jack of All Trades: +${stats.jackOfAllTrades}`"></span>
+                        </div>
+                        <div class="overflow-y-auto flex-grow pr-1 space-y-1 text-xs md:text-sm max-h-[380px]">
+                            <template x-for="s in stats.computedSkills" :key="s.id">
+                                <div class="flex justify-between items-center p-2 rounded-lg bg-dark-900 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-800">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="font-bold text-white" x-text="s.name"></span>
+                                        <span class="text-xs text-gray-400" x-text="`(${s.attr})`"></span>
+                                        <span class="text-xs ml-0.5">
+                                            <span x-show="s.profType === 'P'" class="text-brand-400 font-bold">★ Expertise</span>
+                                            <span x-show="s.profType === 'C'" class="text-purple-400">● Proficient</span>
+                                            <span x-show="s.profType !== 'P' && s.profType !== 'C' && stats.hasJackOfAllTrades" class="text-gray-600">Jack of All Trades</span>
+                                        </span>
+                                        <!-- Minimum 10 Badge & Floating Tooltip -->
+                                        <div x-show="s.minVal" class="group relative inline-flex items-center">
+                                            <span class="text-xs bg-amber-950/60 text-amber-300 border border-amber-500/40 px-1.5 py-0.2 rounded font-bold cursor-help"
+                                                :title="`${s.minTenSource || 'Minimum 10'}: ${s.minTenDesc}`">
+                                                Min 10
+                                            </span>
+                                            <!-- Floating Tooltip Card on Hover -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[260px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-amber-500/80 shadow-[0_0_20px_rgba(245,158,11,0.35)] text-center">
+                                                    <div class="font-black text-amber-300 text-xs flex items-center justify-center gap-1">
+                                                        <span>🎯</span>
+                                                        <span x-text="s.minTenSource || 'Minimum 10'"></span>
+                                                    </div>
+                                                    <div class="text-gray-300 mt-1 leading-snug" x-text="s.minTenDesc"></div>
+                                                    <div class="text-[10px] text-amber-200/80 mt-1 font-mono" x-text="`Guaranteed roll: at least ${s.minVal}`"></div>
+                                                </div>
+                                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-amber-500/80 rotate-45 -mt-1.5"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Advantage Badge & Floating Tooltip -->
+                                        <div x-show="s.hasAdvantage" class="group relative inline-flex items-center">
+                                            <span class="text-xs bg-emerald-950/70 text-emerald-300 border border-emerald-500/50 px-1.5 py-0.2 rounded font-bold cursor-help"
+                                                :title="`Advantage on ${s.name} checks (${(s.advantageSources || []).join(', ')})`">
+                                                🎲 Adv
+                                            </span>
+                                            <!-- Floating Tooltip Card on Hover -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none w-max max-w-[260px]">
+                                                <div class="bg-dark-950 text-white text-[11px] rounded-xl px-3 py-2 border border-emerald-500/80 shadow-[0_0_20px_rgba(16,185,129,0.35)] text-center">
+                                                    <div class="font-black text-emerald-300 text-xs flex items-center justify-center gap-1">
+                                                        <span>🎲</span>
+                                                        <span x-text="`Advantage: ${s.name}`"></span>
+                                                    </div>
+                                                    <div class="text-gray-300 mt-1 leading-snug">
+                                                        Source: <strong class="text-emerald-300 font-bold" x-text="(s.advantageSources || []).join(', ') || 'Equipment / Trait'"></strong>
+                                                    </div>
+                                                    <div class="text-[10px] text-emerald-200/80 mt-1">Roll 2d20 and take the higher result.</div>
+                                                </div>
+                                                <div class="w-2.5 h-2.5 bg-dark-950 border-r border-b border-emerald-500/80 rotate-45 -mt-1.5"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="font-black text-brand-300" x-text="s.valStr"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FEATURES & TRAITS (ROLEPLAY & EXPLORATION PASSIVES) -->
+                <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow mt-6">
+                    <div class="flex justify-between items-center border-b border-gray-700 pb-2.5 mb-3">
+                        <h3 class="text-base sm:text-lg font-bold text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                            <span>📜</span> Features & Traits
+                        </h3>
+                        <span class="text-xs text-gray-400 font-mono" x-text="`${computedTraits.length} traits`"></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        <template x-for="trait in computedTraits" :key="trait.name || trait.originalIndex">
+                            <div class="bg-dark-900/90 hover:bg-dark-850 hover:border-brand-500/50 transition border border-gray-800 p-3.5 rounded-xl shadow-inner">
+                                <strong class="font-bold text-brand-300 text-sm sm:text-base block mb-1" x-text="trait.displayName || trait.name"></strong>
+                                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed" x-text="trait.displayDesc || trait.desc"></p>
+                            </div>
+                        </template>
+                        <div x-show="!computedTraits || computedTraits.length === 0" class="text-gray-500 italic text-sm py-4 col-span-2 text-center">
+                            No features or traits configured.
+                        </div>
+                    </div>
+                </div>
+            </section>

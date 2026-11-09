@@ -1,0 +1,98 @@
+<!-- MODAL: BACKGROUND COMPENDIUM -->
+    <div class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-3 md:p-4"
+        x-show="modalBackgroundsOpen">
+        <div class="bg-dark-900 border border-brand-500/60 rounded-2xl max-w-4xl w-full max-h-[90vh] p-4 md:p-6 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3 mb-4 shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl">📜</span>
+                    <div>
+                        <h3 class="text-base md:text-lg font-bold text-white">5e Background Compendium</h3>
+                        <span class="text-xs text-gray-400">Official backgrounds from PHB, TCE, and XGE</span>
+                    </div>
+                </div>
+                <button @click="modalBackgroundsOpen = false" class="text-gray-400 hover:text-white text-2xl font-bold p-1 leading-none">&times;</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="mb-4 shrink-0">
+                <input type="text" x-model="backgroundSearchQuery" placeholder="Search background by name, skill, feature, or source (e.g. Criminal, Insight, PHB)..."
+                    class="w-full bg-dark-950 border border-gray-700 rounded-xl px-3.5 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-brand-500 transition shadow-inner">
+            </div>
+
+            <!-- Main Content Area: Split List & Detail -->
+            <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-4 overflow-hidden">
+                <!-- Background List -->
+                <div class="md:col-span-5 overflow-y-auto space-y-1.5 pr-1 max-h-[280px] md:max-h-full border-b md:border-b-0 md:border-r border-gray-800 pb-3 md:pb-0 md:pr-3">
+                    <template x-for="bg in filteredBackgrounds" :key="bg.key">
+                        <button type="button" @click="selectBackground(bg)"
+                            class="w-full text-left p-2.5 sm:p-3 rounded-xl border transition flex items-center justify-between gap-2"
+                            :class="(backgroundDetailItem && backgroundDetailItem.name === bg.name) ? 'bg-brand-950/60 border-brand-500 shadow-md' : 'bg-dark-950/70 border-gray-800/80 hover:border-gray-700'">
+                            <div class="min-w-0">
+                                <strong class="text-xs sm:text-sm block truncate" :class="(backgroundDetailItem && backgroundDetailItem.name === bg.name) ? 'text-white font-bold' : 'text-gray-200'" x-text="bg.name"></strong>
+                                <span class="text-[11px] text-gray-400 truncate block mt-0.5" x-text="bg.feature?.name || ''"></span>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full border border-gray-700 bg-dark-900 text-gray-300 font-bold" x-text="bg.source"></span>
+                                <span x-show="data.identity?.background && data.identity.background.toLowerCase().includes(bg.name.toLowerCase())"
+                                    class="text-[10px] font-black bg-brand-600 text-white px-1.5 py-0.2 rounded-full uppercase">Active</span>
+                            </div>
+                        </button>
+                    </template>
+                    <div x-show="filteredBackgrounds.length === 0" class="text-gray-500 text-xs text-center py-6">No matching backgrounds found.</div>
+                </div>
+
+                <!-- Background Detail Panel -->
+                <div class="md:col-span-7 overflow-y-auto pr-1 flex flex-col justify-between">
+                    <template x-if="backgroundDetailItem">
+                        <div class="space-y-3">
+                            <div class="border-b border-gray-800 pb-2.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <h4 class="text-base sm:text-lg font-black text-brand-300" x-text="backgroundDetailItem.name"></h4>
+                                    <span class="text-xs font-mono px-2.5 py-0.5 rounded-full border border-brand-500/50 bg-brand-950/50 text-brand-200 font-bold" x-text="`Source: ${backgroundDetailItem.source}`"></span>
+                                </div>
+                                <p class="text-xs text-gray-300 mt-1 leading-relaxed" x-text="backgroundDetailItem.desc"></p>
+                            </div>
+
+                            <!-- Skills & Proficiencies -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🎯 Skill Proficiencies:</span>
+                                    <span class="text-white font-medium" x-text="(backgroundDetailItem.skillProficiencies || []).join(', ') || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🛠️ Tool Proficiencies:</span>
+                                    <span class="text-white font-medium" x-text="(backgroundDetailItem.toolProficiencies || []).join(', ') || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🗣️ Languages:</span>
+                                    <span class="text-white font-medium" x-text="backgroundDetailItem.languages || 'None'"></span>
+                                </div>
+                                <div class="bg-dark-950 p-2.5 rounded-xl border border-gray-800">
+                                    <span class="text-gray-400 font-bold block mb-1">🎒 Equipment:</span>
+                                    <span class="text-gray-300 text-[11px] leading-tight block" x-text="(backgroundDetailItem.equipment || []).join(' • ') || 'Standard'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Background Feature -->
+                            <template x-if="backgroundDetailItem.feature">
+                                <div class="bg-amber-950/30 border border-amber-600/50 rounded-xl p-3 text-xs">
+                                    <span class="font-bold text-amber-300 text-sm block mb-1" x-text="`✨ Feature: ${backgroundDetailItem.feature.name}`"></span>
+                                    <p class="text-amber-100/90 leading-relaxed" x-text="backgroundDetailItem.feature.desc"></p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="!backgroundDetailItem">
+                        <div class="text-gray-500 text-sm text-center py-12">Select a background from the list to view its details.</div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Footer / Action Buttons -->
+            <div class="flex justify-end items-center pt-3 border-t border-gray-800 shrink-0 mt-3">
+                <button type="button" @click="modalBackgroundsOpen = false"
+                    class="px-5 py-2 bg-dark-800 hover:bg-dark-700 text-gray-200 rounded-lg text-xs font-bold transition">Close</button>
+            </div>
+        </div>
+    </div>

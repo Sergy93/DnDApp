@@ -1,50 +1,55 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
+import {
+    BASE_PROFICIENCY_BONUS,
+    EXPERTISE_MULTIPLIER,
+    DEFAULT_MIN_ROLL_THRESHOLD
+} from '../constants/dnd.constants.js';
 
 /**
- * Computes skill bonuses, minimum roll rules (Silver Tongue, Reliable Talent), and skill advantages.
+ * Computes skill bonuses, minimum roll rules, and skill advantages.
+ * Pure domain calculator, completely decoupled from specific classes or races.
  * @param {Array} rawSkills - Raw skills array from character sheet.
  * @param {Object} computedAttrs - Output of calculateAttributes.
- * @param {number} pb - Proficiency bonus.
- * @param {number} jackOfAllTrades - Half PB (if feature active, else 0).
- * @param {boolean} hasSilverTongue - Whether character has Silver Tongue trait.
- * @param {boolean} hasReliableTalent - Whether character has Reliable Talent trait.
+ * @param {number} [pb=BASE_PROFICIENCY_BONUS] - Proficiency bonus.
+ * @param {Object} skillRules - Generic skill modifier rules ({ jackOfAllTrades, minRollRules }).
  * @param {Array} allEquipped - Array of equipped items.
  * @returns {Array} Computed skills array.
  */
 export function calculateSkills(
     rawSkills = [],
     computedAttrs = {},
-    pb = 2,
-    jackOfAllTrades = 0,
-    hasSilverTongue = false,
-    hasReliableTalent = false,
+    pb = BASE_PROFICIENCY_BONUS,
+    skillRules = {},
     allEquipped = []
 ) {
+    const jackOfAllTrades = skillRules?.jackOfAllTrades || 0;
+    const minRollRules = Array.isArray(skillRules?.minRollRules) ? skillRules.minRollRules : [];
+
     return (rawSkills || []).map(s => {
         const attrObj = computedAttrs[s.attr] || { mod: 0 };
         let bonus = attrObj.mod;
-        if (s.profType === 'P') bonus += pb * 2;
+        if (s.profType === 'P') bonus += pb * EXPERTISE_MULTIPLIER;
         else if (s.profType === 'C') bonus += pb;
         else bonus += jackOfAllTrades;
 
-        const isSilverTongueSkill = hasSilverTongue && (s.id === 'persuasion' || s.id === 'deception');
-        const isReliableTalentSkill = hasReliableTalent && (s.profType === 'C' || s.profType === 'P');
-        const applyMinTen = s.minTen !== undefined ? !!s.minTen : (isSilverTongueSkill || isReliableTalentSkill);
+        // Generic minRoll rule evaluation
+        const matchedRule = minRollRules.find(r => typeof r.applies === 'function' && r.applies(s));
+        const hasRuleMin = !!matchedRule;
+        const applyMinTen = s.minTen !== undefined ? !!s.minTen : hasRuleMin;
+
         let minTenSource = '';
         let minTenDesc = '';
         if (applyMinTen) {
-            if (isSilverTongueSkill) {
-                minTenSource = 'Silver Tongue (Eloquence Bard)';
-                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
-            } else if (isReliableTalentSkill) {
-                minTenSource = 'Reliable Talent (Rogue)';
-                minTenDesc = `Any d20 roll of 9 or lower on proficient checks becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+            if (matchedRule) {
+                const targetRoll = matchedRule.minRoll || DEFAULT_MIN_ROLL_THRESHOLD;
+                minTenSource = matchedRule.source || 'Feature Rule';
+                minTenDesc = matchedRule.desc || `Any d20 roll of 9 or lower on the die becomes a ${targetRoll} (Total roll: minimum ${targetRoll + bonus}).`;
             } else if (s.minTenSource) {
                 minTenSource = s.minTenSource;
-                minTenDesc = s.minTenDesc || `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+                minTenDesc = s.minTenDesc || `Any d20 roll of 9 or lower on the die becomes a ${DEFAULT_MIN_ROLL_THRESHOLD} (Total roll: minimum ${DEFAULT_MIN_ROLL_THRESHOLD + bonus}).`;
             } else {
                 minTenSource = 'Reliable Talent / Feature';
-                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a 10 (Total roll: minimum ${10 + bonus}).`;
+                minTenDesc = `Any d20 roll of 9 or lower on the die becomes a ${DEFAULT_MIN_ROLL_THRESHOLD} (Total roll: minimum ${DEFAULT_MIN_ROLL_THRESHOLD + bonus}).`;
             }
         }
 
@@ -85,7 +90,7 @@ export function calculateSkills(
             ...s,
             valNum: bonus,
             valStr: bonus >= 0 ? `+${bonus}` : `${bonus}`,
-            minVal: applyMinTen ? (10 + bonus) : null,
+            minVal: applyMinTen ? ((matchedRule?.minRoll || DEFAULT_MIN_ROLL_THRESHOLD) + bonus) : null,
             minTenSource,
             minTenDesc,
             hasAdvantage,

@@ -1,0 +1,316 @@
+<!-- TAB: INVENTORY / EQUIPMENT -->
+            <section x-show="activeTab === 'inventory'" class="tab-view">
+                <div class="bg-dark-900 border border-gray-700 rounded-xl p-4 mb-6 shadow">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex justify-around items-center text-center flex-wrap gap-4 flex-1">
+                            <div class="flex flex-col items-center cursor-pointer group" @click="openWealthModal('add')" title="Click to add or spend coins">
+                                <div class="text-cyan-300 font-black text-2xl md:text-3xl min-w-[5rem] bg-dark-950 rounded-lg border border-gray-700 group-hover:border-cyan-400/60 px-3 py-1 transition select-none"
+                                    x-text="data.inventory.wealth.pp || 0"></div>
+                                <span class="text-xs text-gray-300 block font-bold uppercase mt-1">Platinum (pp)</span>
+                            </div>
+                            <div class="border-l border-gray-800 pl-4 flex flex-col items-center cursor-pointer group" @click="openWealthModal('add')" title="Click to add or spend coins">
+                                <div class="text-yellow-400 font-black text-2xl md:text-3xl min-w-[5rem] bg-dark-950 rounded-lg border border-gray-700 group-hover:border-yellow-500/60 px-3 py-1 transition select-none"
+                                    x-text="data.inventory.wealth.gp || 0"></div>
+                                <span class="text-xs text-gray-300 block font-bold uppercase mt-1">Gold (gp)</span>
+                            </div>
+                            <div class="border-l border-gray-800 pl-4 flex flex-col items-center cursor-pointer group" @click="openWealthModal('add')" title="Click to add or spend coins">
+                                <div class="text-teal-400 font-black text-2xl md:text-3xl min-w-[5rem] bg-dark-950 rounded-lg border border-gray-700 group-hover:border-teal-500/60 px-3 py-1 transition select-none"
+                                    x-text="data.inventory.wealth.ep || 0"></div>
+                                <span class="text-xs text-gray-300 block font-bold uppercase mt-1">Electrum (ep)</span>
+                            </div>
+                            <div class="border-l border-gray-800 pl-4 flex flex-col items-center cursor-pointer group" @click="openWealthModal('add')" title="Click to add or spend coins">
+                                <div class="text-gray-200 font-black text-2xl md:text-3xl min-w-[5rem] bg-dark-950 rounded-lg border border-gray-700 group-hover:border-gray-400 px-3 py-1 transition select-none"
+                                    x-text="data.inventory.wealth.sp || 0"></div>
+                                <span class="text-xs text-gray-300 block font-bold uppercase mt-1">Silver (sp)</span>
+                            </div>
+                            <div class="border-l border-gray-800 pl-4 flex flex-col items-center cursor-pointer group" @click="openWealthModal('add')" title="Click to add or spend coins">
+                                <div class="text-orange-500 font-black text-2xl md:text-3xl min-w-[5rem] bg-dark-950 rounded-lg border border-gray-700 group-hover:border-orange-500/60 px-3 py-1 transition select-none"
+                                    x-text="data.inventory.wealth.cp || 0"></div>
+                                <span class="text-xs text-gray-300 block font-bold uppercase mt-1">Copper (cp)</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2.5 shrink-0 mx-auto sm:mx-0 flex-wrap">
+                            <div class="flex items-center gap-1.5 px-3 py-2 bg-purple-950/70 border border-purple-500/50 rounded-xl text-xs font-bold text-purple-200 shadow"
+                                :title="`Attuned items: ${attunedCount} of ${maxAttunementSlots} (D&D 5e standard limit)`">
+                                <span>🔮</span>
+                                <span>Attunement:</span>
+                                <span class="font-black" :class="attunedCount > maxAttunementSlots ? 'text-red-400' : 'text-purple-300'" x-text="`${attunedCount} / ${maxAttunementSlots}`"></span>
+                            </div>
+                            <button type="button" @click="openWealthModal('add')"
+                                class="px-3.5 py-2 bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/60 rounded-xl text-xs font-bold text-amber-200 transition shadow active:scale-95 flex items-center gap-1.5">
+                                <span>🪙</span> Add / Spend Coins
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMBAT GEAR: WEAPONS & ARMOR -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- WEAPONS & ARSENAL -->
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
+                        <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>⚔️</span> Weapons & Arsenal
+                            </h4>
+                            <button @click="openWeaponModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add Weapon
+                            </button>
+                        </div>
+                        <ul class="space-y-3 text-xs md:text-sm text-gray-300">
+                            <template x-for="w in stats.computedWeapons" :key="w.originalIndex">
+                                <li class="bg-dark-900 p-3 rounded-xl border border-gray-800 hover:border-gray-700 transition flex items-start justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <strong class="text-gray-100 text-sm" x-text="w.name"></strong>
+                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-dark-950 border border-gray-700 text-brand-300"
+                                                x-text="`Atk: ${w.atkStr}`"></span>
+                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-dark-950 border border-gray-700 text-gray-200"
+                                                x-text="`Dmg: ${w.dmgStr}`"></span>
+                                            <span x-show="w.damageType" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-dark-950 text-gray-400 border border-gray-800"
+                                                x-text="w.damageType"></span>
+                                        </div>
+                                        <p x-show="w.properties?.length" class="text-xs text-gray-400 mt-1" x-text="w.properties.join(', ')"></p>
+                                        <p x-show="w.special" class="text-[11px] text-gray-500 mt-0.5 italic" x-text="w.special"></p>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <button @click="openWeaponModal(w.originalIndex)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit weapon">✏️</button>
+                                        <button @click="removeWeapon(w.originalIndex)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete weapon">🗑️</button>
+                                    </div>
+                                </li>
+                            </template>
+                            <div x-show="!stats.computedWeapons || stats.computedWeapons.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No weapons registered. Click "➕ Add Weapon".
+                            </div>
+                        </ul>
+                    </div>
+
+                    <!-- ARMOR & PROTECTION -->
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
+                        <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>🛡️</span> Armor & Protection
+                            </h4>
+                            <button @click="openArmorModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
+                        <ul class="space-y-3 text-xs md:text-sm text-gray-300">
+                            <template x-for="(a, idx) in data.inventory.armors" :key="idx">
+                                <li class="bg-dark-900 p-3 rounded-xl border flex items-start justify-between gap-3"
+                                    :class="a.equipped ? 'border-brand-500/60 bg-brand-950/15' : 'border-gray-800'">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <strong class="text-gray-100 text-sm" x-text="a.name"></strong>
+                                            <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-dark-950 border border-gray-700 text-brand-300"
+                                                x-text="(a.type === 'accessory' || a.type === 'shield') ? `${(parseInt(a.baseAc, 10) || 0) > 0 ? '+' + a.baseAc : '+0'} AC • ${a.type === 'shield' ? 'Shield' : 'Accessory'}` : `AC ${a.baseAc} • ${a.type ? (a.type.charAt(0).toUpperCase() + a.type.slice(1)) : 'Armor'}`"></span>
+                                            <span x-show="a.stealthDisadv" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-950/70 border border-red-800/60 text-red-300">
+                                                Stealth Disadv.
+                                            </span>
+                                            <template x-for="sp in (a.grantedSpells || [])" :key="sp">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-950/70 border border-purple-800/60 text-purple-300" x-text="`✨ ${sp}`"></span>
+                                            </template>
+                                            <template x-for="res in (a.resistances || [])" :key="res">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-950/70 border border-amber-800/60 text-amber-300" x-text="`🛡️ ${res} Res.`"></span>
+                                            </template>
+                                            <template x-if="a.statBonuses && a.statBonuses.attr">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-950/70 border border-blue-800/60 text-blue-300"
+                                                    x-text="a.statBonuses.attrMode === 'advantage' ? `🎲 Adv: ${a.statBonuses.attr}` : `${a.statBonuses.attrVal >= 0 ? '+' : ''}${a.statBonuses.attrVal} ${a.statBonuses.attr}`"></span>
+                                            </template>
+                                            <template x-if="a.statBonuses && (a.statBonuses.saveVal || a.statBonuses.saveMode === 'advantage')">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300"
+                                                    x-text="a.statBonuses.saveMode === 'advantage' ? `🎲 Adv: ${(a.statBonuses.saveType && a.statBonuses.saveType.toUpperCase() !== 'ALL') ? a.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves` : `+${a.statBonuses.saveVal} ${(a.statBonuses.saveType && a.statBonuses.saveType.toUpperCase() !== 'ALL') ? a.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves`"></span>
+                                            </template>
+                                            <template x-for="sk in (a.advantageSkills || [])" :key="sk">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300" x-text="`🎲 Adv: ${sk}`"></span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1" x-text="a.special || ''"></p>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <label class="flex items-center gap-1.5 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
+                                            <input type="checkbox" class="cb-custom w-4 h-4" x-model="a.equipped" @change="onEquipChange(a)">
+                                            <span :class="a.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
+                                        </label>
+                                        <button @click="openArmorModal(idx)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit armor">✏️</button>
+                                        <button @click="removeArmor(idx)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete armor">🗑️</button>
+                                    </div>
+                                </li>
+                            </template>
+                            <div x-show="!data.inventory.armors || data.inventory.armors.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No armor or protection recorded. Click "➕ Add".
+                            </div>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- ADVENTURING GEAR: CONSUMABLES & TOOLS -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
+                        <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>🧪</span> Consumables
+                            </h4>
+                            <button @click="openConsumableModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
+                        <ul class="space-y-2 text-xs md:text-sm text-gray-300">
+                            <template x-for="(c, idx) in data.inventory.consumables" :key="idx">
+                                <li class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 flex items-center justify-between gap-2">
+                                    <span class="truncate text-gray-200 font-medium" :title="c.name" x-text="c.name"></span>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <button @click="adjustConsumableQty(idx, -1)" class="w-6 h-6 rounded bg-dark-950 border border-gray-700 text-gray-300 hover:text-white flex items-center justify-center font-bold text-xs" title="Spend / Use 1">–</button>
+                                        <span class="bg-dark-950 text-brand-300 text-center font-bold min-w-[4rem] px-2 py-1 rounded border border-gray-800 text-xs select-none"
+                                            x-text="c.qty"></span>
+                                        <button @click="adjustConsumableQty(idx, 1)" class="w-6 h-6 rounded bg-dark-950 border border-gray-700 text-gray-300 hover:text-white flex items-center justify-center font-bold text-xs" title="Add 1">+</button>
+                                        <button @click="openConsumableModal(idx)" class="text-gray-400 hover:text-white text-xs ml-1" title="Edit">✏️</button>
+                                        <button @click="removeConsumable(idx)" class="text-gray-400 hover:text-red-400 text-xs" title="Delete">🗑️</button>
+                                    </div>
+                                </li>
+                            </template>
+                            <div x-show="!data.inventory.consumables || data.inventory.consumables.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No consumables recorded.
+                            </div>
+                        </ul>
+                    </div>
+
+                    <!-- TOOLS & EQUIPMENT -->
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow-lg">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>🎒</span> Tools & Equipment
+                            </h4>
+                            <button @click="openToolModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
+                        <div class="space-y-2 text-xs md:text-sm">
+                            <template x-for="t in sortedTools" :key="t.name">
+                                <div class="bg-dark-900 p-3 rounded-lg border border-gray-800 flex justify-between items-start gap-3 hover:border-gray-700 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-base shrink-0" x-text="t.icon || '🎒'"></span>
+                                            <strong class="font-bold text-white text-sm" x-text="t.name"></strong>
+                                            <span x-show="t.isInstrument"
+                                                class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-950/70 text-blue-300 border border-blue-800/60">
+                                                🎸 Spellcasting Focus
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-300 text-xs mt-1.5 leading-relaxed" x-text="t.desc || 'No usage notes provided.'"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0 mt-0.5">
+                                        <button @click="openToolModal(t)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
+                                        <button @click="removeTool(t)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete">🗑️</button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="!data.inventory.tools || data.inventory.tools.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No tools or equipment recorded.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CAMPAIGN & STORY ITEMS -->
+                <div class="mb-6">
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-5 shadow">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
+                            <h4 class="text-base font-bold text-gray-100 flex items-center gap-2">
+                                <span>✨</span> Story & Quest Items
+                            </h4>
+                            <button @click="openStoryItemModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs md:text-sm">
+                            <template x-for="st in sortedStoryItems" :key="st.name">
+                                <div class="p-3 rounded-lg border text-xs flex justify-between items-start gap-3 transition"
+                                    :class="st.equipped ? 'border-brand-500/60 bg-brand-950/20' : 'bg-dark-900 border-gray-800 hover:border-gray-700'">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span x-show="st.isSpecial" class="text-amber-400 text-base shrink-0">🪙</span>
+                                            <span x-show="st.isMagic && !st.isSpecial" class="text-purple-400 text-base shrink-0">✨</span>
+                                            <strong class="font-bold text-sm" :class="st.isSpecial ? 'text-amber-300' : 'text-gray-100'" x-text="st.name"></strong>
+                                            <span x-show="st.isSpecial" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-800/50">Key Item</span>
+                                            <span x-show="st.isMagic" class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-950/60 text-purple-300 border border-purple-800/50">Magic Item</span>
+                                            <template x-for="sp in (st.grantedSpells || [])" :key="sp">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-950/70 border border-purple-800/60 text-purple-300" x-text="`✨ ${sp}`"></span>
+                                            </template>
+                                            <template x-for="res in (st.resistances || [])" :key="res">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-950/70 border border-amber-800/60 text-amber-300" x-text="`🛡️ ${res} Res.`"></span>
+                                            </template>
+                                            <template x-if="st.statBonuses && st.statBonuses.attr">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-950/70 border border-blue-800/60 text-blue-300"
+                                                    x-text="st.statBonuses.attrMode === 'advantage' ? `🎲 Adv: ${st.statBonuses.attr}` : `${st.statBonuses.attrVal >= 0 ? '+' : ''}${st.statBonuses.attrVal} ${st.statBonuses.attr}`"></span>
+                                            </template>
+                                            <template x-if="st.statBonuses && (st.statBonuses.saveVal || st.statBonuses.saveMode === 'advantage')">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300"
+                                                    x-text="st.statBonuses.saveMode === 'advantage' ? `🎲 Adv: ${(st.statBonuses.saveType && st.statBonuses.saveType.toUpperCase() !== 'ALL') ? st.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves` : `+${st.statBonuses.saveVal} ${(st.statBonuses.saveType && st.statBonuses.saveType.toUpperCase() !== 'ALL') ? st.statBonuses.saveType.toUpperCase() + ' ' : ''}Saves`"></span>
+                                            </template>
+                                            <template x-for="sk in (st.advantageSkills || [])" :key="sk">
+                                                <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-950/70 border border-emerald-800/60 text-emerald-300" x-text="`🎲 Adv: ${sk}`"></span>
+                                            </template>
+                                        </div>
+                                        <p class="text-gray-300 text-xs mt-1.5 leading-relaxed" x-text="st.desc || 'No description provided.'"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0 mt-0.5">
+                                        <label class="flex items-center gap-1 text-xs cursor-pointer bg-dark-950 px-2 py-1 rounded border border-gray-800">
+                                            <input type="checkbox" class="cb-custom w-3.5 h-3.5" x-model="st.equipped" @change="onEquipChange(st)">
+                                            <span :class="st.equipped ? 'text-brand-300 font-bold' : 'text-gray-400'">Equipped</span>
+                                        </label>
+                                        <button @click="openStoryItemModal(st)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
+                                        <button @click="removeStoryItem(st)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete">🗑️</button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="!data.inventory.story || data.inventory.story.length === 0" class="text-gray-500 text-center py-4 text-xs italic col-span-2">
+                                No story items recorded.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                    <!-- TOOLS & EQUIPMENT (ALPHABETICAL LIST WITH RULES & USAGE) -->
+                    <div class="bg-dark-800 border border-gray-700 rounded-xl p-4 sm:p-5 shadow">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2 mb-3">
+                            <h4 class="text-sm sm:text-base font-bold text-gray-100 flex items-center gap-1.5">
+                                <span>🎒</span> Tools & Equipment
+                            </h4>
+                            <button @click="openToolModal()"
+                                class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 rounded text-xs font-bold text-white shadow transition flex items-center gap-1">
+                                <span>➕</span> Add
+                            </button>
+                        </div>
+                        <div class="space-y-2 text-xs md:text-sm">
+                            <template x-for="t in sortedTools" :key="t.name">
+                                <div class="bg-dark-900 p-3 rounded-lg border border-gray-800 flex justify-between items-start gap-3 hover:border-gray-700 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="text-base shrink-0" x-text="t.icon || '🎒'"></span>
+                                            <strong class="font-bold text-white text-sm" x-text="t.name"></strong>
+                                            <span x-show="t.isInstrument"
+                                                class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-950/70 text-blue-300 border border-blue-800/60">
+                                                🎸 Spellcasting Focus
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-300 text-xs mt-1.5 leading-relaxed" x-text="t.desc || 'No usage notes provided.'"></p>
+                                    </div>
+                                    <div class="flex items-center gap-1 shrink-0 mt-0.5">
+                                        <button @click="openToolModal(t)" class="text-gray-400 hover:text-white p-1 text-xs" title="Edit">✏️</button>
+                                        <button @click="removeTool(t)" class="text-gray-400 hover:text-red-400 p-1 text-xs" title="Delete">🗑️</button>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="!data.inventory.tools || data.inventory.tools.length === 0" class="text-gray-500 text-center py-4 text-xs italic">
+                                No tools or equipment recorded.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>

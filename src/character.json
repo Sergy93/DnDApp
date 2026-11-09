@@ -520,10 +520,11 @@
   },
   "inventory": {
     "wealth": {
-      "cp": 270,
-      "sp": 350,
+      "pp": 0,
+      "gp": 430,
       "ep": 282,
-      "gp": 430
+      "sp": 350,
+      "cp": 270
     },
     "armors": [
       {
@@ -604,17 +605,6 @@
           "Silvered"
         ],
         "special": "Bypasses silver-vulnerable damage resistance."
-      },
-      {
-        "name": "Alchemist's Fire",
-        "attrMode": "dex",
-        "dice": "1d4 ongoing",
-        "damageType": "Fire",
-        "proficient": false,
-        "properties": [
-          "Thrown (20 ft.)"
-        ],
-        "special": "1d4 fire damage at the start of each turn until DC 10 DEX check to extinguish."
       }
     ],
     "consumables": [

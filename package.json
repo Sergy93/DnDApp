@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/app.test.js",
-    "build": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
+    "compile:data": "node scripts/compile-compendiums.js",
+    "build:html": "node scripts/build-html.js",
+    "build:js": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",
+    "build": "npm run build:html && npm run build:js",
     "db:build": "node scripts/build-db.js",
     "predeploy": "npm test && npm run build",
     "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "dev": "npm run build && wrangler dev",
+    "start": "npm run dev"
   },
   "devDependencies": {
     "wrangler": "^4.151.0"
