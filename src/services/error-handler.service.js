@@ -35,6 +35,11 @@ export class ErrorHandler {
             });
 
             window.addEventListener('error', (event) => {
+                // Ignore opaque cross-origin script errors or resource load failures with no actionable detail
+                if (event.message === 'Script error.' && !event.filename && !event.error) {
+                    console.warn('[WINDOW.ONERROR] Cross-origin script error suppressed.');
+                    return;
+                }
                 this.handle(event.error || event.message || 'Window Error', 'window.onerror', ERROR_SEVERITY.ERROR);
             });
         }

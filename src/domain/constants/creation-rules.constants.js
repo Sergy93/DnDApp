@@ -12,7 +12,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: 'INT',
         primaryAbility: 'INT',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Intelligence governs your spellcasting DC, infusion limit, and tool expertise. Prioritize INT, then CON for HP and concentration.'
     },
     barbarian: {
@@ -24,7 +24,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: null,
         primaryAbility: 'STR',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Strength powers your melee rage damage and athletics. Constitution boosts Unarmored Defense and maximum hit points.'
     },
     bard: {
@@ -36,7 +36,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: 'CHA',
         primaryAbility: 'CHA',
-        secondaryAbilities: 'DEX, CON',
+        secondaryAbilities: ['DEX', 'CON'],
         descriptionHint: 'Charisma powers your spell save DC, spell attack rolls, and number of Bardic Inspiration uses. Dexterity boosts AC and finesse weapons.'
     },
     cleric: {
@@ -48,7 +48,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 1, // Divine Domain at 1st level
         spellcastingAttr: 'WIS',
         primaryAbility: 'WIS',
-        secondaryAbilities: 'STR or CON',
+        secondaryAbilities: ['STR', 'CON'],
         descriptionHint: 'Wisdom is your divine spellcasting ability and determines your prepared spells count. Strength or Constitution aids armor and survival.'
     },
     druid: {
@@ -60,7 +60,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 2, // Circle at 2nd level
         spellcastingAttr: 'WIS',
         primaryAbility: 'WIS',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Wisdom drives your natural spellcasting and prepared spells list. Constitution is vital for concentration while Wild Shaped or casting.'
     },
     fighter: {
@@ -72,7 +72,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: null,
         primaryAbility: 'STR or DEX',
-        secondaryAbilities: 'CON',
+        secondaryAbilities: ['CON'],
         descriptionHint: 'Choose Strength for heavy armor and great weapons, or Dexterity for archery and rapier finesse. Constitution provides martial staying power.'
     },
     monk: {
@@ -84,7 +84,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: null,
         primaryAbility: 'DEX & WIS',
-        secondaryAbilities: 'CON',
+        secondaryAbilities: ['CON'],
         descriptionHint: 'Dexterity fuels martial arts attacks and Unarmored AC. Wisdom powers Ki save DC and adds to Unarmored Defense.'
     },
     paladin: {
@@ -96,7 +96,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: 'CHA',
         primaryAbility: 'STR & CHA',
-        secondaryAbilities: 'CON',
+        secondaryAbilities: ['CON'],
         descriptionHint: 'Strength powers divine smite melee attacks and heavy armor. Charisma enhances spellcasting, aura saves, and Channel Divinity.'
     },
     ranger: {
@@ -108,7 +108,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: 'WIS',
         primaryAbility: 'DEX & WIS',
-        secondaryAbilities: 'CON',
+        secondaryAbilities: ['CON'],
         descriptionHint: 'Dexterity powers archery, finesse weapons, and stealth. Wisdom governs spell save DC and survival tracking.'
     },
     rogue: {
@@ -120,7 +120,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 3,
         spellcastingAttr: null,
         primaryAbility: 'DEX',
-        secondaryAbilities: 'CON, INT or CHA',
+        secondaryAbilities: ['CON', 'INT / CHA'],
         descriptionHint: 'Dexterity is vital for Sneak Attack, Stealth, Sleight of Hand, and AC. Secondary scores support Arcane Trickster (INT) or Swashbuckler (CHA).'
     },
     sorcerer: {
@@ -132,7 +132,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 1, // Sorcerous Origin at 1st level
         spellcastingAttr: 'CHA',
         primaryAbility: 'CHA',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Charisma is your innate spellcasting power, dictating spell attack bonus and save DC. Constitution protects concentration and hit points.'
     },
     warlock: {
@@ -144,7 +144,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 1, // Otherworldly Patron at 1st level
         spellcastingAttr: 'CHA',
         primaryAbility: 'CHA',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Charisma is your patron pact spellcasting ability. Dexterity boosts light armor AC, and Constitution preserves concentration.'
     },
     wizard: {
@@ -156,7 +156,7 @@ export const CLASS_CREATION_RULES = {
         subclassLevel: 2, // Arcane Tradition at 2nd level
         spellcastingAttr: 'INT',
         primaryAbility: 'INT',
-        secondaryAbilities: 'CON, DEX',
+        secondaryAbilities: ['CON', 'DEX'],
         descriptionHint: 'Intelligence is your spellcasting ability and determines spell save DC and prepared spells count. Constitution maintains concentration and HP.'
     }
 };
