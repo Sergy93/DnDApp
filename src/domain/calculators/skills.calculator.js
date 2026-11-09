@@ -84,6 +84,15 @@ export function calculateSkills(
                     advantageSources.push(item.name || 'Equipment');
                 }
             }
+
+            // Also check item description / special text for advantage on this skill
+            const itemText = normalizeKey(`${item.desc || ''} ${item.special || ''}`);
+            if (itemText.includes('advantage') && (itemText.includes(normSkillId) || itemText.includes(normSkillName))) {
+                hasAdvantage = true;
+                if (!advantageSources.includes(item.name)) {
+                    advantageSources.push(item.name || 'Equipment');
+                }
+            }
         });
 
         return {

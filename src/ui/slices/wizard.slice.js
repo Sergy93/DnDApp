@@ -306,6 +306,7 @@ export function createWizardSlice() {
             this.data = saved.characterData;
             this.activeCharacterId = saved.id;
             this.charactersRegistry = CharacterStorageService.getRegistry();
+            this.equipRevision++;
             CharacterRouterService.navigateToSlug(saved.slug);
 
             this.wizardOpen = false;

@@ -237,7 +237,7 @@ function computeStats(d) {
 
     const allEquipped = getAllEquippedItems(d);
 
-    const computedAttrs = calculateAttributes(d?.attributes, allEquipped, pb);
+    const computedAttrs = calculateAttributes(d?.attributes, allEquipped, pb, d);
 
     const computedSkills = calculateSkills(
         d?.skills,
@@ -396,9 +396,12 @@ function createCharacterSheet() {
             return computeStats(this.data);
         },
         function() {
+            const charId = this.data?.id || '';
+            const charName = this.data?.identity?.name || '';
             const classesSig = (this.data?.identity?.classes || []).map(c => `${c.name}:${c.level}:${c.subclass}`).join(',');
-            const attrsSig = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map(k => this.data?.attributes?.[k]?.score || DEFAULT_ABILITY_SCORE).join(',');
-            return `${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}`;
+            const attrsSig = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map(k => `${this.data?.attributes?.[k]?.score}:${this.data?.attributes?.[k]?.profSave}`).join(',');
+            const equippedSig = (getAllEquippedItems(this.data)).map(i => `${i.name}:${i.equipped}:${JSON.stringify(i.statBonuses || {})}:${(i.advantageSkills || []).join(',')}:${(i.advantageAttrs || []).join(',')}:${(i.advantageSaves || []).join(',')}`).join(';');
+            return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}`;
         }
     );
 
@@ -585,6 +588,7 @@ function createCharacterSheet() {
                 this.data = sanitizeTracking(charData);
                 this.activeCharacterId = charData.id;
                 this.charactersRegistry = CharacterStorageService.getRegistry();
+                this.equipRevision++;
                 CharacterRouterService.navigateToSlug(charData.slug);
             } else {
                 this.uiAlert(`Character "${slug}" not found in local storage.`, "Not Found", "⚠️");
@@ -602,6 +606,7 @@ function createCharacterSheet() {
                 this.data = sanitizeTracking(target);
                 this.activeCharacterId = target.id;
                 this.charactersRegistry = CharacterStorageService.getRegistry();
+                this.equipRevision++;
                 CharacterRouterService.navigateToSlug(target.slug);
                 this.characterSwitcherOpen = false;
             }
@@ -736,6 +741,7 @@ function createCharacterSheet() {
                     this.data = sanitizeTracking(saved.characterData);
                     this.activeCharacterId = saved.id;
                     this.charactersRegistry = CharacterStorageService.getRegistry();
+                    this.equipRevision++;
                     CharacterRouterService.navigateToSlug(saved.slug);
                     this.saveState();
                     await this.uiAlert(`Character "${saved.characterData.identity?.name || saved.slug}" loaded at /#/c/${saved.slug}.`, "Character Imported", "👤");

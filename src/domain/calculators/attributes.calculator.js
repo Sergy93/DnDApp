@@ -33,12 +33,14 @@ export function resolveAttributeMod(attributes, attrKey) {
  * @param {Object} attributes - Raw character attributes map.
  * @param {Array} allEquipped - Array of all currently equipped items.
  * @param {number} [pb=BASE_PROFICIENCY_BONUS] - Proficiency bonus.
+ * @param {Object} [character=null] - Full character object for trait/race inspection.
  * @returns {Object} Computed attributes map.
  */
 export function calculateAttributes(
     attributes = {},
     allEquipped = [],
-    pb = BASE_PROFICIENCY_BONUS
+    pb = BASE_PROFICIENCY_BONUS,
+    character = null
 ) {
     const computedAttrs = {};
 
@@ -54,11 +56,21 @@ export function calculateAttributes(
         let hasSaveAdvantage = false;
         const saveAdvantageSources = [];
 
+        const attrFullName = {
+            STR: 'strength',
+            DEX: 'dexterity',
+            CON: 'constitution',
+            INT: 'intelligence',
+            WIS: 'wisdom',
+            CHA: 'charisma'
+        }[k] || '';
+
         allEquipped.forEach(item => {
             const sb = item.statBonuses;
             if (sb) {
                 if (sb[k]) bonusFromItems += parseInt(sb[k], 10) || 0;
-                if (sb.attr === k) {
+                const sbAttr = String(sb.attr || '').toUpperCase();
+                if (sbAttr === k) {
                     if (sb.attrMode === 'advantage') {
                         hasAttrAdvantage = true;
                         attrAdvantageSources.push(item.name || 'Equipment');
@@ -67,9 +79,10 @@ export function calculateAttributes(
                     }
                 }
 
-                const saveType = (sb.saveType || 'all').toUpperCase();
+                const rawSaveType = sb.saveType ? String(sb.saveType).trim() : '';
+                const saveType = rawSaveType.toUpperCase();
                 const saveVal = parseInt(sb.saveVal, 10) || 0;
-                const isTargetSave = saveType === 'ALL' || saveType === k;
+                const isTargetSave = (saveType === 'ALL' || saveType === k) && Boolean(rawSaveType);
                 if (isTargetSave) {
                     if (sb.saveMode === 'advantage') {
                         hasSaveAdvantage = true;
@@ -97,6 +110,57 @@ export function calculateAttributes(
                         saveAdvantageSources.push(item.name || 'Equipment');
                     }
                 });
+            }
+
+            // Advantage mentioned in item description or special properties
+            const itemText = (item.desc || '') + ' ' + (item.special || '');
+            if (itemText.toLowerCase().includes('advantage')) {
+                const normText = itemText.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normText.includes(`advantageon${attrFullName}check`) || normText.includes(`advantageon${k.toLowerCase()}check`)) {
+                    hasAttrAdvantage = true;
+                    if (!attrAdvantageSources.includes(item.name)) attrAdvantageSources.push(item.name || 'Equipment');
+                }
+                if (normText.includes(`advantageon${attrFullName}save`) || normText.includes(`advantageon${k.toLowerCase()}save`) ||
+                    (normText.includes('advantageonsavingthrow') && (normText.includes(`all${attrFullName}`) || normText.includes('allsavingthrow')))) {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes(item.name)) saveAdvantageSources.push(item.name || 'Equipment');
+                }
+            }
+        });
+
+        // Racial and character traits advantage inspection
+        const traits = [
+            ...(character?.combat?.traits || []),
+            ...(character?.traits || [])
+        ];
+        traits.forEach(t => {
+            const text = (t.name || '') + ' ' + (t.desc || '');
+            if (text.toLowerCase().includes('advantage')) {
+                const normText = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normText.includes(`advantageon${attrFullName}check`) || normText.includes(`advantageon${k.toLowerCase()}check`)) {
+                    hasAttrAdvantage = true;
+                    if (!attrAdvantageSources.includes(t.name)) attrAdvantageSources.push(t.name || 'Trait');
+                }
+                if (normText.includes(`advantageon${attrFullName}save`) || normText.includes(`advantageon${k.toLowerCase()}save`)) {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes(t.name)) saveAdvantageSources.push(t.name || 'Trait');
+                }
+                if (normText.includes('gnomecunning') && ['INT', 'WIS', 'CHA'].includes(k)) {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes('Gnome Cunning (vs Magic)')) saveAdvantageSources.push('Gnome Cunning (vs Magic)');
+                }
+                if (normText.includes('dwarvenresilience') && k === 'CON') {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes('Dwarven Resilience (vs Poison)')) saveAdvantageSources.push('Dwarven Resilience (vs Poison)');
+                }
+                if (normText.includes('feyancestry') && ['WIS', 'CHA'].includes(k)) {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes('Fey Ancestry (vs Charmed)')) saveAdvantageSources.push('Fey Ancestry (vs Charmed)');
+                }
+                if (normText.includes('dangersense') && k === 'DEX') {
+                    hasSaveAdvantage = true;
+                    if (!saveAdvantageSources.includes('Danger Sense')) saveAdvantageSources.push('Danger Sense');
+                }
             }
         });
 

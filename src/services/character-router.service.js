@@ -19,7 +19,7 @@ export class CharacterRouterService {
      * @param {string} [hashStr=window.location.hash]
      * @returns {string|null} Canonical slug or null if no character in route.
      */
-    static getSlugFromHash(hashStr = (typeof window !== 'undefined' ? window.location.hash : '')) {
+    static getSlugFromHash(hashStr = (typeof window !== 'undefined' && window.location ? window.location.hash : '')) {
         if (!hashStr || typeof hashStr !== 'string') return null;
 
         const clean = hashStr.replace(/^#\/?/, '').trim();
@@ -57,7 +57,7 @@ export class CharacterRouterService {
      * @param {boolean} [replace=false] - If true, replaces current history state.
      */
     static navigateToSlug(slug, replace = false) {
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined' || !window.location) return;
         const targetHash = this.formatHash(slug);
 
         if (window.location.hash === targetHash) return;
