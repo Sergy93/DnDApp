@@ -648,11 +648,11 @@ function createCharacterSheet() {
                 this.equipRevision++;
             }
             if (res.success) {
-                await this.uiAlert(`Sincronización completada con Cloudflare D1 (${res.updated} actualizados, ${res.deleted} borrados).`, "Sincronizado", "☁️");
+                await this.uiAlert(`Sync completed with Cloudflare D1 (${res.updated} updated, ${res.deleted} deleted).`, "Synced", "☁️");
             } else if (res.error === 'Offline') {
-                await this.uiAlert("Estás en modo offline. Los cambios se guardan localmente y se sincronizarán al reconectar.", "Modo Offline", "📡");
+                await this.uiAlert("You are currently in offline mode. Changes are saved locally and will sync when you reconnect.", "Offline Mode", "📡");
             } else {
-                await this.uiAlert(`Aviso de sincronización: ${res.error || 'Error de red'}. Los datos locales están a salvo.`, "Aviso", "⚠️");
+                await this.uiAlert(`Sync notice: ${res.error || 'Network error'}. Local data is safe.`, "Sync Notice", "⚠️");
             }
         },
 

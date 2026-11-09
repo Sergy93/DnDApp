@@ -195,7 +195,7 @@
             D&D 5e Companion
         </h1>
         <p class="text-xs md:text-sm text-gray-400 mt-2 max-w-md">
-            Hoja de personaje PWA de alta fidelidad, cálculo de reglas 5e en tiempo real y sincronización en el Edge con Cloudflare D1.
+            High-fidelity 5e D&D character sheet PWA with real-time rule calculations and edge sync via Cloudflare D1.
         </p>
 
         <!-- Status / Auth info banner if applicable -->
@@ -209,14 +209,14 @@
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Entrar con Google (Cloudflare Access)</span>
+                <span>Sign in with Google (Cloudflare Access)</span>
             </button>
 
             <!-- Continue Local / Guest -->
             <button type="button" @click="continueAsGuest()"
                 class="w-full py-3.5 px-4 bg-dark-950 hover:bg-dark-850 text-brand-300 border border-brand-700/60 hover:border-brand-500 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2.5 transition active:scale-98">
                 <span>🛡️</span>
-                <span>Continuar sin cuenta (Modo Local / Offline)</span>
+                <span>Continue without account (Local / Offline Mode)</span>
             </button>
         </div>
 
@@ -224,10 +224,10 @@
         <div class="grid grid-cols-2 gap-3 w-full mt-8 pt-6 border-t border-gray-800 text-left">
             <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
                 <div class="text-xs font-bold text-brand-400 flex items-center gap-1">
-                    <span>⚡</span> Latencia 0 ms
+                    <span>⚡</span> 0 ms Latency
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Guarda instantáneamente en tu dispositivo sin esperas.
+                    Instant offline saves directly to your device.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-emerald-900/60">
@@ -235,23 +235,23 @@
                     <span>☁️</span> Cloudflare D1
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Sincronización bidireccional automática en segundo plano.
+                    Automatic bidirectional background sync.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
                 <div class="text-xs font-bold text-purple-400 flex items-center gap-1">
-                    <span>📜</span> Reglas 5e RAW
+                    <span>📜</span> 5e RAW Rules
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    13 Clases, 30 Razas, 20 Trasfondos, Dotes y Conjuros.
+                    13 Classes, 30 Races, 20 Backgrounds, Feats & Spells.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-amber-900/60">
                 <div class="text-xs font-bold text-amber-400 flex items-center gap-1">
-                    <span>👥</span> Multi-Personaje
+                    <span>👥</span> Multi-Character
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Selector rápido con URLs amigables (/#/c/{slug}).
+                    Fast hero switcher with clean URLs (/#/c/{slug}).
                 </div>
             </div>
         </div>
@@ -272,9 +272,9 @@
             <div class="flex items-center gap-3">
                 <button type="button" @click="closeNewHeroWizard()"
                     class="px-3 py-1.5 rounded-xl bg-dark-950 hover:bg-dark-800 border border-gray-700 text-xs font-bold text-gray-300 hover:text-white transition flex items-center gap-1.5 shadow"
-                    title="Volver a la hoja de personaje">
+                    title="Return to character sheet">
                     <span>←</span>
-                    <span class="hidden sm:inline">Volver a la Hoja</span>
+                    <span class="hidden sm:inline">Back to Sheet</span>
                 </button>
                 <div>
                     <h2 class="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-300 via-brand-500 to-purple-600 uppercase">
@@ -688,16 +688,16 @@
                             'bg-sky-950/80 border-sky-500/80 text-sky-300 hover:border-sky-400': syncStatus === 'offline',
                             'bg-red-950/80 border-red-500/80 text-red-300 hover:border-red-400': syncStatus === 'conflict'
                         }"
-                        :title="syncStatus === 'synced' ? 'Sincronizado con Cloudflare D1. Clic para forzar sync.' : (syncStatus === 'syncing' ? 'Sincronizando con D1...' : (syncStatus === 'offline' ? 'Modo Offline: datos guardados en LocalStorage.' : 'Error al sincronizar. Clic para reintentar.'))">
+                        :title="syncStatus === 'synced' ? 'Synced with Cloudflare D1. Click to force sync.' : (syncStatus === 'syncing' ? 'Syncing with D1...' : (syncStatus === 'offline' ? 'Offline Mode: data saved in LocalStorage.' : 'Sync error. Click to retry.'))">
                         <span x-show="syncStatus === 'synced'" class="text-emerald-400">🟢</span>
                         <span x-show="syncStatus === 'syncing'" class="text-amber-400 animate-spin inline-block">🔄</span>
                         <span x-show="syncStatus === 'offline'" class="text-sky-400">🔵</span>
                         <span x-show="syncStatus === 'conflict'" class="text-red-400">🔴</span>
 
-                        <span x-show="syncStatus === 'synced'">☁️ Cloudflare D1 Sincronizado</span>
-                        <span x-show="syncStatus === 'syncing'">Sincronizando con D1...</span>
-                        <span x-show="syncStatus === 'offline'">📡 Modo Offline (0ms)</span>
-                        <span x-show="syncStatus === 'conflict'">⚠️ Reintentar Sync</span>
+                        <span x-show="syncStatus === 'synced'">☁️ Cloudflare D1 Synced</span>
+                        <span x-show="syncStatus === 'syncing'">Syncing with D1...</span>
+                        <span x-show="syncStatus === 'offline'">📡 Offline Mode (0ms)</span>
+                        <span x-show="syncStatus === 'conflict'">⚠️ Retry Sync</span>
                     </button>
                 </div>
 
@@ -705,22 +705,22 @@
                 <div class="flex items-center gap-2">
                     <template x-if="userProfile && userProfile.email">
                         <div class="flex items-center gap-2">
-                            <span class="text-gray-400 hidden sm:inline">Cuenta:</span>
+                            <span class="text-gray-400 hidden sm:inline">Account:</span>
                             <span class="px-2.5 py-0.5 rounded-md bg-dark-900 border border-brand-800/80 text-brand-300 font-mono font-semibold"
                                 x-text="userProfile.email"></span>
                             <button type="button" @click="logout()"
                                 class="text-gray-400 hover:text-red-300 transition text-[11px] underline ml-1"
-                                title="Cerrar Sesión">Salir</button>
+                                title="Sign Out">Log out</button>
                         </div>
                     </template>
                     <template x-if="!userProfile || !userProfile.email">
                         <div class="flex items-center gap-2">
                             <span class="px-2.5 py-0.5 rounded-md bg-dark-900 border border-gray-800 text-gray-400 font-semibold">
-                                👤 Modo Local
+                                👤 Local Mode
                             </span>
                             <button type="button" @click="loginWithGoogle()"
                                 class="text-brand-400 hover:text-brand-300 text-xs font-bold underline">
-                                Entrar con Google
+                                Sign in with Google
                             </button>
                         </div>
                     </template>
@@ -751,8 +751,8 @@
                             <div class="relative inline-block text-left" @click.outside="characterSwitcherOpen = false">
                                 <button type="button" @click="characterSwitcherOpen = !characterSwitcherOpen"
                                     class="px-3 py-1.5 bg-dark-900 hover:bg-dark-850 border border-brand-500/60 hover:border-brand-400 rounded-xl text-xs md:text-sm font-bold text-brand-300 hover:text-white transition shadow-lg flex items-center gap-2 active:scale-95"
-                                    title="Cambiar de personaje o gestionar héroes guardados">
-                                    <span>👥 Cambiar</span>
+                                    title="Switch character or manage saved heroes">
+                                    <span>👥 Switch</span>
                                     <span class="font-mono text-brand-400" x-text="`#/${data.slug || 'dorian'}`"></span>
                                     <span class="text-xs transition-transform" :class="characterSwitcherOpen ? 'rotate-180' : ''">▼</span>
                                 </button>
@@ -761,8 +761,8 @@
                                 <div x-show="characterSwitcherOpen" x-transition
                                     class="absolute left-0 mt-2 w-80 bg-dark-950 border border-brand-800/80 rounded-2xl shadow-2xl py-2 z-50">
                                     <div class="px-3.5 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 flex justify-between items-center">
-                                        <span>Tus Personajes Guardados</span>
-                                        <span class="text-brand-400 font-mono" x-text="`${charactersRegistry.length} en total`"></span>
+                                        <span>Saved Characters</span>
+                                        <span class="text-brand-400 font-mono" x-text="`${charactersRegistry.length} total`"></span>
                                     </div>
                                     <div class="max-h-72 overflow-y-auto divide-y divide-gray-900">
                                         <template x-for="c in charactersRegistry" :key="c.id">
@@ -785,15 +785,15 @@
                                     <div class="border-t border-gray-800 pt-2 px-2 space-y-1">
                                         <button type="button" @click="createNewCharacter()"
                                             class="w-full text-left px-3 py-2 text-xs font-bold text-brand-300 hover:bg-dark-900 hover:text-white rounded-xl flex items-center gap-2 transition">
-                                            <span>➕</span> Crear Nuevo Héroe (Wizard)
+                                            <span>➕</span> Create New Hero (Wizard)
                                         </button>
                                         <label class="w-full text-left px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-dark-900 hover:text-white rounded-xl flex items-center gap-2 transition cursor-pointer">
-                                            <span>📂</span> Importar Personaje (.json)
+                                            <span>📂</span> Import Character (.json)
                                             <input type="file" accept=".json,.js,application/json,text/javascript" class="hidden" @change="importJSON($event)">
                                         </label>
                                         <button type="button" x-show="charactersRegistry.length > 1" @click="deleteCurrentCharacter()"
                                             class="w-full text-left px-3 py-2 text-xs font-semibold text-red-400 hover:bg-red-950/40 rounded-xl flex items-center gap-2 transition">
-                                            <span>🗑️</span> Borrar Personaje Actual
+                                            <span>🗑️</span> Delete Current Character
                                         </button>
                                     </div>
                                 </div>
@@ -802,7 +802,7 @@
 
                         <p class="text-gray-300 font-semibold text-base md:text-lg mt-0.5 capitalize truncate" x-text="stats.classesSummary"></p>
 
-                        <div class="flex flex-wrap gap-2 mt-2 text-xs md:text-sm text-gray-300">
+                        <div class="flex flex-wrap items-center gap-2 mt-2 text-xs md:text-sm text-gray-300">
                             <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.race || ''"></span>
                             <span class="bg-dark-900 border border-gray-700 px-2.5 py-1 rounded-lg text-gray-300" x-text="data.identity?.alignment || ''"></span>
                             <button type="button" @click="showCurrentBackgroundDetail()"
@@ -812,6 +812,22 @@
                                 <span x-text="data.identity?.background || 'Background'"></span>
                             </button>
                             <span class="bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold" x-text="`Level ${stats.totalLevel}`"></span>
+
+                            <!-- INSPIRATION COUNTER (HEADER) -->
+                            <div class="flex items-center gap-1.5 bg-dark-900 border border-amber-600/50 px-2.5 py-1 rounded-lg text-amber-300 font-bold shadow-inner"
+                                title="Heroic Inspiration (DM Inspiration)">
+                                <span class="text-xs">⭐</span>
+                                <span class="text-xs">Inspiration:</span>
+                                <span class="text-xs font-black text-amber-200 min-w-[1rem] text-center" x-text="data.vitals?.inspiration || 0"></span>
+                                <div class="flex items-center gap-1 ml-0.5">
+                                    <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
+                                        class="w-4 h-4 rounded bg-dark-950 hover:bg-dark-800 disabled:opacity-30 disabled:cursor-not-allowed text-amber-300 font-black text-[10px] flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                        title="Use 1 Inspiration point">-</button>
+                                    <button type="button" @click="adjustInspiration(1)"
+                                        class="w-4 h-4 rounded bg-dark-950 hover:bg-dark-800 text-amber-300 font-black text-[10px] flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
+                                        title="Gain 1 Inspiration point">+</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -861,22 +877,6 @@
                     <!-- Death Saves quick indicator if 0 HP -->
                     <div x-show="data.vitals.currentHp === 0" class="flex items-center gap-2 bg-dark-950 px-2.5 py-1 rounded-xl border border-red-600/60 animate-pulse">
                         <span class="text-xs font-black text-red-400">☠️ UNCONSCIOUS</span>
-                    </div>
-
-                    <!-- Inspiration Points Widget -->
-                    <div class="flex items-center gap-1.5 bg-dark-950 px-2.5 py-1.5 rounded-xl border border-amber-600/50 shadow-inner"
-                        title="Heroic Inspiration (DM Inspiration)">
-                        <span class="text-sm">⭐</span>
-                        <span class="text-xs font-bold text-amber-300">Inspiration:</span>
-                        <span class="text-sm font-black text-amber-200 min-w-[1.2rem] text-center" x-text="data.vitals?.inspiration || 0"></span>
-                        <div class="flex items-center gap-1 ml-1">
-                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
-                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 disabled:opacity-30 disabled:cursor-not-allowed text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
-                                title="Use 1 Inspiration point">-</button>
-                            <button type="button" @click="adjustInspiration(1)"
-                                class="w-5 h-5 rounded bg-dark-900 hover:bg-dark-800 text-amber-300 font-black text-xs flex items-center justify-center border border-amber-600/40 active:scale-95 transition"
-                                title="Gain 1 Inspiration point">+</button>
-                        </div>
                     </div>
                 </div>
 
@@ -1073,7 +1073,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mb-6 text-center">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5 mb-6 text-center">
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.ac"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">🛡️ Armor Class</div>
@@ -1088,19 +1088,6 @@
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">⚡ Initiative</div>
                         <span class="text-xs text-gray-400 block mt-0.5 truncate" x-text="stats.initDesc"></span>
-                    </div>
-                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow flex flex-col justify-between">
-                        <div>
-                            <div class="text-3xl md:text-5xl text-amber-400 font-black" x-text="data.vitals?.inspiration || 0"></div>
-                            <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">✨ Inspiration</div>
-                            <span class="text-xs text-gray-400 block mt-0.5">Heroic / DM Points</span>
-                        </div>
-                        <div class="flex items-center justify-center gap-2 mt-2">
-                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
-                                class="w-7 h-7 rounded-lg bg-dark-900 hover:bg-dark-950 disabled:opacity-30 disabled:cursor-not-allowed border border-gray-700 text-gray-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Use 1 Inspiration point">-</button>
-                            <button type="button" @click="adjustInspiration(1)"
-                                class="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Add 1 Inspiration point">+</button>
-                        </div>
                     </div>
                 </div>
 

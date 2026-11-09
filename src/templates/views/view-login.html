@@ -12,7 +12,7 @@
             D&D 5e Companion
         </h1>
         <p class="text-xs md:text-sm text-gray-400 mt-2 max-w-md">
-            Hoja de personaje PWA de alta fidelidad, cálculo de reglas 5e en tiempo real y sincronización en el Edge con Cloudflare D1.
+            High-fidelity 5e D&D character sheet PWA with real-time rule calculations and edge sync via Cloudflare D1.
         </p>
 
         <!-- Status / Auth info banner if applicable -->
@@ -26,14 +26,14 @@
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Entrar con Google (Cloudflare Access)</span>
+                <span>Sign in with Google (Cloudflare Access)</span>
             </button>
 
             <!-- Continue Local / Guest -->
             <button type="button" @click="continueAsGuest()"
                 class="w-full py-3.5 px-4 bg-dark-950 hover:bg-dark-850 text-brand-300 border border-brand-700/60 hover:border-brand-500 rounded-xl font-bold text-sm md:text-base flex items-center justify-center gap-2.5 transition active:scale-98">
                 <span>🛡️</span>
-                <span>Continuar sin cuenta (Modo Local / Offline)</span>
+                <span>Continue without account (Local / Offline Mode)</span>
             </button>
         </div>
 
@@ -41,10 +41,10 @@
         <div class="grid grid-cols-2 gap-3 w-full mt-8 pt-6 border-t border-gray-800 text-left">
             <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
                 <div class="text-xs font-bold text-brand-400 flex items-center gap-1">
-                    <span>⚡</span> Latencia 0 ms
+                    <span>⚡</span> 0 ms Latency
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Guarda instantáneamente en tu dispositivo sin esperas.
+                    Instant offline saves directly to your device.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-emerald-900/60">
@@ -52,23 +52,23 @@
                     <span>☁️</span> Cloudflare D1
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Sincronización bidireccional automática en segundo plano.
+                    Automatic bidirectional background sync.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-gray-800">
                 <div class="text-xs font-bold text-purple-400 flex items-center gap-1">
-                    <span>📜</span> Reglas 5e RAW
+                    <span>📜</span> 5e RAW Rules
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    13 Clases, 30 Razas, 20 Trasfondos, Dotes y Conjuros.
+                    13 Classes, 30 Races, 20 Backgrounds, Feats & Spells.
                 </div>
             </div>
             <div class="bg-dark-950/70 p-3 rounded-xl border border-amber-900/60">
                 <div class="text-xs font-bold text-amber-400 flex items-center gap-1">
-                    <span>👥</span> Multi-Personaje
+                    <span>👥</span> Multi-Character
                 </div>
                 <div class="text-[11px] text-gray-400 mt-0.5">
-                    Selector rápido con URLs amigables (/#/c/{slug}).
+                    Fast hero switcher with clean URLs (/#/c/{slug}).
                 </div>
             </div>
         </div>

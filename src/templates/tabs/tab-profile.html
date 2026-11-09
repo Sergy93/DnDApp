@@ -76,7 +76,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mb-6 text-center">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-5 mb-6 text-center">
                     <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow">
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.ac"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">🛡️ Armor Class</div>
@@ -91,19 +91,6 @@
                         <div class="text-3xl md:text-5xl text-brand-300 font-black" x-text="stats.initStr"></div>
                         <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">⚡ Initiative</div>
                         <span class="text-xs text-gray-400 block mt-0.5 truncate" x-text="stats.initDesc"></span>
-                    </div>
-                    <div class="bg-dark-800 border border-gray-700 p-4 rounded-xl shadow flex flex-col justify-between">
-                        <div>
-                            <div class="text-3xl md:text-5xl text-amber-400 font-black" x-text="data.vitals?.inspiration || 0"></div>
-                            <div class="text-xs md:text-sm text-gray-200 font-bold uppercase mt-1">✨ Inspiration</div>
-                            <span class="text-xs text-gray-400 block mt-0.5">Heroic / DM Points</span>
-                        </div>
-                        <div class="flex items-center justify-center gap-2 mt-2">
-                            <button type="button" @click="adjustInspiration(-1)" :disabled="(data.vitals?.inspiration || 0) <= 0"
-                                class="w-7 h-7 rounded-lg bg-dark-900 hover:bg-dark-950 disabled:opacity-30 disabled:cursor-not-allowed border border-gray-700 text-gray-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Use 1 Inspiration point">-</button>
-                            <button type="button" @click="adjustInspiration(1)"
-                                class="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/50 text-amber-300 font-bold hover:text-white flex items-center justify-center text-sm transition" title="Add 1 Inspiration point">+</button>
-                        </div>
                     </div>
                 </div>
 
