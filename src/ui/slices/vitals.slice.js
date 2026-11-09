@@ -1,12 +1,11 @@
 import DND_RULES from '../../dnd-data/dnd-rules.json' with { type: "json" };
 import CHARACTER_DATA from '../../character.json' with { type: "json" };
 import { ClassProgressionService } from '../../domain/progression/class-progression.service.js';
-import { StorageService } from '../../services/storage.service.js';
-import { STORAGE_KEYS } from '../../domain/constants/storage.constants.js';
+import { RestingService } from '../../domain/character/resting.service.js';
+import { CharacterStorageService } from '../../services/character-storage.service.js';
 import { REST_TYPES } from '../../domain/constants/dnd.constants.js';
 
 const DND_CONDITIONS = DND_RULES.conditions;
-const STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 /**
  * Vitals, Health, Resting, Conditions, Concentration, Inspiration, and Session Event Log slice.
@@ -380,88 +379,52 @@ export function createVitalsSlice() {
 
         async applyShortRest(diceCount) {
             const count = parseInt(diceCount, 10) || 0;
-            let availableIndices = [];
-            this.data.vitals.hitDiceSpent.forEach((spent, i) => { if (!spent) availableIndices.push(i); });
+            const availableCount = (this.data.vitals?.hitDiceSpent || []).filter(s => !s).length;
 
-            if (count > availableIndices.length) {
-                await this.uiAlert(`You only have ${availableIndices.length} hit dice available.`, "Notice", "⚠️");
+            if (count > availableCount) {
+                await this.uiAlert(`You only have ${availableCount} hit dice available.`, "Notice", "⚠️");
                 return;
             }
 
-            for (let i = 0; i < count; i++) {
-                this.data.vitals.hitDiceSpent[availableIndices[i]] = true;
-            }
+            const { summary } = RestingService.applyShortRest(this.data, count);
+            const rechargedDesc = summary.allRecharged.join(', ') || 'None';
+            const details = `Spent ${summary.actualSpent} Hit Dice. Restored short rest resources: ${rechargedDesc}.`;
 
-            // Recharge short rest slots and resources
-            let rechargedResources = [];
-            (this.data.magic?.slots || []).forEach(s => {
-                if ((s.reset || '').toLowerCase().includes(REST_TYPES.SHORT)) {
-                    if (Array.isArray(s.spent)) s.spent = s.spent.map(() => false);
-                    rechargedResources.push(s.level);
-                }
-            });
-            (this.data.combat?.resources || []).forEach(r => {
-                if ((r.reset || '').toLowerCase().includes(REST_TYPES.SHORT)) {
-                    if (Array.isArray(r.spent)) r.spent = r.spent.map(() => false);
-                    rechargedResources.push(r.name);
-                }
-            });
-
-            this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-
-            let details = `Spent ${count} Hit Dice. Restored short rest resources: ${rechargedResources.join(', ') || 'None'}.`;
             this.logEvent('☕', 'Short Rest Completed', details);
             this.modalShortRestOpen = false;
             this.saveState();
-            await this.uiAlert(`Short rest completed.\n• Hit Dice spent: ${count}\n• Recharged: ${rechargedResources.join(', ') || 'None'}\n• Death saves cleared.`, "Short Rest Completed", "☕");
+            await this.uiAlert(`Short rest completed.\n• Hit Dice spent: ${summary.actualSpent}\n• Recharged: ${rechargedDesc}\n• Death saves cleared.`, "Short Rest Completed", "☕");
         },
 
         async executeLongRest() {
             const confirmed = await this.uiConfirm("This will restore Hit Points, Spell Slots, class resources, and up to half your total Hit Dice (D&D 5e RAW).", "Take a Long Rest?", "🌙", "Rest");
             if (!confirmed) return;
 
-            this.data.vitals.currentHp = this.data.vitals.maxHp;
-            this.data.vitals.tempHp = 0;
+            const { summary } = RestingService.applyLongRest(this.data);
+            const hdNote = summary.regainedCount > 0
+                ? ` Regained ${summary.regainedCount} Hit Dice (${summary.availableHd}/${summary.totalHd} now available).`
+                : ` All Hit Dice were already available.`;
 
-            // D&D 5e RAW (PHB p. 186): regain spent Hit Dice up to half total (min 1)
-            const totalHd = Array.isArray(this.data.vitals.hitDiceSpent) ? this.data.vitals.hitDiceSpent.length : 1;
-            const maxRegained = Math.max(1, Math.floor(totalHd / 2));
-            let regainedCount = 0;
-            if (Array.isArray(this.data.vitals.hitDiceSpent)) {
-                for (let i = 0; i < this.data.vitals.hitDiceSpent.length; i++) {
-                    if (this.data.vitals.hitDiceSpent[i] && regainedCount < maxRegained) {
-                        this.data.vitals.hitDiceSpent[i] = false;
-                        regainedCount++;
-                    }
-                }
-            }
-
-            this.data.deathSaves = { successes: [false, false, false], failures: [false, false, false] };
-            this.data.concentration = { active: false, spellName: '' };
-
-            (this.data.magic?.slots || []).forEach(s => {
-                s.spent = s.spent.map(() => false);
-            });
-            (this.data.combat?.resources || []).forEach(r => {
-                r.spent = r.spent.map(() => false);
-            });
-
-            const remainingSpent = (this.data.vitals.hitDiceSpent || []).filter(Boolean).length;
-            const hdNote = regainedCount > 0 ? ` Regained ${regainedCount} Hit Dice (${totalHd - remainingSpent}/${totalHd} now available).` : ` All Hit Dice were already available.`;
             this.logEvent('🌙', 'Long Rest', `Full rest. Restored all HP (${this.data.vitals.maxHp}), Spell Slots, and Class Resources.${hdNote}`);
             this.saveState();
-            await this.uiAlert(`Long Rest completed.\n• Health and spell slots fully restored.\n• Hit Dice recovered: ${regainedCount} (D&D 5e RAW rule: up to ${maxRegained}).`, "Long Rest", "✨");
+            await this.uiAlert(`Long Rest completed.\n• Health and spell slots fully restored.\n• Hit Dice recovered: ${summary.regainedCount} (D&D 5e RAW rule: up to ${summary.maxRegained}).`, "Long Rest", "✨");
         },
 
         async resetDefaults() {
             const ok = await this.uiConfirm("Reset character sheet to default starting state? All current modifications will be lost.", "Reset Character", "⚠️", "Reset", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
-            StorageService.remove(STORAGE_KEY);
+
+            const base = JSON.parse(JSON.stringify(CHARACTER_DATA));
+            CharacterStorageService.saveCharacter(base, { makeActive: true });
+            this.data = base;
+            this.activeCharacterId = base.id;
+            this.charactersRegistry = CharacterStorageService.getRegistry();
+            this.equipRevision++;
+            this.saveState();
+
             if (typeof window !== 'undefined' && window.location?.reload) {
                 window.location.reload();
             } else {
-                this.data = JSON.parse(JSON.stringify(CHARACTER_DATA));
-                this.saveState();
                 await this.uiAlert("Character sheet reset to defaults.", "Reset Done", "🔄");
             }
         },

@@ -85,6 +85,38 @@ export class ClassSyncService {
     }
 
     /**
+     * Resolves dynamic display name and reset condition for tactical resources.
+     * Centralizes 5e class-specific scaling rules (e.g. Bardic Inspiration reset tier at Bard 5).
+     * @param {Object} res - Resource definition.
+     * @param {Object} character - Character data.
+     * @param {Object} stats - Computed character stats.
+     * @param {Object} [interpCtx=null] - Interpolation context.
+     * @returns {{ displayName: string, displayReset: string }}
+     */
+    static resolveResourceDisplay(res, character, stats, interpCtx = null) {
+        if (!res) return { displayName: 'Resource', displayReset: 'Rest' };
+        const norm = normalizeKey(res.name || '');
+        const bardicDie = stats?.bardicDie || '1d8';
+        const pb = stats?.pb || BASE_PROFICIENCY_BONUS;
+        const vesselHours = pb * 2;
+
+        let displayName = res.name || 'Resource';
+        let displayReset = res.reset || 'Rest';
+
+        if (res.id === 'insp_bard' || norm.includes('bardicinspiration')) {
+            displayName = `Bardic Inspiration (${bardicDie})`;
+            const bardLvl = ClassProgressionService.getClassLevel(character, 'bard') || 0;
+            if (bardLvl >= 5) {
+                displayReset = 'Short/Long Rest';
+            }
+        } else if (res.id === 'genie_vessel' || norm.includes('geniesvessel')) {
+            displayName = `Genie's Vessel (${vesselHours}h)`;
+        }
+
+        return { displayName, displayReset };
+    }
+
+    /**
      * Calculates expected spell slots based on multiclass and pact spellcasting rules.
      */
     static calculateExpectedSlots(classes = []) {

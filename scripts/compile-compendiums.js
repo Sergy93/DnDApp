@@ -1,17 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ALLOWED_SOURCES, COMPENDIUM_CONFIG } from './compendium.config.js';
+import { SCHOOL_MAP } from '../src/domain/constants/dnd.constants.js';
+import { normalizeKey } from '../src/helpers/string.helper.js';
 
-const SCHOOL_MAP = {
-    A: 'Abjuration',
-    C: 'Conjuration',
-    D: 'Divination',
-    E: 'Enchantment',
-    V: 'Evocation',
-    I: 'Illusion',
-    N: 'Necromancy',
-    T: 'Transmutation'
-};
+export { normalizeKey };
 
 const SKILL_MAP = {
     athletics: 'Athletics',
@@ -33,11 +26,6 @@ const SKILL_MAP = {
     performance: 'Performance',
     persuasion: 'Persuasion'
 };
-
-export function normalizeKey(str) {
-    if (!str) return '';
-    return String(str).toLowerCase().replace(/[^a-z0-9]/g, '');
-}
 
 export function clean5eToolsText(text) {
     if (!text) return '';

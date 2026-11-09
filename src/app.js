@@ -27,6 +27,7 @@ import { CharacterSanitizerService } from "./domain/character/character-sanitize
 import { ClassFeatureProvider } from "./domain/providers/class-feature.provider.js";
 import { RaceProvider } from "./domain/providers/race.provider.js";
 import { SpellService } from "./domain/spells/spell.service.js";
+import { RestingService } from "./domain/character/resting.service.js";
 import { ClassProgressionService } from "./domain/progression/class-progression.service.js";
 import { ClassSyncService } from "./domain/progression/class-sync.service.js";
 import { calculateArmorClass } from "./domain/calculators/ac.calculator.js";
@@ -136,6 +137,7 @@ export {
     SpellService,
     ClassProgressionService,
     ClassSyncService,
+    RestingService,
     CharacterBuilderService,
     createWizardSlice
 };
@@ -310,19 +312,20 @@ function computeStats(d) {
     const psionicDie = resolvePsionicEnergyDie(d);
 
     const genieDamage = resolveGenieDamage(d, pb);
+    const interpCtx = TemplateHelper.createInterpolationContext({
+        pb,
+        bardicDie,
+        songOfRestDie,
+        sneakAttackDie,
+        martialArtsDie,
+        superiorityDie,
+        rageDamage,
+        psionicDie
+    });
     const combatBadges = [];
     (d?.combat?.traits || []).forEach(t => {
         if (t.badge) {
-            let badgeText = TemplateHelper.interpolate(t.badge, {
-                pb,
-                bardicDie,
-                songOfRestDie,
-                sneakAttackDie,
-                martialArtsDie,
-                superiorityDie,
-                rageDamage,
-                psionicDie
-            });
+            let badgeText = TemplateHelper.interpolate(t.badge, interpCtx);
             combatBadges.push({
                 icon: t.badgeIcon || '⚡',
                 text: badgeText,
@@ -422,9 +425,7 @@ function createCharacterSheet() {
     const memoizedCombatResources = createMemo(
         function() {
             const _rev = this.equipRevision;
-            const bardicDie = this.stats.bardicDie || '1d8';
-            const pb = this.stats.pb || BASE_PROFICIENCY_BONUS;
-            const vesselHours = pb * 2;
+            const interpCtx = TemplateHelper.createInterpolationContext(this.stats);
             const equippedItemNames = new Set((this.allEquipped || []).map(i => normalizeKey(i.name)));
 
             return (this.data.combat?.resources || []).map((r, idx) => {
@@ -432,29 +433,13 @@ function createCharacterSheet() {
                     return null;
                 }
 
-                let displayName = TemplateHelper.interpolate(r.name || 'Resource', {
-                    pb,
-                    bardicDie,
-                    songOfRestDie: this.stats.songOfRestDie,
-                    sneakAttackDie: this.stats.sneakAttackDie,
-                    martialArtsDie: this.stats.martialArtsDie,
-                    superiorityDie: this.stats.superiorityDie,
-                    rageDamage: this.stats.rageDamage,
-                    psionicDie: this.stats.psionicDie,
-                    vesselHours
-                });
+                let displayName = TemplateHelper.interpolate(r.name || 'Resource', interpCtx);
                 let displayReset = r.reset || 'Rest';
-                const norm = normalizeKey(r.name || '');
 
-                if (r.id === 'insp_bard' || norm.includes('bardicinspiration')) {
-                    displayName = `Bardic Inspiration (${bardicDie})`;
-                    const bardClass = (this.data.identity?.classes || []).find(c => normalizeKey(c?.name) === 'bard');
-                    const bardLvl = bardClass ? (parseInt(bardClass.level, 10) || 0) : 0;
-                    if (bardLvl >= 5) {
-                        displayReset = 'Short/Long Rest';
-                    }
-                } else if (r.id === 'genie_vessel' || norm.includes('geniesvessel')) {
-                    displayName = `Genie's Vessel (${vesselHours}h)`;
+                const specialMeta = ClassSyncService.resolveResourceDisplay(r, this.data, this.stats, interpCtx);
+                if (specialMeta) {
+                    if (specialMeta.displayName !== (r.name || 'Resource')) displayName = specialMeta.displayName;
+                    if (specialMeta.displayReset !== (r.reset || 'Rest')) displayReset = specialMeta.displayReset;
                 }
 
                 return {
@@ -473,25 +458,7 @@ function createCharacterSheet() {
 
     const memoizedTraits = createMemo(
         function() {
-            const bardicDie = this.stats.bardicDie || '1d8';
-            const pb = this.stats.pb || BASE_PROFICIENCY_BONUS;
-            const songOfRestDie = this.stats.songOfRestDie || '1d6';
-            const spellDC = this.stats.spellDC || (BASE_SPELL_SAVE_DC + pb);
-            const spellAtk = this.stats.spellAtkStr || '+7';
-            const vesselHours = pb * 2;
-            const interpCtx = {
-                pb,
-                spellDC,
-                spellAtk,
-                bardicDie,
-                songOfRestDie,
-                sneakAttackDie: this.stats.sneakAttackDie,
-                martialArtsDie: this.stats.martialArtsDie,
-                superiorityDie: this.stats.superiorityDie,
-                rageDamage: this.stats.rageDamage,
-                psionicDie: this.stats.psionicDie,
-                vesselHours
-            };
+            const interpCtx = TemplateHelper.createInterpolationContext(this.stats);
 
             return (this.data.combat?.traits || []).map((t, idx) => {
                 const displayName = TemplateHelper.interpolate(t.name || '', interpCtx);
@@ -674,7 +641,6 @@ function createCharacterSheet() {
         // Persistence
         saveState() {
             CharacterStorageService.saveCharacter(this.data, { makeActive: true });
-            StorageService.save(STORAGE_KEY, this.data);
             this.charactersRegistry = CharacterStorageService.getRegistry();
             this.activeCharacterId = this.data?.id;
             CharacterSyncService.scheduleSync(1500);

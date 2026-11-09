@@ -3,32 +3,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 
+import { slugify } from '../src/helpers/string.helper.js';
+import { SCHOOL_MAP } from '../src/domain/constants/dnd.constants.js';
+import {
+    CHARACTER_COLUMNS,
+    extractCharacterDbPayload,
+    getCharacterPayloadValues
+} from '../src/domain/character/character-db.schema.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const DB_FILE_PATH = path.join(ROOT_DIR, 'DorianDndApp.db');
 const SCHEMA_FILE_PATH = path.join(ROOT_DIR, 'db', 'schema.sql');
-
-const SCHOOL_MAP = {
-    A: 'Abjuration',
-    C: 'Conjuration',
-    D: 'Divination',
-    E: 'Enchantment',
-    V: 'Evocation',
-    I: 'Illusion',
-    N: 'Necromancy',
-    T: 'Transmutation'
-};
-
-function slugify(str) {
-    return String(str || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
 
 function formatSpellTime(rawTime) {
     if (!Array.isArray(rawTime) || rawTime.length === 0) return '1 action';
@@ -135,59 +123,17 @@ function buildDatabase() {
     db.exec('BEGIN IMMEDIATE TRANSACTION;');
     try {
         // 1. Insert Primary Character (Dorian)
-        const classesList = Array.isArray(characterData.identity?.classes)
-            ? characterData.identity.classes
-            : [];
-        const totalLevel = classesList.reduce((sum, c) => sum + (parseInt(c.level, 10) || 0), 0) || 1;
-        const classesSummary = classesList
-            .map(c => `${c.name}${c.subclass ? ` (${c.subclass})` : ''} ${c.level}`)
-            .join(' / ');
+        const payload = extractCharacterDbPayload({
+            id: 'dorian-gray',
+            slug: 'dorian',
+            ...characterData
+        }, 'default-user');
 
         const insertCharacter = db.prepare(`
-            INSERT INTO characters (
-                id, user_id, slug, name, race, total_level, classes_summary,
-                identity_json, vitals_json, attributes_json, skills_json,
-                inventory_json, magic_json, combat_json, progression_json,
-                conditions_json, concentration_json, death_saves_json, status_notes,
-                quests_json, campaign_notes,
-                version, schema_version, client_updated_at
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?,
-                1, 1, ?
-            )
+            INSERT INTO characters (${CHARACTER_COLUMNS.join(', ')})
+            VALUES (${CHARACTER_COLUMNS.map(() => '?').join(', ')})
         `);
-
-        const characterId = 'dorian-gray';
-        const characterSlug = 'dorian';
-        const nowMs = Date.now();
-        insertCharacter.run(
-            characterId,
-            'default-user',
-            characterSlug,
-            characterData.identity?.name || 'Dorian',
-            characterData.identity?.race || 'Unknown',
-            totalLevel,
-            classesSummary || 'Level 1',
-            JSON.stringify(characterData.identity || {}),
-            JSON.stringify(characterData.vitals || {}),
-            JSON.stringify(characterData.attributes || {}),
-            JSON.stringify(characterData.skills || []),
-            JSON.stringify(characterData.inventory || {}),
-            JSON.stringify(characterData.magic || {}),
-            JSON.stringify(characterData.combat || {}),
-            JSON.stringify(characterData.progression || {}),
-            JSON.stringify(characterData.conditions || []),
-            JSON.stringify(characterData.concentration || { active: false, spellName: '' }),
-            JSON.stringify(characterData.deathSaves || { successes: [false, false, false], failures: [false, false, false] }),
-            String(characterData.statusNotes || ''),
-            JSON.stringify(characterData.quests || []),
-            String(characterData.campaignNotes || ''),
-            nowMs
-        );
+        insertCharacter.run(...getCharacterPayloadValues(payload));
 
         // 2. Insert Session Logs
         const insertLog = db.prepare(`
@@ -344,7 +290,7 @@ function buildDatabase() {
         console.log('DorianDndApp.db created and verified successfully!');
         console.log(`- File: ${DB_FILE_PATH}`);
         console.log(`- Integrity Check: ${integrityResult.integrity_check.toUpperCase()}`);
-        console.log(`- Characters seeded: 1 (${characterData.identity?.name} - Level ${totalLevel})`);
+        console.log(`- Characters seeded: 1 (${payload.name} - Level ${payload.total_level})`);
         console.log(`- Session logs seeded: ${sessionLogs.length}`);
         console.log(`- Spells seeded: ${spellsInserted}`);
         console.log(`- Classes seeded: ${classesInserted}`);
@@ -352,7 +298,7 @@ function buildDatabase() {
         console.log(`- Races seeded: ${racesInserted}`);
         console.log('====================================================');
     } catch (err) {
-        db.exec('ROLLBACK;');
+        try { db.exec('ROLLBACK;'); } catch {}
         throw err;
     } finally {
         db.close();

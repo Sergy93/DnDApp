@@ -44,4 +44,30 @@ export class TemplateHelper {
             .replace(/\{\{psionicDie\}\}/g, String(psionicDie))
             .replace(/\{\{vesselHours\}\}/g, String(vesselHours));
     }
+
+    /**
+     * Builds a canonical interpolation context from character computed stats.
+     * Single Source of Truth for mustache token replacements across traits, badges, and resources.
+     * @param {Object} [stats={}] - Computed sheet stats.
+     * @param {Object} [overrides={}] - Optional per-call overrides.
+     * @returns {Object}
+     */
+    static createInterpolationContext(stats = {}, overrides = {}) {
+        const pb = stats.pb !== undefined ? stats.pb : BASE_PROFICIENCY_BONUS;
+        const vesselHours = stats.vesselHours !== undefined ? stats.vesselHours : (typeof pb === 'number' ? pb * 2 : 4);
+        return {
+            pb,
+            spellDC: stats.spellDC !== undefined ? stats.spellDC : (10 + (typeof pb === 'number' ? pb : 2)),
+            spellAtk: stats.spellAtkStr || stats.spellAtk || (typeof pb === 'number' ? `+${pb + 2}` : '+5'),
+            bardicDie: stats.bardicDie || '1d8',
+            songOfRestDie: stats.songOfRestDie || DEFAULT_SONG_OF_REST_DIE,
+            sneakAttackDie: stats.sneakAttackDie || '1d6',
+            martialArtsDie: stats.martialArtsDie || DEFAULT_MARTIAL_ARTS_DIE,
+            superiorityDie: stats.superiorityDie || '1d8',
+            rageDamage: stats.rageDamage || '+2',
+            psionicDie: stats.psionicDie || '1d6',
+            vesselHours,
+            ...overrides
+        };
+    }
 }

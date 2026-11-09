@@ -1,4 +1,4 @@
-import { normalizeKey } from '../helpers/string.helper.js';
+import { normalizeKey, slugify } from '../helpers/string.helper.js';
 import { STORAGE_KEYS } from '../domain/constants/storage.constants.js';
 
 export const REGISTRY_STORAGE_KEY = STORAGE_KEYS.REGISTRY;
@@ -8,20 +8,13 @@ export const LEGACY_STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 /**
  * Pure helper to convert a character name into a URL-friendly canonical slug.
- * Removes accents/diacritics, spaces, and punctuation.
- * e.g., "Dorian Gray" -> "dorian-gray", "Drizzt Do'Urden" -> "drizzt-dourden"
+ * Delegates to canonical slugify helper (SSOT).
  * 
  * @param {string} name - Raw character name.
  * @returns {string} URL slug.
  */
 export function slugifyCharacterName(name = '') {
-    const clean = String(name || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Strip diacritics / accents
-        .replace(/[^a-z0-9]+/g, '-')    // Convert non-alphanumeric chars to hyphens
-        .replace(/^-+|-+$/g, '');       // Trim leading and trailing hyphens
-    return clean || 'character';
+    return slugify(name);
 }
 
 /**

@@ -271,3 +271,18 @@ export const DRAGONBORN_ANCESTRY_RESISTANCE_MAP = Object.freeze({
     silver: 'cold',
     white: 'cold'
 });
+
+// ==========================================
+// 9. SPELL SCHOOLS MAP
+// ==========================================
+export const SCHOOL_MAP = Object.freeze({
+    A: 'Abjuration',
+    C: 'Conjuration',
+    D: 'Divination',
+    E: 'Enchantment',
+    V: 'Evocation',
+    I: 'Illusion',
+    N: 'Necromancy',
+    T: 'Transmutation'
+});
+
