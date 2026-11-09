@@ -8,7 +8,8 @@ import {
     DEFAULT_HIT_DIE,
     DEFAULT_BARDIC_DIE,
     DEFAULT_SONG_OF_REST_DIE,
-    DEFAULT_MARTIAL_ARTS_DIE
+    DEFAULT_MARTIAL_ARTS_DIE,
+    ABILITIES
 } from "../constants/dnd.constants.js";
 
 const DAMAGE_TYPES = DND_RULES.damageTypes;
@@ -305,7 +306,7 @@ export class ClassProgressionService {
                 }
             }
         }
-        return 'CHA';
+        return ABILITIES.CHA;
     }
 
     /**

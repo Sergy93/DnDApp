@@ -16,7 +16,8 @@ import {
     PSIONIC_DICE_PB_MULTIPLIER,
     CHANNEL_DIVINITY_THRESHOLDS,
     BARBARIAN_RAGE_USES_TABLE,
-    BATTLE_MASTER_SUPERIORITY_DICE_TABLE
+    BATTLE_MASTER_SUPERIORITY_DICE_TABLE,
+    REST_TYPES
 } from "../constants/dnd.constants.js";
 
 const SPELL_SLOTS_TABLES = DND_RULES.spellSlotsTables;
@@ -116,7 +117,7 @@ export class ClassSyncService {
                     id: 'pact',
                     level: `Pact (${capitalizeWord(pc.name)} ${pLvl})`,
                     max: pInfo.count,
-                    reset: 'short'
+                    reset: REST_TYPES.SHORT
                 });
             }
         });
@@ -139,7 +140,7 @@ export class ClassSyncService {
                         id: `lvl${idx + 1}`,
                         level: `${ordinals[idx]} Level${classTag}`,
                         max: max,
-                        reset: 'long'
+                        reset: REST_TYPES.LONG
                     });
                 }
             });
@@ -159,7 +160,7 @@ export class ClassSyncService {
                             id: `lvl${idx + 1}`,
                             level: `${ordinals[idx]} Level`,
                             max: max,
-                            reset: 'long'
+                            reset: REST_TYPES.LONG
                         });
                     }
                 });

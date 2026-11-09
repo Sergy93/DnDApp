@@ -1,6 +1,11 @@
 import { ItemBonusHelper } from '../../helpers/item-bonus.helper.js';
 import { getAllEquippedItems } from '../../domain/items/equipped-items.helper.js';
-import { ARMOR_TYPES, WEAPON_ATTR_MODES } from '../../domain/constants/dnd.constants.js';
+import {
+    ARMOR_TYPES,
+    WEAPON_ATTR_MODES,
+    BASE_UNARMORED_AC,
+    DEFAULT_SHIELD_AC_BONUS
+} from '../../domain/constants/dnd.constants.js';
 
 /**
  * Inventory, Weapons, Armor, Wealth, Consumables, Story Items, and Tools state slice.
@@ -182,14 +187,14 @@ export function createInventorySlice() {
             if (index !== null && this.data.inventory?.armors?.[index]) {
                 const a = this.data.inventory.armors[index];
                 this.armorForm = ItemBonusHelper.populateItemForm(a, {
-                    type: a.type || 'light',
+                    type: a.type || ARMOR_TYPES.LIGHT,
                     baseAc: a.baseAc !== undefined ? a.baseAc : 12,
                     stealthDisadv: !!a.stealthDisadv,
                     special: a.special || ''
                 });
             } else {
                 this.armorForm = ItemBonusHelper.createEmptyItemForm({
-                    type: 'light',
+                    type: ARMOR_TYPES.LIGHT,
                     baseAc: 12,
                     stealthDisadv: false,
                     special: ''
@@ -234,7 +239,9 @@ export function createInventorySlice() {
             const existing = isEdit ? this.data.inventory.armors[this.editingArmorIndex] : null;
 
             const parsedAc = parseInt(this.armorForm.baseAc, 10);
-            const baseAc = isNaN(parsedAc) ? (this.armorForm.type === 'shield' ? 2 : (this.armorForm.type === 'accessory' ? 0 : 10)) : Math.max(0, parsedAc);
+            const baseAc = isNaN(parsedAc)
+                ? (this.armorForm.type === ARMOR_TYPES.SHIELD ? DEFAULT_SHIELD_AC_BONUS : (this.armorForm.type === ARMOR_TYPES.ACCESSORY ? 0 : BASE_UNARMORED_AC))
+                : Math.max(0, parsedAc);
 
             const grantedSpells = [...(this.armorForm.grantedSpells || [])];
             const resistances = [...(this.armorForm.resistances || [])];

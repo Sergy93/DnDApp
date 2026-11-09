@@ -2,7 +2,9 @@ import { normalizeKey } from '../../helpers/string.helper.js';
 import {
     MIN_CHARACTER_LEVEL,
     CANTRIP_LEVEL,
-    CANTRIP_SCALING_TIERS
+    CANTRIP_SCALING_TIERS,
+    ACTION_TYPES,
+    normalizeAbilityKey
 } from '../constants/dnd.constants.js';
 
 export class SpellService {
@@ -72,16 +74,16 @@ export class SpellService {
     static parse5eToolsSpell(raw) {
         if (!raw || typeof raw !== 'object' || !raw.name) return null;
         try {
-            let actionType = 'action';
+            let actionType = ACTION_TYPES.ACTION;
             const at = String(raw.actionType || '').toLowerCase();
-            if (at.includes('bonus')) actionType = 'bonus';
-            else if (at.includes('react')) actionType = 'reaction';
+            if (at.includes('bonus')) actionType = ACTION_TYPES.BONUS_ACTION;
+            else if (at.includes('react')) actionType = ACTION_TYPES.REACTION;
             else {
                 const timeList = Array.isArray(raw.time) ? raw.time : (raw.time ? [raw.time] : []);
                 for (const t of timeList) {
                     const unit = String(t.unit || t || '').toLowerCase();
-                    if (unit.includes('bonus')) actionType = 'bonus';
-                    if (unit.includes('react')) actionType = 'reaction';
+                    if (unit.includes('bonus')) actionType = ACTION_TYPES.BONUS_ACTION;
+                    if (unit.includes('react')) actionType = ACTION_TYPES.REACTION;
                 }
             }
 
@@ -103,8 +105,7 @@ export class SpellService {
             let useSpellDc = false;
             if (Array.isArray(raw.savingThrow) && raw.savingThrow.length > 0) {
                 useSpellDc = true;
-                const sMap = { strength: 'STR', dexterity: 'DEX', constitution: 'CON', intelligence: 'INT', wisdom: 'WIS', charisma: 'CHA' };
-                saveStat = sMap[String(raw.savingThrow[0]).toLowerCase()] || String(raw.savingThrow[0]).toUpperCase();
+                saveStat = normalizeAbilityKey(raw.savingThrow[0]) || String(raw.savingThrow[0]).toUpperCase();
             }
 
             const descEntries = this.clean5eToolsText(raw.entries || '');
@@ -289,7 +290,7 @@ export class SpellService {
         if (rawLvl === 0 || rawLvl === "0" || rawLvl === "T") lvlNum = 0;
         else lvlNum = parseInt(rawLvl, 10) || 1;
 
-        const actionType = charSpell.actionType || comp.actionType || 'action';
+        const actionType = charSpell.actionType || comp.actionType || ACTION_TYPES.ACTION;
         const conc = charSpell.conc !== undefined ? !!charSpell.conc : !!comp.conc;
         const isHealing = charSpell.isHealing !== undefined ? !!charSpell.isHealing : !!comp.isHealing;
         let damage = this.resolveScaledSpellDamage(comp, charSpell, totalLevel, lvlNum);

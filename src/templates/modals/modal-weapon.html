@@ -17,9 +17,9 @@
                         <label class="block text-gray-300 font-semibold mb-1">Key Ability</label>
                         <select x-model="weaponForm.attrMode"
                             class="w-full bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500">
-                            <option value="finesse">Finesse (DEX or STR)</option>
-                            <option value="dex">Dexterity (DEX)</option>
-                            <option value="str">Strength (STR)</option>
+                            <option :value="CONSTANTS.WEAPON_ATTR_MODES.FINESSE">Finesse (DEX or STR)</option>
+                            <option :value="CONSTANTS.WEAPON_ATTR_MODES.DEX">Dexterity (DEX)</option>
+                            <option :value="CONSTANTS.WEAPON_ATTR_MODES.STR">Strength (STR)</option>
                         </select>
                     </div>
                     <div>

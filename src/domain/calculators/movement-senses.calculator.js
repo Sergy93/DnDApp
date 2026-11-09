@@ -1,6 +1,8 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
 import {
     DEFAULT_WALK_SPEED,
+    DEFAULT_ABILITY_SCORE,
+    ABILITIES,
     ARMOR_TYPES,
     BODY_ARMOR_TYPES,
     HEAVY_ARMOR_STR_REQUIREMENTS,
@@ -48,7 +50,7 @@ export function calculateMovementAndSenses(
     const traitText = traits.map(t => normalizeKey(`${t?.name || ''} ${t?.desc || ''}`)).join(' ');
     const normRace = normalizeKey(character?.identity?.race || raceInfo.name || '');
 
-    const charStr = computedAttrs.STR?.score ?? 10;
+    const charStr = computedAttrs[ABILITIES.STR]?.score ?? DEFAULT_ABILITY_SCORE;
 
     // 1. Heavy Armor Strength Requirement & Penalty
     let heavyArmorPenalty = 0;
@@ -75,7 +77,7 @@ export function calculateMovementAndSenses(
     }
 
     // 2. Base Walk Speed
-    let baseWalk = 30;
+    let baseWalk = parseInt(DEFAULT_WALK_SPEED, 10) || 30;
     if (typeof raceInfo.speed === 'string') {
         const parsed = parseInt(raceInfo.speed, 10);
         if (!isNaN(parsed)) baseWalk = parsed;

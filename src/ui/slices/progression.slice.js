@@ -7,7 +7,8 @@ import {
     ABILITY_KEYS,
     DEFAULT_ABILITY_SCORE,
     ABILITY_MODIFIER_OFFSET,
-    ABILITY_MODIFIER_DIVISOR
+    ABILITY_MODIFIER_DIVISOR,
+    DEFAULT_HIT_DIE
 } from '../../domain/constants/dnd.constants.js';
 
 /**
@@ -127,7 +128,7 @@ export function createProgressionSlice() {
             const name = this.levelUpForm.newClassName.trim();
             if (!name) return;
             const compClass = ClassProgressionService.findCompendiumClass(name);
-            const resolvedHitDie = compClass?.obj?.hitDie || this.levelUpForm.newClassHitDie || 'd8';
+            const resolvedHitDie = compClass?.obj?.hitDie || this.levelUpForm.newClassHitDie || DEFAULT_HIT_DIE;
             this.levelUpForm.classes.push({
                 name: capitalizeWord(name),
                 subclass: capitalizeWord(this.levelUpForm.newClassSubclass.trim()),
@@ -136,7 +137,7 @@ export function createProgressionSlice() {
             });
             this.levelUpForm.newClassName = '';
             this.levelUpForm.newClassSubclass = '';
-            this.levelUpForm.newClassHitDie = 'd8';
+            this.levelUpForm.newClassHitDie = DEFAULT_HIT_DIE;
         },
 
         removeClassFromLevelUpForm(cIdx) {

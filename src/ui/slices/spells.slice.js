@@ -182,7 +182,7 @@ export function createSpellsSlice() {
         spellManualForm: {
             name: '',
             level: 1,
-            actionType: 'action',
+            actionType: ACTION_TYPES.ACTION,
             range: '60 ft',
             duration: 'Instantaneous',
             damage: '',
@@ -371,7 +371,7 @@ export function createSpellsSlice() {
         },
 
         get dynamicReactionActions() {
-            return collectActionFeatures('reaction', {
+            return collectActionFeatures(ACTION_TYPES.REACTION, {
                 resources: this.computedCombatResources,
                 traits: this.data.combat?.traits,
                 equipped: this.allEquipped,
@@ -499,7 +499,7 @@ export function createSpellsSlice() {
             this.spellManualForm = {
                 name: '',
                 level: 1,
-                actionType: 'action',
+                actionType: ACTION_TYPES.ACTION,
                 range: '60 ft',
                 duration: 'Instantaneous',
                 damage: '',
@@ -629,7 +629,7 @@ export function createSpellsSlice() {
             if (!spell) return;
             const meta = [];
             meta.push(spell.level === 0 ? 'Cantrip' : `Level ${spell.level}`);
-            meta.push(spell.actionType === 'bonus' ? 'Bonus Action' : (spell.actionType === 'reaction' ? 'Reaction' : 'Action'));
+            meta.push(spell.actionType === ACTION_TYPES.BONUS_ACTION ? 'Bonus Action' : (spell.actionType === ACTION_TYPES.REACTION ? 'Reaction' : 'Action'));
             if (spell.range) meta.push(`Range: ${spell.range}`);
             if (spell.duration) meta.push(`Duration: ${spell.duration}`);
             if (spell.useSpellDc) meta.push(`Save: ${spell.saveStat || ''} (DC ${this.stats.spellDC})`);

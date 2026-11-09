@@ -57,7 +57,9 @@ import {
     DEFAULT_HIT_DIE,
     DND_5E_SKILLS,
     ABILITY_KEYS,
-    ABILITIES
+    ABILITIES,
+    SKILL_IDS,
+    BASE_SPELL_SAVE_DC
 } from "./domain/constants/dnd.constants.js";
 
 
@@ -250,9 +252,9 @@ function computeStats(d) {
         allEquipped
     );
 
-    const percSkill = computedSkills.find(s => s.id === 'perception');
+    const percSkill = computedSkills.find(s => s.id === SKILL_IDS.PERCEPTION);
     const percAdvBonus = percSkill?.hasAdvantage ? PASSIVE_ADVANTAGE_BONUS : 0;
-    const passivePerception = BASE_PASSIVE_SCORE + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades)) + percAdvBonus;
+    const passivePerception = BASE_PASSIVE_SCORE + (percSkill ? percSkill.valNum : ((computedAttrs[ABILITIES.WIS]?.mod || 0) + jackOfAllTrades)) + percAdvBonus;
     
     const initiativeData = calculateInitiative(
         computedAttrs,
@@ -465,7 +467,7 @@ function createCharacterSheet() {
             const bardicDie = this.stats.bardicDie || '1d8';
             const pb = this.stats.pb || BASE_PROFICIENCY_BONUS;
             const songOfRestDie = this.stats.songOfRestDie || '1d6';
-            const spellDC = this.stats.spellDC || 15;
+            const spellDC = this.stats.spellDC || (BASE_SPELL_SAVE_DC + pb);
             const spellAtk = this.stats.spellAtkStr || '+7';
             const vesselHours = pb * 2;
             const interpCtx = {
