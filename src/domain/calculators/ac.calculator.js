@@ -4,7 +4,9 @@ import {
     DRACONIC_RESILIENCE_BASE_AC,
     MEDIUM_ARMOR_MAX_DEX_BONUS,
     DEFAULT_SHIELD_AC_BONUS,
-    DEFENSE_FIGHTING_STYLE_BONUS
+    DEFENSE_FIGHTING_STYLE_BONUS,
+    ARMOR_TYPES,
+    BODY_ARMOR_TYPES
 } from '../constants/dnd.constants.js';
 
 /**
@@ -101,23 +103,23 @@ export function calculateArmorClass(
 
     // Main armor must be light, medium, or heavy (or custom base body armor)
     const mainArmor = equippedArmors.find(a =>
-        ['light', 'medium', 'heavy'].includes(a.type) ||
-        (a.type !== 'shield' && a.type !== 'accessory' && (parseInt(a.baseAc, 10) || 0) >= BASE_UNARMORED_AC)
+        BODY_ARMOR_TYPES.includes(a.type) ||
+        (a.type !== ARMOR_TYPES.SHIELD && a.type !== ARMOR_TYPES.ACCESSORY && (parseInt(a.baseAc, 10) || 0) >= BASE_UNARMORED_AC)
     );
-    const equippedShield = equippedArmors.find(a => a.type === 'shield');
+    const equippedShield = equippedArmors.find(a => a.type === ARMOR_TYPES.SHIELD);
     // Magic accessories (cloaks, rings, amulets, wondrous items) that grant bonus AC (or 0 AC)
     const accessories = equippedArmors.filter(a => a !== mainArmor && a !== equippedShield);
     accessories.push(...equippedStory);
 
     if (mainArmor) {
         const bAc = parseInt(mainArmor.baseAc, 10) || BASE_UNARMORED_AC;
-        if (mainArmor.type === 'light') {
+        if (mainArmor.type === ARMOR_TYPES.LIGHT) {
             calculatedAc = bAc + dexMod;
             armorDesc = `${mainArmor.name} (${bAc} + DEX)`;
-        } else if (mainArmor.type === 'medium') {
+        } else if (mainArmor.type === ARMOR_TYPES.MEDIUM) {
             calculatedAc = bAc + Math.min(MEDIUM_ARMOR_MAX_DEX_BONUS, dexMod);
             armorDesc = `${mainArmor.name} (${bAc} + max ${MEDIUM_ARMOR_MAX_DEX_BONUS})`;
-        } else if (mainArmor.type === 'heavy') {
+        } else if (mainArmor.type === ARMOR_TYPES.HEAVY) {
             calculatedAc = bAc;
             armorDesc = `${mainArmor.name} (${bAc})`;
         } else {
@@ -156,7 +158,7 @@ export function calculateArmorClass(
     }
 
     // Bladesong (TCE): +INT (min +1) while not wearing medium/heavy armor or using a shield
-    const canBladesing = !equippedShield && (!mainArmor || mainArmor.type === 'light');
+    const canBladesing = !equippedShield && (!mainArmor || mainArmor.type === ARMOR_TYPES.LIGHT);
     if (acRules.isBladesingerActive && canBladesing) {
         const bladesongBonus = Math.max(1, intMod);
         calculatedAc += bladesongBonus;

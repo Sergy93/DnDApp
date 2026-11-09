@@ -2,7 +2,8 @@ import { normalizeKey } from '../../helpers/string.helper.js';
 import {
     BASE_PROFICIENCY_BONUS,
     EXPERTISE_MULTIPLIER,
-    DEFAULT_MIN_ROLL_THRESHOLD
+    DEFAULT_MIN_ROLL_THRESHOLD,
+    PROFICIENCY_LEVELS
 } from '../constants/dnd.constants.js';
 
 /**
@@ -28,8 +29,8 @@ export function calculateSkills(
     return (rawSkills || []).map(s => {
         const attrObj = computedAttrs[s.attr] || { mod: 0 };
         let bonus = attrObj.mod;
-        if (s.profType === 'P') bonus += pb * EXPERTISE_MULTIPLIER;
-        else if (s.profType === 'C') bonus += pb;
+        if (s.profType === PROFICIENCY_LEVELS.EXPERTISE) bonus += pb * EXPERTISE_MULTIPLIER;
+        else if (s.profType === PROFICIENCY_LEVELS.PROFICIENT) bonus += pb;
         else bonus += jackOfAllTrades;
 
         // Generic minRoll rule evaluation

@@ -1,4 +1,9 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
+import {
+    ABILITIES,
+    JACK_OF_ALL_TRADES_DIVISOR,
+    BASE_PROFICIENCY_BONUS
+} from '../constants/dnd.constants.js';
 
 /**
  * Pure calculator for D&D 5e Character Initiative.
@@ -20,15 +25,15 @@ import { normalizeKey } from '../../helpers/string.helper.js';
  */
 export function calculateInitiative(
     computedAttrs = {},
-    pb = 2,
+    pb = BASE_PROFICIENCY_BONUS,
     character = null,
     allEquipped = []
 ) {
-    const dexMod = computedAttrs.DEX?.mod ?? 0;
-    const dexModStr = computedAttrs.DEX?.modStr ?? '+0';
+    const dexMod = computedAttrs[ABILITIES.DEX]?.mod ?? 0;
+    const dexModStr = computedAttrs[ABILITIES.DEX]?.modStr ?? '+0';
 
     const breakdown = [
-        { source: 'DEX', val: dexMod, valStr: dexModStr }
+        { source: ABILITIES.DEX, val: dexMod, valStr: dexModStr }
     ];
 
     const classes = character?.identity?.classes || [];
@@ -45,7 +50,7 @@ export function calculateInitiative(
         }
     }
     if (isBardLvl2 || traitText.includes('jackofalltrades')) {
-        const joatVal = Math.floor(pb / 2);
+        const joatVal = Math.floor(pb / JACK_OF_ALL_TRADES_DIVISOR);
         if (joatVal > 0) {
             breakdown.push({
                 source: 'Jack of All Trades',
@@ -67,7 +72,7 @@ export function calculateInitiative(
         }
     }
     if (isSwashbuckler || traitText.includes('rakishaudacity')) {
-        const chaMod = computedAttrs.CHA?.mod ?? 0;
+        const chaMod = computedAttrs[ABILITIES.CHA]?.mod ?? 0;
         if (chaMod !== 0) {
             breakdown.push({
                 source: 'Rakish Audacity (CHA)',
@@ -88,7 +93,7 @@ export function calculateInitiative(
         }
     }
     if (isIntInitiative || traitText.includes('tacticalwit') || traitText.includes('temporalawareness')) {
-        const intMod = computedAttrs.INT?.mod ?? 0;
+        const intMod = computedAttrs[ABILITIES.INT]?.mod ?? 0;
         if (intMod !== 0) {
             breakdown.push({
                 source: 'Tactical Wit (INT)',
@@ -109,7 +114,7 @@ export function calculateInitiative(
         }
     }
     if (isGloomStalker || traitText.includes('dreadambusher')) {
-        const wisMod = computedAttrs.WIS?.mod ?? 0;
+        const wisMod = computedAttrs[ABILITIES.WIS]?.mod ?? 0;
         if (wisMod !== 0) {
             breakdown.push({
                 source: 'Dread Ambusher (WIS)',

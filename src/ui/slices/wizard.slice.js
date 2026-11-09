@@ -4,7 +4,7 @@ import BACKGROUND_COMPENDIUM from '../../dnd-data/background-compendium.json' wi
 import { CharacterBuilderService } from '../../domain/character/character-builder.service.js';
 import { CharacterStorageService } from '../../services/character-storage.service.js';
 import { CharacterRouterService } from '../../services/character-router.service.js';
-import { DND_5E_SKILLS, ABILITY_KEYS } from '../../domain/constants/dnd.constants.js';
+import { DND_5E_SKILLS, ABILITY_KEYS, calculateAbilityModifier, DEFAULT_ABILITY_SCORE } from '../../domain/constants/dnd.constants.js';
 import {
     CLASS_CREATION_RULES,
     POINT_BUY_COSTS,
@@ -137,10 +137,10 @@ export function createWizardSlice() {
             const asi = this.wizardRacialAsi;
 
             ABILITY_KEYS.forEach(k => {
-                const b = parseInt(base[k], 10) || 10;
+                const b = parseInt(base[k], 10) || DEFAULT_ABILITY_SCORE;
                 const r = asi[k] || 0;
                 const score = b + r;
-                const mod = Math.floor((score - 10) / 2);
+                const mod = calculateAbilityModifier(score);
                 final[k] = {
                     base: b,
                     racial: r,

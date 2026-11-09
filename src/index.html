@@ -1902,12 +1902,9 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <select x-model="armorForm.bonusAttr" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
-                                    <option value="STR">STR</option>
-                                    <option value="DEX">DEX</option>
-                                    <option value="CON">CON</option>
-                                    <option value="INT">INT</option>
-                                    <option value="WIS">WIS</option>
-                                    <option value="CHA">CHA</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="attr"></option>
+                                    </template>
                                 </select>
                                 <select x-model="armorForm.attrMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!armorForm.bonusAttr">
                                     <option value="bonus">+ / - Bonus</option>
@@ -1925,12 +1922,9 @@
                                 <select x-model="armorForm.saveType" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
                                     <option value="all">All Saves</option>
-                                    <option value="STR">STR Save</option>
-                                    <option value="DEX">DEX Save</option>
-                                    <option value="CON">CON Save</option>
-                                    <option value="INT">INT Save</option>
-                                    <option value="WIS">WIS Save</option>
-                                    <option value="CHA">CHA Save</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="`${attr} Save`"></option>
+                                    </template>
                                 </select>
                                 <select x-model="armorForm.saveMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!armorForm.saveType">
                                     <option value="bonus">+ / - Bonus</option>
@@ -2454,12 +2448,9 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <select x-model="storyItemForm.bonusAttr" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
-                                    <option value="STR">STR</option>
-                                    <option value="DEX">DEX</option>
-                                    <option value="CON">CON</option>
-                                    <option value="INT">INT</option>
-                                    <option value="WIS">WIS</option>
-                                    <option value="CHA">CHA</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="attr"></option>
+                                    </template>
                                 </select>
                                 <select x-model="storyItemForm.attrMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.bonusAttr">
                                     <option value="bonus">+ / - Bonus</option>
@@ -2477,12 +2468,9 @@
                                 <select x-model="storyItemForm.saveType" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
                                     <option value="all">All Saves</option>
-                                    <option value="STR">STR Save</option>
-                                    <option value="DEX">DEX Save</option>
-                                    <option value="CON">CON Save</option>
-                                    <option value="INT">INT Save</option>
-                                    <option value="WIS">WIS Save</option>
-                                    <option value="CHA">CHA Save</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="`${attr} Save`"></option>
+                                    </template>
                                 </select>
                                 <select x-model="storyItemForm.saveMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.saveType">
                                     <option value="bonus">+ / - Bonus</option>
@@ -2793,13 +2781,13 @@
                     <h4 class="font-bold text-gray-200">💪 Ability Score Improvements</h4>
                     <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
                     <div class="grid grid-cols-3 gap-2">
-                        <template x-for="attr in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="attr">
+                        <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
                             <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
                                 <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
                                 <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
                                     class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
                                 <span class="text-xs text-brand-300 font-bold block mt-1"
-                                    x-text="Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2) >= 0 ? `+${Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2)}` : `${Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2)}`"></span>
+                                    x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
                             </div>
                         </template>
                     </div>

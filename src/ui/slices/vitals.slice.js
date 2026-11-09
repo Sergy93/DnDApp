@@ -2,9 +2,11 @@ import DND_RULES from '../../dnd-data/dnd-rules.json' with { type: "json" };
 import CHARACTER_DATA from '../../character.json' with { type: "json" };
 import { ClassProgressionService } from '../../domain/progression/class-progression.service.js';
 import { StorageService } from '../../services/storage.service.js';
+import { STORAGE_KEYS } from '../../domain/constants/storage.constants.js';
+import { REST_TYPES } from '../../domain/constants/dnd.constants.js';
 
 const DND_CONDITIONS = DND_RULES.conditions;
-const STORAGE_KEY = 'character_dnd_v21';
+const STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 /**
  * Vitals, Health, Resting, Conditions, Concentration, Inspiration, and Session Event Log slice.
@@ -113,11 +115,11 @@ export function createVitalsSlice() {
             const list = [];
             (this.data?.magic?.slots || []).forEach(s => {
                 const r = (s.reset || '').toLowerCase();
-                if (r.includes('short')) list.push(s.level);
+                if (r.includes(REST_TYPES.SHORT)) list.push(s.level);
             });
             (this.data?.combat?.resources || []).forEach(r => {
                 const res = (r.reset || '').toLowerCase();
-                if (res.includes('short')) list.push(r.name);
+                if (res.includes(REST_TYPES.SHORT)) list.push(r.name);
             });
             return list;
         },
@@ -393,13 +395,13 @@ export function createVitalsSlice() {
             // Recharge short rest slots and resources
             let rechargedResources = [];
             (this.data.magic?.slots || []).forEach(s => {
-                if ((s.reset || '').toLowerCase().includes('short')) {
+                if ((s.reset || '').toLowerCase().includes(REST_TYPES.SHORT)) {
                     if (Array.isArray(s.spent)) s.spent = s.spent.map(() => false);
                     rechargedResources.push(s.level);
                 }
             });
             (this.data.combat?.resources || []).forEach(r => {
-                if ((r.reset || '').toLowerCase().includes('short')) {
+                if ((r.reset || '').toLowerCase().includes(REST_TYPES.SHORT)) {
                     if (Array.isArray(r.spent)) r.spent = r.spent.map(() => false);
                     rechargedResources.push(r.name);
                 }

@@ -1,15 +1,15 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
-import { DEFAULT_WALK_SPEED } from '../constants/dnd.constants.js';
+import {
+    DEFAULT_WALK_SPEED,
+    ARMOR_TYPES,
+    BODY_ARMOR_TYPES,
+    HEAVY_ARMOR_STR_REQUIREMENTS,
+    HEAVY_ARMOR_STR_PENALTY_SPEED_REDUCTION,
+    STANDARD_DARKVISION_RANGE,
+    SUPERIOR_DARKVISION_RANGE
+} from '../constants/dnd.constants.js';
 
-/**
- * Canonical minimum Strength requirements for heavy armor (PHB p. 144).
- */
-export const HEAVY_ARMOR_STR_REQUIREMENTS = {
-    ringmail: 0,
-    chainmail: 13,
-    splint: 15,
-    plate: 15
-};
+export { HEAVY_ARMOR_STR_REQUIREMENTS };
 
 /**
  * Resolves the minimum Strength required for an armor.
@@ -17,10 +17,10 @@ export const HEAVY_ARMOR_STR_REQUIREMENTS = {
  * @returns {number} Minimum STR score required (0 if none).
  */
 export function getArmorMinStr(armor) {
-    if (!armor || armor.type !== 'heavy') return 0;
+    if (!armor || armor.type !== ARMOR_TYPES.HEAVY) return 0;
     if (typeof armor.minStr === 'number') return armor.minStr;
     const norm = normalizeKey(armor.name || '');
-    if (norm.includes('chainmail')) return HEAVY_ARMOR_STR_REQUIREMENTS.chainmail;
+    if (norm.includes('chainmail')) return HEAVY_ARMOR_STR_REQUIREMENTS.chain_mail;
     if (norm.includes('splint')) return HEAVY_ARMOR_STR_REQUIREMENTS.splint;
     if (norm.includes('plate')) return HEAVY_ARMOR_STR_REQUIREMENTS.plate;
     return 0;
@@ -55,7 +55,7 @@ export function calculateMovementAndSenses(
     let heavyArmorWarning = null;
     let heavyArmorViolatedItem = null;
 
-    const equippedHeavyArmor = (equippedArmors || []).find(a => a && a.equipped && a.type === 'heavy');
+    const equippedHeavyArmor = (equippedArmors || []).find(a => a && a.equipped && a.type === ARMOR_TYPES.HEAVY);
     if (equippedHeavyArmor) {
         const requiredStr = getArmorMinStr(equippedHeavyArmor);
         if (requiredStr > 0 && charStr < requiredStr) {
@@ -67,9 +67,9 @@ export function calculateMovementAndSenses(
             );
 
             if (!isDwarf && !isArmorer) {
-                heavyArmorPenalty = 10;
+                heavyArmorPenalty = HEAVY_ARMOR_STR_PENALTY_SPEED_REDUCTION;
                 heavyArmorViolatedItem = equippedHeavyArmor.name;
-                heavyArmorWarning = `${equippedHeavyArmor.name} requires STR ${requiredStr} (You have ${charStr}). Speed reduced by 10 ft.`;
+                heavyArmorWarning = `${equippedHeavyArmor.name} requires STR ${requiredStr} (You have ${charStr}). Speed reduced by ${HEAVY_ARMOR_STR_PENALTY_SPEED_REDUCTION} ft.`;
             }
         }
     }
@@ -98,8 +98,8 @@ export function calculateMovementAndSenses(
     }
 
     // Monk Unarmored Movement (Level 2+, no armor and no shield)
-    const equippedShield = (equippedArmors || []).find(a => a && a.equipped && a.type === 'shield');
-    const hasAnyArmor = (equippedArmors || []).some(a => a && a.equipped && ['light', 'medium', 'heavy'].includes(a.type));
+    const equippedShield = (equippedArmors || []).find(a => a && a.equipped && a.type === ARMOR_TYPES.SHIELD);
+    const hasAnyArmor = (equippedArmors || []).some(a => a && a.equipped && BODY_ARMOR_TYPES.includes(a.type));
     if (!hasAnyArmor && !equippedShield) {
         const monkClass = classes.find(c => normalizeKey(c?.name) === 'monk');
         const monkLvl = monkClass?.level || 0;
@@ -200,14 +200,14 @@ export function calculateMovementAndSenses(
         normalizeKey(c?.name) === 'ranger' && normalizeKey(c?.subclass).includes('gloom') && (c?.level || 0) >= 3
     );
     if (isGloomStalker || traitText.includes('umbrasight')) {
-        darkvisionRange = darkvisionRange > 0 ? (darkvisionRange + 30) : 60;
+        darkvisionRange = darkvisionRange > 0 ? (darkvisionRange + 30) : STANDARD_DARKVISION_RANGE;
         darkvisionSource = darkvisionSource ? `${darkvisionSource} + Umbral Sight` : 'Umbral Sight';
     }
 
     // Shadow Magic Sorcerer: 120 ft darkvision (XGE p. 50)
     if (classes.some(c => normalizeKey(c?.name) === 'sorcerer' && normalizeKey(c?.subclass).includes('shadow'))) {
-        if (darkvisionRange < 120) {
-            darkvisionRange = 120;
+        if (darkvisionRange < SUPERIOR_DARKVISION_RANGE) {
+            darkvisionRange = SUPERIOR_DARKVISION_RANGE;
             darkvisionSource = 'Eyes of the Dark';
         }
     }
@@ -216,7 +216,7 @@ export function calculateMovementAndSenses(
     allEquipped.forEach(item => {
         const normItem = normalizeKey(item?.name || '');
         if (normItem.includes('gogglesofnight')) {
-            darkvisionRange = darkvisionRange > 0 ? (darkvisionRange + 60) : 60;
+            darkvisionRange = darkvisionRange > 0 ? (darkvisionRange + STANDARD_DARKVISION_RANGE) : STANDARD_DARKVISION_RANGE;
             darkvisionSource = darkvisionSource ? `${darkvisionSource} + Goggles of Night` : 'Goggles of Night';
         }
     });

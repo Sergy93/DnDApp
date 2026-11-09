@@ -1,5 +1,5 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
-import { BASE_PROFICIENCY_BONUS } from '../constants/dnd.constants.js';
+import { BASE_PROFICIENCY_BONUS, ABILITIES, WEAPON_ATTR_MODES } from '../constants/dnd.constants.js';
 
 /**
  * Pure calculator for weapon attack bonuses, damage modifiers, and formatted attack cards.
@@ -65,25 +65,25 @@ export function calculateWeapons(
         const normName = normalizeKey(w.name || '');
         const mode = String(w.attrMode || '').toLowerCase();
 
-        const strMod = computedAttrs.STR?.mod || 0;
-        const dexMod = computedAttrs.DEX?.mod || 0;
-        const intMod = computedAttrs.INT?.mod || 0;
-        const chaMod = computedAttrs.CHA?.mod || 0;
+        const strMod = computedAttrs[ABILITIES.STR]?.mod || 0;
+        const dexMod = computedAttrs[ABILITIES.DEX]?.mod || 0;
+        const intMod = computedAttrs[ABILITIES.INT]?.mod || 0;
+        const chaMod = computedAttrs[ABILITIES.CHA]?.mod || 0;
 
-        let usedAttr = 'STR';
-        if (mode === 'dex') {
-            usedAttr = 'DEX';
-        } else if (mode === 'cha') {
-            usedAttr = 'CHA';
-        } else if (mode === 'int') {
-            usedAttr = 'INT';
-        } else if (mode === 'wis') {
-            usedAttr = 'WIS';
-        } else if (mode === 'finesse') {
-            usedAttr = (dexMod >= strMod) ? 'DEX' : 'STR';
+        let usedAttr = ABILITIES.STR;
+        if (mode === WEAPON_ATTR_MODES.DEX) {
+            usedAttr = ABILITIES.DEX;
+        } else if (mode === WEAPON_ATTR_MODES.CHA) {
+            usedAttr = ABILITIES.CHA;
+        } else if (mode === WEAPON_ATTR_MODES.INT) {
+            usedAttr = ABILITIES.INT;
+        } else if (mode === WEAPON_ATTR_MODES.WIS) {
+            usedAttr = ABILITIES.WIS;
+        } else if (mode === WEAPON_ATTR_MODES.FINESSE) {
+            usedAttr = (dexMod >= strMod) ? ABILITIES.DEX : ABILITIES.STR;
         }
 
-        let currentBestMod = (computedAttrs[usedAttr] || computedAttrs.STR || { mod: 0 }).mod;
+        let currentBestMod = (computedAttrs[usedAttr] || computedAttrs[ABILITIES.STR] || { mod: 0 }).mod;
 
         // 1. Monk Martial Arts: can use DEX instead of STR for monk weapons
         const isMonkWeapon = Boolean(
@@ -91,7 +91,7 @@ export function calculateWeapons(
             (rules.isMonk && MONK_WEAPON_KEYWORDS.some(kw => normName.includes(kw)))
         );
         if (isMonkWeapon && dexMod > currentBestMod) {
-            usedAttr = 'DEX';
+            usedAttr = ABILITIES.DEX;
             currentBestMod = dexMod;
         }
 
@@ -106,7 +106,7 @@ export function calculateWeapons(
             (rules.isBattleSmith && isMagical)
         );
         if (isBattleReadyWeapon && intMod > currentBestMod) {
-            usedAttr = 'INT';
+            usedAttr = ABILITIES.INT;
             currentBestMod = intMod;
         }
 
@@ -118,11 +118,11 @@ export function calculateWeapons(
             (rules.isHexblade && !isTwoHanded)
         );
         if (isHexWeapon && chaMod > currentBestMod) {
-            usedAttr = 'CHA';
+            usedAttr = ABILITIES.CHA;
             currentBestMod = chaMod;
         }
 
-        const attrMod = (computedAttrs[usedAttr] || computedAttrs.STR || { mod: 0 }).mod;
+        const attrMod = (computedAttrs[usedAttr] || computedAttrs[ABILITIES.STR] || { mod: 0 }).mod;
         const atkBonus = attrMod + (w.proficient !== false ? pb : 0) + magicBonus;
         const dmgMod = attrMod + magicBonus;
         let dmgModStr = '';

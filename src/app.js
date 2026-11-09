@@ -3,7 +3,8 @@ const SafeFileReader = (typeof window !== 'undefined' && window.FileReader)
     ? window.FileReader
     : (typeof FileReader !== 'undefined' ? FileReader : null);
 
-const STORAGE_KEY = 'character_dnd_v21';
+import { STORAGE_KEYS } from "./domain/constants/storage.constants.js";
+const STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 import DND_RULES from "./dnd-data/dnd-rules.json" with { type: "json" };
 import CHARACTER_DATA from "./character.json" with { type: "json" };
@@ -54,7 +55,9 @@ import {
     BASE_PASSIVE_SCORE,
     PASSIVE_ADVANTAGE_BONUS,
     DEFAULT_HIT_DIE,
-    DND_5E_SKILLS
+    DND_5E_SKILLS,
+    ABILITY_KEYS,
+    ABILITIES
 } from "./domain/constants/dnd.constants.js";
 
 
@@ -399,7 +402,7 @@ function createCharacterSheet() {
             const charId = this.data?.id || '';
             const charName = this.data?.identity?.name || '';
             const classesSig = (this.data?.identity?.classes || []).map(c => `${c.name}:${c.level}:${c.subclass}`).join(',');
-            const attrsSig = ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map(k => `${this.data?.attributes?.[k]?.score}:${this.data?.attributes?.[k]?.profSave}`).join(',');
+            const attrsSig = ABILITY_KEYS.map(k => `${this.data?.attributes?.[k]?.score}:${this.data?.attributes?.[k]?.profSave}`).join(',');
             const equippedSig = (getAllEquippedItems(this.data)).map(i => `${i.name}:${i.equipped}:${JSON.stringify(i.statBonuses || {})}:${(i.advantageSkills || []).join(',')}:${(i.advantageAttrs || []).join(',')}:${(i.advantageSaves || []).join(',')}`).join(';');
             return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}`;
         }
@@ -499,6 +502,7 @@ function createCharacterSheet() {
     );
 
     const base = {
+        CONSTANTS: DND_CONSTANTS,
         data: loadInitialData(),
         activeTab: 'profile',
         compendiumCount: 0,

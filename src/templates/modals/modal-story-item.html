@@ -94,12 +94,9 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <select x-model="storyItemForm.bonusAttr" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
-                                    <option value="STR">STR</option>
-                                    <option value="DEX">DEX</option>
-                                    <option value="CON">CON</option>
-                                    <option value="INT">INT</option>
-                                    <option value="WIS">WIS</option>
-                                    <option value="CHA">CHA</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="attr"></option>
+                                    </template>
                                 </select>
                                 <select x-model="storyItemForm.attrMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.bonusAttr">
                                     <option value="bonus">+ / - Bonus</option>
@@ -117,12 +114,9 @@
                                 <select x-model="storyItemForm.saveType" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                                     <option value="">None</option>
                                     <option value="all">All Saves</option>
-                                    <option value="STR">STR Save</option>
-                                    <option value="DEX">DEX Save</option>
-                                    <option value="CON">CON Save</option>
-                                    <option value="INT">INT Save</option>
-                                    <option value="WIS">WIS Save</option>
-                                    <option value="CHA">CHA Save</option>
+                                    <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
+                                        <option :value="attr" x-text="`${attr} Save`"></option>
+                                    </template>
                                 </select>
                                 <select x-model="storyItemForm.saveMode" class="bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs" :disabled="!storyItemForm.saveType">
                                     <option value="bonus">+ / - Bonus</option>

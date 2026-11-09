@@ -3,7 +3,9 @@ import {
     ABILITY_MODIFIER_OFFSET,
     ABILITY_MODIFIER_DIVISOR,
     BASE_PROFICIENCY_BONUS,
-    ABILITY_KEYS
+    ABILITIES,
+    ABILITY_KEYS,
+    calculateAbilityModifier
 } from '../constants/dnd.constants.js';
 
 /**
@@ -22,10 +24,7 @@ export function resolveAttributeMod(attributes, attrKey) {
     if (!attributes || !attrKey) return 0;
     const canonKey = String(attrKey).toUpperCase();
     const raw = attributes[canonKey];
-    const score = typeof raw?.score === 'number'
-        ? raw.score
-        : (parseInt(raw?.score, 10) || DEFAULT_ABILITY_SCORE);
-    return Math.floor((score - ABILITY_MODIFIER_OFFSET) / ABILITY_MODIFIER_DIVISOR);
+    return calculateAbilityModifier(raw?.score);
 }
 
 /**
@@ -145,19 +144,19 @@ export function calculateAttributes(
                     hasSaveAdvantage = true;
                     if (!saveAdvantageSources.includes(t.name)) saveAdvantageSources.push(t.name || 'Trait');
                 }
-                if (normText.includes('gnomecunning') && ['INT', 'WIS', 'CHA'].includes(k)) {
+                if (normText.includes('gnomecunning') && [ABILITIES.INT, ABILITIES.WIS, ABILITIES.CHA].includes(k)) {
                     hasSaveAdvantage = true;
                     if (!saveAdvantageSources.includes('Gnome Cunning (vs Magic)')) saveAdvantageSources.push('Gnome Cunning (vs Magic)');
                 }
-                if (normText.includes('dwarvenresilience') && k === 'CON') {
+                if (normText.includes('dwarvenresilience') && k === ABILITIES.CON) {
                     hasSaveAdvantage = true;
                     if (!saveAdvantageSources.includes('Dwarven Resilience (vs Poison)')) saveAdvantageSources.push('Dwarven Resilience (vs Poison)');
                 }
-                if (normText.includes('feyancestry') && ['WIS', 'CHA'].includes(k)) {
+                if (normText.includes('feyancestry') && [ABILITIES.WIS, ABILITIES.CHA].includes(k)) {
                     hasSaveAdvantage = true;
                     if (!saveAdvantageSources.includes('Fey Ancestry (vs Charmed)')) saveAdvantageSources.push('Fey Ancestry (vs Charmed)');
                 }
-                if (normText.includes('dangersense') && k === 'DEX') {
+                if (normText.includes('dangersense') && k === ABILITIES.DEX) {
                     hasSaveAdvantage = true;
                     if (!saveAdvantageSources.includes('Danger Sense')) saveAdvantageSources.push('Danger Sense');
                 }
@@ -165,7 +164,7 @@ export function calculateAttributes(
         });
 
         const score = baseScore + bonusFromItems;
-        const mod = Math.floor((score - ABILITY_MODIFIER_OFFSET) / ABILITY_MODIFIER_DIVISOR);
+        const mod = calculateAbilityModifier(score);
         const save = mod + (raw.profSave ? pb : 0) + itemSaveBonus;
 
         computedAttrs[k] = {

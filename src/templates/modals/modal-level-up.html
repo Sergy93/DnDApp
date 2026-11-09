@@ -51,13 +51,13 @@
                     <h4 class="font-bold text-gray-200">💪 Ability Score Improvements</h4>
                     <p class="text-gray-400 text-xs">If you gain an Ability Score Improvement (+2 to one or +1 to two), update scores here:</p>
                     <div class="grid grid-cols-3 gap-2">
-                        <template x-for="attr in ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA']" :key="attr">
+                        <template x-for="attr in CONSTANTS.ABILITY_KEYS" :key="attr">
                             <div class="bg-dark-900 p-2.5 rounded-lg border border-gray-800 text-center">
                                 <span class="text-xs text-gray-300 font-bold block mb-1" x-text="attr"></span>
                                 <input type="number" min="1" max="30" x-model.number="levelUpForm.attributes[attr]"
                                     class="w-full bg-dark-950 border border-gray-700 rounded p-1.5 text-center font-black text-white text-base outline-none focus:border-brand-500">
                                 <span class="text-xs text-brand-300 font-bold block mt-1"
-                                    x-text="Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2) >= 0 ? `+${Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2)}` : `${Math.floor(((levelUpForm.attributes[attr] || 10) - 10) / 2)}`"></span>
+                                    x-text="CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr]) >= 0 ? `+${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}` : `${CONSTANTS.calculateAbilityModifier(levelUpForm.attributes[attr])}`"></span>
                             </div>
                         </template>
                     </div>

@@ -1,6 +1,8 @@
 import {
     BASE_PROFICIENCY_BONUS,
-    BASE_SPELL_SAVE_DC
+    BASE_SPELL_SAVE_DC,
+    ABILITIES,
+    calculateBaseSpellDC
 } from '../constants/dnd.constants.js';
 
 /**
@@ -21,7 +23,7 @@ export function calculateSpellStats(
     pb = BASE_PROFICIENCY_BONUS,
     allEquipped = []
 ) {
-    const spellAttrMod = (computedAttrs[spellcastingAttrKey] || computedAttrs.CHA || { mod: 0 }).mod;
+    const spellAttrMod = (computedAttrs[spellcastingAttrKey] || computedAttrs[ABILITIES.CHA] || { mod: 0 }).mod;
     let itemSpellDcBonus = 0;
     let itemSpellAtkBonus = 0;
 
@@ -32,7 +34,7 @@ export function calculateSpellStats(
     });
 
     const spellAtkNum = spellAttrMod + pb + itemSpellAtkBonus;
-    const spellDC = BASE_SPELL_SAVE_DC + pb + spellAttrMod + itemSpellDcBonus;
+    const spellDC = calculateBaseSpellDC(pb, spellAttrMod, itemSpellDcBonus);
 
     return {
         spellcastingAttrKey,

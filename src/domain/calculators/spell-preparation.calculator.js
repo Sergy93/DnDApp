@@ -1,4 +1,5 @@
 import { normalizeKey } from '../../helpers/string.helper.js';
+import { ABILITIES, MAX_CHARACTER_LEVEL } from '../constants/dnd.constants.js';
 
 /**
  * D&D 5e Known Spells progression by class level (excluding cantrips).
@@ -40,33 +41,33 @@ export function calculateSpellPreparation(
         // Prepared Casters
         if (cName === 'wizard') {
             isPreparedCaster = true;
-            const intMod = computedAttrs.INT?.mod ?? 0;
+            const intMod = computedAttrs[ABILITIES.INT]?.mod ?? 0;
             const limit = Math.max(1, lvl + intMod);
             maxPrepared += limit;
             preparedCasterBreakdown.push(`Wizard (${lvl} + INT ${intMod >= 0 ? '+' + intMod : intMod} = ${limit})`);
         } else if (cName === 'cleric') {
             isPreparedCaster = true;
-            const wisMod = computedAttrs.WIS?.mod ?? 0;
+            const wisMod = computedAttrs[ABILITIES.WIS]?.mod ?? 0;
             const limit = Math.max(1, lvl + wisMod);
             maxPrepared += limit;
             preparedCasterBreakdown.push(`Cleric (${lvl} + WIS ${wisMod >= 0 ? '+' + wisMod : wisMod} = ${limit})`);
         } else if (cName === 'druid') {
             isPreparedCaster = true;
-            const wisMod = computedAttrs.WIS?.mod ?? 0;
+            const wisMod = computedAttrs[ABILITIES.WIS]?.mod ?? 0;
             const limit = Math.max(1, lvl + wisMod);
             maxPrepared += limit;
             preparedCasterBreakdown.push(`Druid (${lvl} + WIS ${wisMod >= 0 ? '+' + wisMod : wisMod} = ${limit})`);
         } else if (cName === 'paladin') {
             if (lvl >= 2) {
                 isPreparedCaster = true;
-                const chaMod = computedAttrs.CHA?.mod ?? 0;
+                const chaMod = computedAttrs[ABILITIES.CHA]?.mod ?? 0;
                 const limit = Math.max(1, Math.floor(lvl / 2) + chaMod);
                 maxPrepared += limit;
                 preparedCasterBreakdown.push(`Paladin (½ lvl ${Math.floor(lvl / 2)} + CHA ${chaMod >= 0 ? '+' + chaMod : chaMod} = ${limit})`);
             }
         } else if (cName === 'artificer') {
             isPreparedCaster = true;
-            const intMod = computedAttrs.INT?.mod ?? 0;
+            const intMod = computedAttrs[ABILITIES.INT]?.mod ?? 0;
             const limit = Math.max(1, Math.floor(lvl / 2) + intMod);
             maxPrepared += limit;
             preparedCasterBreakdown.push(`Artificer (½ lvl ${Math.floor(lvl / 2)} + INT ${intMod >= 0 ? '+' + intMod : intMod} = ${limit})`);
@@ -76,7 +77,7 @@ export function calculateSpellPreparation(
         if (KNOWN_SPELLS_TABLES[cName]) {
             isKnownCaster = true;
             const table = KNOWN_SPELLS_TABLES[cName];
-            const limit = table[Math.min(lvl, 20)] || 0;
+            const limit = table[Math.min(lvl, MAX_CHARACTER_LEVEL)] || 0;
             maxKnown += limit;
             const capName = cName.charAt(0).toUpperCase() + cName.slice(1);
             knownCasterBreakdown.push(`${capName} (${limit})`);

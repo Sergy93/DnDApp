@@ -1,9 +1,10 @@
 import { normalizeKey } from '../helpers/string.helper.js';
+import { STORAGE_KEYS } from '../domain/constants/storage.constants.js';
 
-export const REGISTRY_STORAGE_KEY = 'dnd_characters_registry';
-export const ACTIVE_CHAR_STORAGE_KEY = 'dnd_active_character_id';
-export const CHAR_DATA_PREFIX = 'dnd_char_data_';
-export const LEGACY_STORAGE_KEY = 'character_dnd_v21';
+export const REGISTRY_STORAGE_KEY = STORAGE_KEYS.REGISTRY;
+export const ACTIVE_CHAR_STORAGE_KEY = STORAGE_KEYS.ACTIVE_CHARACTER_ID;
+export const CHAR_DATA_PREFIX = STORAGE_KEYS.CHAR_DATA_PREFIX;
+export const LEGACY_STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 /**
  * Pure helper to convert a character name into a URL-friendly canonical slug.

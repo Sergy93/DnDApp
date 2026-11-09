@@ -3,7 +3,15 @@ import { CharacterStorageService } from '../../services/character-storage.servic
 import { RaceProvider } from '../providers/race.provider.js';
 import { ClassFeatureProvider } from '../providers/class-feature.provider.js';
 import { ClassSyncService } from '../progression/class-sync.service.js';
-import { DND_5E_SKILLS, ABILITY_KEYS } from '../constants/dnd.constants.js';
+import {
+    DND_5E_SKILLS,
+    ABILITY_KEYS,
+    ABILITIES,
+    DEFAULT_WALK_SPEED,
+    calculateAbilityModifier,
+    SKILL_IDS,
+    PROFICIENCY_LEVELS
+} from '../constants/dnd.constants.js';
 import {
     CLASS_CREATION_RULES,
     RACIAL_ASI_MAP
@@ -69,7 +77,7 @@ export class CharacterBuilderService {
         if (normRace === 'halfelf' && map.chooseOtherCount) {
             for (const [attr, val] of Object.entries(flexibleChoices || {})) {
                 const canon = String(attr).toUpperCase();
-                if (canon !== 'CHA' && bonuses[canon] !== undefined) {
+                if (canon !== ABILITIES.CHA && bonuses[canon] !== undefined) {
                     bonuses[canon] += parseInt(val, 10) || 0;
                 }
             }
@@ -144,7 +152,7 @@ export class CharacterBuilderService {
         });
 
         // 2. CON Modifier & HP
-        const conMod = Math.floor(((finalAttributes.CON?.score || 10) - 10) / 2);
+        const conMod = calculateAbilityModifier(finalAttributes[ABILITIES.CON]?.score);
         const isHillDwarf = normalizeKey(raceKey) === 'dwarf' && Boolean(normalizeKey(subraceKey).includes('hill'));
         const maxHp = this.calculateStartingHp(classKey, conMod, level, isHillDwarf);
 
@@ -155,7 +163,7 @@ export class CharacterBuilderService {
         );
         (wizardData.backgroundSkills || []).forEach(s => chosenProficientSkills.add(normalizeKey(s)));
         if (normalizeKey(raceKey) === 'elf') {
-            chosenProficientSkills.add('perception');
+            chosenProficientSkills.add(SKILL_IDS.PERCEPTION);
         }
 
         const skills = DND_5E_SKILLS.map(s => {
@@ -164,7 +172,7 @@ export class CharacterBuilderService {
                 id: s.id,
                 name: s.name,
                 attr: s.attr,
-                profType: isProf ? 'C' : ''
+                profType: isProf ? PROFICIENCY_LEVELS.PROFICIENT : PROFICIENCY_LEVELS.NONE
             };
         });
 
@@ -172,7 +180,7 @@ export class CharacterBuilderService {
         const hitDiceSpent = Array(level).fill(false);
 
         // 5. Speed & Movement
-        const baseSpeed = raceInfo.speed || '30 ft.';
+        const baseSpeed = raceInfo.speed || DEFAULT_WALK_SPEED;
 
         // 6. Racial damage resistances
         const damageResistances = Array.from(new Set(raceInfo.resistances || []));

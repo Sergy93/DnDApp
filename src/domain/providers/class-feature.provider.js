@@ -2,7 +2,9 @@ import { normalizeKey } from '../../helpers/string.helper.js';
 import {
     BASE_PROFICIENCY_BONUS,
     JACK_OF_ALL_TRADES_DIVISOR,
-    DEFAULT_MIN_ROLL_THRESHOLD
+    DEFAULT_MIN_ROLL_THRESHOLD,
+    SKILL_IDS,
+    PROFICIENCY_LEVELS
 } from '../constants/dnd.constants.js';
 
 /**
@@ -72,7 +74,7 @@ export class ClassFeatureProvider {
                 minRoll: DEFAULT_MIN_ROLL_THRESHOLD,
                 source: 'Silver Tongue (Eloquence Bard)',
                 desc: `Any d20 roll of 9 or lower on the die becomes a ${DEFAULT_MIN_ROLL_THRESHOLD}.`,
-                applies: (s) => s.id === 'persuasion' || s.id === 'deception'
+                applies: (s) => s.id === SKILL_IDS.PERSUASION || s.id === SKILL_IDS.DECEPTION
             });
         }
 
@@ -82,7 +84,7 @@ export class ClassFeatureProvider {
                 minRoll: DEFAULT_MIN_ROLL_THRESHOLD,
                 source: 'Reliable Talent (Rogue)',
                 desc: `Any d20 roll of 9 or lower on proficient checks becomes a ${DEFAULT_MIN_ROLL_THRESHOLD}.`,
-                applies: (s) => s.profType === 'C' || s.profType === 'P'
+                applies: (s) => s.profType === PROFICIENCY_LEVELS.PROFICIENT || s.profType === PROFICIENCY_LEVELS.EXPERTISE
             });
         }
 

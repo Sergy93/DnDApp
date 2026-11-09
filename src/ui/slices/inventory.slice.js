@@ -1,5 +1,6 @@
 import { ItemBonusHelper } from '../../helpers/item-bonus.helper.js';
 import { getAllEquippedItems } from '../../domain/items/equipped-items.helper.js';
+import { ARMOR_TYPES, WEAPON_ATTR_MODES } from '../../domain/constants/dnd.constants.js';
 
 /**
  * Inventory, Weapons, Armor, Wealth, Consumables, Story Items, and Tools state slice.
@@ -13,7 +14,7 @@ export function createInventorySlice() {
         editingWeaponIndex: null,
         weaponForm: {
             name: '',
-            attrMode: 'finesse',
+            attrMode: WEAPON_ATTR_MODES.FINESSE,
             dice: '1d8',
             damageType: 'Piercing',
             propsRaw: ''
@@ -32,7 +33,7 @@ export function createInventorySlice() {
         editingArmorIndex: null,
         armorForm: {
             name: '',
-            type: 'light',
+            type: ARMOR_TYPES.LIGHT,
             baseAc: 12,
             stealthDisadv: false,
             special: '',
@@ -115,7 +116,7 @@ export function createInventorySlice() {
                 const w = this.data.inventory.weapons[index];
                 this.weaponForm = {
                     name: w.name || '',
-                    attrMode: w.attrMode || 'finesse',
+                    attrMode: w.attrMode || WEAPON_ATTR_MODES.FINESSE,
                     dice: w.dice || '1d8',
                     damageType: w.damageType || 'Piercing',
                     propsRaw: (w.properties || []).join(', ')
@@ -123,7 +124,7 @@ export function createInventorySlice() {
             } else {
                 this.weaponForm = {
                     name: '',
-                    attrMode: 'finesse',
+                    attrMode: WEAPON_ATTR_MODES.FINESSE,
                     dice: '1d8',
                     damageType: 'Piercing',
                     propsRaw: ''

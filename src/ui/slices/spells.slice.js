@@ -6,6 +6,7 @@ import { SpellService } from '../../domain/spells/spell.service.js';
 import { ClassProgressionService } from '../../domain/progression/class-progression.service.js';
 import { collectActionFeatures } from '../../helpers/action-collector.helper.js';
 import { createMemo } from '../../helpers/memo.helper.js';
+import { ABILITIES, ACTION_TYPES } from '../../domain/constants/dnd.constants.js';
 
 /**
  * Spells, Spellbook, Spell Slot Casting, and Concentration Override slice.
@@ -16,8 +17,8 @@ export function createSpellsSlice() {
             const _rev = this.equipRevision;
             const totalLevel = this.stats.totalLevel;
             const maxSlot = this.maxSlotLevel;
-            const spellAttrKey = this.stats.spellStat || this.stats.spellcastingAttrKey || 'CHA';
-            const spellAttrMod = (this.stats.computedAttrs?.[spellAttrKey] || this.stats.computedAttrs?.CHA)?.mod ?? 0;
+            const spellAttrKey = this.stats.spellStat || this.stats.spellcastingAttrKey || ABILITIES.CHA;
+            const spellAttrMod = (this.stats.computedAttrs?.[spellAttrKey] || this.stats.computedAttrs?.[ABILITIES.CHA])?.mod ?? 0;
 
             // 1. Spells defined on the character (exclude any static sourceType === 'item')
             const list = (this.data.magic?.spells || []).filter(sp => sp && sp.sourceType !== 'item');
@@ -297,14 +298,14 @@ export function createSpellsSlice() {
 
         get filteredSpells() {
             return this.allResolvedSpells.filter(sp => {
-                const act = (sp.actionType || 'action').toLowerCase();
+                const act = (sp.actionType || ACTION_TYPES.ACTION).toLowerCase();
                 const isBonus = act.includes('bonus');
                 const isReaction = act.includes('react');
                 const isAction = !isBonus && !isReaction;
 
-                if (this.currentSpellFilter === 'action') return isAction;
-                if (this.currentSpellFilter === 'bonus') return isBonus;
-                if (this.currentSpellFilter === 'reaction') return isReaction;
+                if (this.currentSpellFilter === ACTION_TYPES.ACTION) return isAction;
+                if (this.currentSpellFilter === ACTION_TYPES.BONUS_ACTION) return isBonus;
+                if (this.currentSpellFilter === ACTION_TYPES.REACTION) return isReaction;
                 if (this.currentSpellFilter === 'conc') return sp.conc;
                 return true;
             });
