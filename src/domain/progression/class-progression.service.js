@@ -1,7 +1,7 @@
-import CLASS_COMPENDIUM from "../../dnd-data/class-compendium.json" with { type: "json" };
 import DND_RULES from "../../dnd-data/dnd-rules.json" with { type: "json" };
 import { normalizeKey, capitalizeWord } from "../../helpers/string.helper.js";
 import { hasCharacterFeature } from "../providers/class-feature.provider.js";
+import { CompendiumStorageService } from "../../services/compendium-storage.service.js";
 import {
     MIN_CHARACTER_LEVEL,
     MAX_CHARACTER_LEVEL,
@@ -13,13 +13,42 @@ import {
 } from "../constants/dnd.constants.js";
 
 const DAMAGE_TYPES = DND_RULES.damageTypes;
-const SUBCLASS_ALIASES = Object.fromEntries(
-    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.subclassAliases).map(([k, v]) => [k, v.subclassAliases])
-);
 
 export class ClassProgressionService {
-    static CLASS_COMPENDIUM = CLASS_COMPENDIUM;
-    static SUBCLASS_ALIASES = SUBCLASS_ALIASES;
+    static _compendium = null;
+    static _subclassAliases = null;
+
+    static get CLASS_COMPENDIUM() {
+        if (!this._compendium || Object.keys(this._compendium).length === 0) {
+            this._compendium = CompendiumStorageService.getClasses();
+        }
+        return this._compendium || {};
+    }
+
+    static set CLASS_COMPENDIUM(val) {
+        this.setCompendium(val);
+    }
+
+    static get SUBCLASS_ALIASES() {
+        if (!this._subclassAliases || Object.keys(this._subclassAliases).length === 0) {
+            const comp = this.CLASS_COMPENDIUM;
+            this._subclassAliases = Object.fromEntries(
+                Object.entries(comp).filter(([, v]) => v.subclassAliases).map(([k, v]) => [k, v.subclassAliases])
+            );
+        }
+        return this._subclassAliases || {};
+    }
+
+    static set SUBCLASS_ALIASES(val) {
+        this._subclassAliases = val;
+    }
+
+    static setCompendium(classes = {}) {
+        this._compendium = classes;
+        this._subclassAliases = Object.fromEntries(
+            Object.entries(classes).filter(([, v]) => v.subclassAliases).map(([k, v]) => [k, v.subclassAliases])
+        );
+    }
 
     /**
      * Looks up a class in the compendium by key or display name.
@@ -28,12 +57,13 @@ export class ClassProgressionService {
         const normClass = normalizeKey(className);
         if (!normClass) return null;
 
-        const classKey = Object.keys(CLASS_COMPENDIUM).find(key => {
+        const comp = this.CLASS_COMPENDIUM;
+        const classKey = Object.keys(comp).find(key => {
             const normKey = normalizeKey(key);
-            const normName = normalizeKey(CLASS_COMPENDIUM[key]?.name);
+            const normName = normalizeKey(comp[key]?.name);
             return normKey === normClass || normName === normClass;
         });
-        return classKey ? { key: classKey, obj: CLASS_COMPENDIUM[classKey] } : null;
+        return classKey ? { key: classKey, obj: comp[classKey] } : null;
     }
 
     /**
@@ -45,7 +75,7 @@ export class ClassProgressionService {
         const normClass = normalizeKey(className || '');
 
         // 1. Direct class block check
-        const classBlock = SUBCLASS_ALIASES[normClass];
+        const classBlock = this.SUBCLASS_ALIASES[normClass];
         if (classBlock) {
             for (const subKey of Object.keys(classBlock)) {
                 const entry = classBlock[subKey];
@@ -70,8 +100,8 @@ export class ClassProgressionService {
         }
 
         // 2. Global search across all classes in SUBCLASS_ALIASES
-        for (const cKey of Object.keys(SUBCLASS_ALIASES)) {
-            const cBlock = SUBCLASS_ALIASES[cKey];
+        for (const cKey of Object.keys(this.SUBCLASS_ALIASES)) {
+            const cBlock = this.SUBCLASS_ALIASES[cKey];
             for (const subKey of Object.keys(cBlock)) {
                 const entry = cBlock[subKey];
                 if (normalizeKey(subKey) === normSub || normalizeKey(entry.name || '') === normSub) {

@@ -11,6 +11,8 @@
  * Includes an in-memory fallback store for Node.js unit testing.
  */
 
+import { ErrorHandler } from './error-handler.service.js';
+
 const DB_NAME = 'DorianDndCompendiumDB';
 const DB_VERSION = 1;
 
@@ -31,6 +33,29 @@ export class CompendiumStorageService {
         backgrounds: new Map(),
         metadata: new Map()
     };
+    static _cache = {
+        classes: {},
+        races: {},
+        backgrounds: {},
+        spells: []
+    };
+    static isLoaded = false;
+
+    static getClasses() {
+        return this._cache.classes || {};
+    }
+
+    static getRaces() {
+        return this._cache.races || {};
+    }
+
+    static getBackgrounds() {
+        return this._cache.backgrounds || {};
+    }
+
+    static getSpells() {
+        return this._cache.spells || [];
+    }
 
     /**
      * Checks if browser IndexedDB is supported.
@@ -287,6 +312,18 @@ export class CompendiumStorageService {
             : (payload.spells?.spell ? payload.spells.spell : []);
         summary.spells = await this.saveItems(COMPENDIUM_STORES.SPELLS, spellsList);
 
+        this._cache.classes = Array.isArray(payload.classes)
+            ? Object.fromEntries(payload.classes.map(c => [c.id || c.name?.toLowerCase() || '', c]))
+            : (payload.classes || {});
+        this._cache.races = Array.isArray(payload.races)
+            ? Object.fromEntries(payload.races.map(r => [r.id || r.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '', r]))
+            : (payload.races || {});
+        this._cache.backgrounds = Array.isArray(payload.backgrounds)
+            ? Object.fromEntries(payload.backgrounds.map(b => [b.id || b.name?.toLowerCase().replace(/[^a-z0-9]/g, '') || '', b]))
+            : (payload.backgrounds || {});
+        this._cache.spells = spellsList;
+        this.isLoaded = true;
+
         await this.setMetadata('version', payload.version || 1);
         await this.setMetadata('seededAt', Date.now());
 
@@ -337,10 +374,16 @@ export class CompendiumStorageService {
      */
     static async syncFromRemote(baseUrl = '') {
         if (typeof fetch === 'undefined') return false;
+        if (typeof window === 'undefined' && (!baseUrl || baseUrl.startsWith('/'))) {
+            return false;
+        }
         try {
             const url = `${baseUrl}/api/compendium/all`.replace(/([^:]\/)\/+/g, '$1');
             const res = await fetch(url);
-            if (!res.ok) return false;
+            if (!res.ok) {
+                ErrorHandler.warn(`Compendium sync returned status ${res.status}`, 'CompendiumStorageService.syncFromRemote');
+                return false;
+            }
             const data = await res.json();
             if (data && data.success && data.compendium) {
                 await this.seedPayload(data.compendium);
@@ -348,8 +391,55 @@ export class CompendiumStorageService {
                 return true;
             }
             return false;
-        } catch {
+        } catch (err) {
+            ErrorHandler.warn(err, 'CompendiumStorageService.syncFromRemote');
             return false;
+        }
+    }
+
+    /**
+     * Initializes compendiums by ensuring IndexedDB is populated from D1/remote and populating in-memory _cache.
+     * @param {string} [baseUrl='']
+     * @returns {Promise<Object>} { classes, races, backgrounds, spells }
+     */
+    static async initCompendiums(baseUrl = '') {
+        try {
+            const populated = await this.isPopulated();
+            if (!populated) {
+                await this.syncFromRemote(baseUrl);
+            }
+
+            const [classesList, racesList, bgList, spellsList] = await Promise.all([
+                this.getAll(COMPENDIUM_STORES.CLASSES),
+                this.getAll(COMPENDIUM_STORES.RACES),
+                this.getAll(COMPENDIUM_STORES.BACKGROUNDS),
+                this.getAll(COMPENDIUM_STORES.SPELLS)
+            ]);
+
+            if (classesList.length > 0) {
+                this._cache.classes = Object.fromEntries(
+                    classesList.map(c => [c.id || (c.name ? c.name.toLowerCase() : ''), c])
+                );
+            }
+            if (racesList.length > 0) {
+                this._cache.races = Object.fromEntries(
+                    racesList.map(r => [r.id || (r.name ? r.name.toLowerCase().replace(/[^a-z0-9]/g, '') : ''), r])
+                );
+            }
+            if (bgList.length > 0) {
+                this._cache.backgrounds = Object.fromEntries(
+                    bgList.map(b => [b.id || (b.name ? b.name.toLowerCase().replace(/[^a-z0-9]/g, '') : ''), b])
+                );
+            }
+            if (spellsList.length > 0) {
+                this._cache.spells = spellsList;
+            }
+            this.isLoaded = true;
+
+            return this._cache;
+        } catch (err) {
+            ErrorHandler.handle(err, 'CompendiumStorageService.initCompendiums');
+            return this._cache;
         }
     }
 }

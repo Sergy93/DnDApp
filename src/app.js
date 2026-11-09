@@ -8,11 +8,8 @@ const STORAGE_KEY = STORAGE_KEYS.LEGACY_CHARACTER;
 
 import DND_RULES from "./dnd-data/dnd-rules.json" with { type: "json" };
 import CHARACTER_DATA from "./character.json" with { type: "json" };
-import CLASS_COMPENDIUM from "./dnd-data/class-compendium.json" with { type: "json" };
-import BACKGROUND_COMPENDIUM from "./dnd-data/background-compendium.json" with { type: "json" };
-import RACE_COMPENDIUM from "./dnd-data/race-compendium.json" with { type: "json" };
-import SPELL_COMPENDIUM from "./dnd-data/spell-compendium.json" with { type: "json" };
 import { CompendiumStorageService } from "./services/compendium-storage.service.js";
+import { ErrorHandler } from "./services/error-handler.service.js";
 
 import { normalizeKey, capitalizeWord } from "./helpers/string.helper.js";
 import { TemplateHelper } from "./helpers/template.helper.js";
@@ -71,12 +68,8 @@ import {
 const DND_CONDITIONS = DND_RULES.conditions;
 const DAMAGE_TYPES = DND_RULES.damageTypes;
 const SPELL_SLOTS_TABLES = DND_RULES.spellSlotsTables;
-const SUBCLASS_ALIASES = Object.fromEntries(
-    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.subclassAliases).map(([k, v]) => [k, v.subclassAliases])
-);
-const CLASS_FEATURES_SYNC = Object.fromEntries(
-    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
-);
+const SUBCLASS_ALIASES = ClassProgressionService.SUBCLASS_ALIASES;
+const CLASS_FEATURES_SYNC = ClassSyncService.CLASS_FEATURES_SYNC;
 
 export {
     DND_CONSTANTS,
@@ -401,11 +394,6 @@ const resolveScaledSpellDamage = SpellService.resolveScaledSpellDamage.bind(Spel
 const calculateSlotDamage = SpellService.calculateSlotDamage.bind(SpellService);
 const resolveSpellData = SpellService.resolveSpellData.bind(SpellService);
 
-// Synchronously populate SpellService with bundled compendium so all spells are immediately available offline
-if (SPELL_COMPENDIUM) {
-    SpellService.buildSpellsCompendium([SPELL_COMPENDIUM]);
-}
-
 // ================= COMPONENTE ALPINE.JS =================
 function createCharacterSheet() {
     const memoizedStats = createMemo(
@@ -511,25 +499,23 @@ function createCharacterSheet() {
         },
 
         init() {
+            ErrorHandler.init();
             this.charactersRegistry = CharacterStorageService.getRegistry();
             this.activeCharacterId = this.data?.id || CharacterStorageService.getActiveCharacterId();
 
             // Initialize Offline-First IndexedDB Compendium
-            CompendiumStorageService.isPopulated().then(populated => {
-                if (!populated) {
-                    CompendiumStorageService.seedPayload({
-                        classes: CLASS_COMPENDIUM,
-                        races: RACE_COMPENDIUM,
-                        backgrounds: BACKGROUND_COMPENDIUM,
-                        spells: SPELL_COMPENDIUM
-                    }).then(() => {
-                        this.compendiumLoaded = true;
-                    }).catch(() => {});
-                } else {
-                    this.compendiumLoaded = true;
+            CompendiumStorageService.initCompendiums().then(comp => {
+                this.compendiumLoaded = true;
+                if (comp && comp.classes && Object.keys(comp.classes).length > 0) {
+                    ClassProgressionService.setCompendium(comp.classes);
                 }
-                CompendiumStorageService.syncFromRemote().catch(() => {});
-            }).catch(() => {});
+                if (comp && comp.spells && comp.spells.length > 0) {
+                    SpellService.buildSpellsCompendium([comp.spells]);
+                    this.compendiumCount = SpellService.spellsCompendium.length;
+                }
+            }).catch(err => {
+                ErrorHandler.handle(err, 'CompendiumStorageService.initCompendiums');
+            });
 
             CharacterSyncService.initListeners();
             this.syncStatus = CharacterSyncService.getStatus();
@@ -549,7 +535,9 @@ function createCharacterSheet() {
                         this.userProfile = auth.user;
                         this.isLoggedIn = auth.authenticated;
                     }
-                }).catch(() => {});
+                }).catch(err => {
+                    ErrorHandler.warn(err, 'CharacterSyncService.checkAuth');
+                });
             }
 
             const route = CharacterRouterService.parseRoute();
@@ -597,7 +585,9 @@ function createCharacterSheet() {
             if (typeof navigator !== 'undefined' && navigator.onLine) {
                 CharacterSyncService.syncNow().then(() => {
                     this.charactersRegistry = CharacterStorageService.getRegistry();
-                }).catch(() => {});
+                }).catch(err => {
+                    ErrorHandler.warn(err, 'CharacterSyncService.syncNow.initial');
+                });
             }
 
             if (SpellService.spellsCompendium.length > 0) {
@@ -605,6 +595,8 @@ function createCharacterSheet() {
             } else {
                 SpellService.loadCompendium().then(count => {
                     this.compendiumCount = count;
+                }).catch(err => {
+                    ErrorHandler.warn(err, 'SpellService.loadCompendium');
                 });
             }
         },
@@ -623,10 +615,11 @@ function createCharacterSheet() {
         },
 
         get availableCompendiumClasses() {
-            return Object.keys(CLASS_COMPENDIUM || {}).map(k => ({
+            const comp = CompendiumStorageService.getClasses();
+            return Object.keys(comp || {}).map(k => ({
                 key: k,
-                name: CLASS_COMPENDIUM[k].name,
-                hitDie: CLASS_COMPENDIUM[k].hitDie || 'd8'
+                name: comp[k].name,
+                hitDie: comp[k].hitDie || 'd8'
             })).sort((a, b) => a.name.localeCompare(b.name));
         },
 
@@ -678,7 +671,9 @@ function createCharacterSheet() {
                     await this.forceSync();
                     return;
                 }
-            } catch (e) {}
+            } catch (e) {
+                ErrorHandler.warn(e, 'CharacterSyncService.checkAuth.login');
+            }
 
             const email = await this.uiPrompt("Introduce tu correo de Google para identificarte:", "Google OAuth / Cloudflare Access", "Google Identity", "usuario@gmail.com", "👤", "Continuar");
             if (email && email.trim()) {
@@ -694,7 +689,9 @@ function createCharacterSheet() {
                 this.currentView = 'sheet';
                 CharacterSyncService.syncNow().then(() => {
                     this.charactersRegistry = CharacterStorageService.getRegistry();
-                }).catch(() => {});
+                }).catch(err => {
+                    ErrorHandler.warn(err, 'CharacterSyncService.syncNow.login');
+                });
             }
         },
 

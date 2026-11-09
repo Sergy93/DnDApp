@@ -1,4 +1,3 @@
-import CLASS_COMPENDIUM from "../../dnd-data/class-compendium.json" with { type: "json" };
 import DND_RULES from "../../dnd-data/dnd-rules.json" with { type: "json" };
 import { normalizeKey, capitalizeWord } from "../../helpers/string.helper.js";
 import { ClassProgressionService } from "./class-progression.service.js";
@@ -21,12 +20,29 @@ import {
 } from "../constants/dnd.constants.js";
 
 const SPELL_SLOTS_TABLES = DND_RULES.spellSlotsTables;
-const CLASS_FEATURES_SYNC = Object.fromEntries(
-    Object.entries(CLASS_COMPENDIUM).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
-);
 
 export class ClassSyncService {
-    static CLASS_FEATURES_SYNC = CLASS_FEATURES_SYNC;
+    static _featuresSync = null;
+
+    static get CLASS_FEATURES_SYNC() {
+        if (!this._featuresSync || Object.keys(this._featuresSync).length === 0) {
+            const comp = ClassProgressionService.CLASS_COMPENDIUM || {};
+            this._featuresSync = Object.fromEntries(
+                Object.entries(comp).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
+            );
+        }
+        return this._featuresSync || {};
+    }
+
+    static set CLASS_FEATURES_SYNC(val) {
+        this._featuresSync = val;
+    }
+
+    static setCompendium(classes = {}) {
+        this._featuresSync = Object.fromEntries(
+            Object.entries(classes).filter(([, v]) => v.featuresSync).map(([k, v]) => [k, v.featuresSync])
+        );
+    }
 
     /**
      * Resolves maximum uses for a tactical resource based on static count, ability mod, PB, or class pool formula.
@@ -260,7 +276,7 @@ export class ClassSyncService {
             const classKey = found?.key || normalizeKey(cls.name);
             const currentLvl = parseInt(cls.level, 10) || 1;
 
-            const classRules = CLASS_FEATURES_SYNC?.[classKey];
+            const classRules = this.CLASS_FEATURES_SYNC?.[classKey];
             if (!classRules) return;
 
             // 1. Base class features

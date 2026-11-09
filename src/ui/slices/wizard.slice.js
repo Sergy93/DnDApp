@@ -1,6 +1,4 @@
-import RACE_COMPENDIUM from '../../dnd-data/race-compendium.json' with { type: "json" };
-import CLASS_COMPENDIUM from '../../dnd-data/class-compendium.json' with { type: "json" };
-import BACKGROUND_COMPENDIUM from '../../dnd-data/background-compendium.json' with { type: "json" };
+import { CompendiumStorageService } from '../../services/compendium-storage.service.js';
 import { CharacterBuilderService } from '../../domain/character/character-builder.service.js';
 import { CharacterStorageService } from '../../services/character-storage.service.js';
 import { CharacterRouterService } from '../../services/character-router.service.js';
@@ -41,18 +39,20 @@ export function createWizardSlice() {
 
         // ================= WIZARD COMPUTED GETTERS =================
         get wizardRacesList() {
-            return Object.keys(RACE_COMPENDIUM).map(k => ({
+            const races = CompendiumStorageService.getRaces();
+            return Object.keys(races).map(k => ({
                 key: k,
-                name: RACE_COMPENDIUM[k].name,
-                speed: RACE_COMPENDIUM[k].speed,
-                darkvision: RACE_COMPENDIUM[k].darkvision,
-                hasSubraces: Boolean(RACE_COMPENDIUM[k].subraces && Object.keys(RACE_COMPENDIUM[k].subraces).length > 0)
+                name: races[k].name,
+                speed: races[k].speed,
+                darkvision: races[k].darkvision,
+                hasSubraces: Boolean(races[k].subraces && Object.keys(races[k].subraces).length > 0)
             })).sort((a, b) => a.name.localeCompare(b.name));
         },
 
         get wizardSubracesList() {
             const rKey = normalizeKey(this.wizardData.race);
-            const raceObj = RACE_COMPENDIUM[rKey];
+            const races = CompendiumStorageService.getRaces();
+            const raceObj = races[rKey];
             if (!raceObj || !raceObj.subraces) return [];
             return Object.keys(raceObj.subraces).map(sk => ({
                 key: sk,
@@ -62,17 +62,19 @@ export function createWizardSlice() {
         },
 
         get wizardClassesList() {
-            return Object.keys(CLASS_COMPENDIUM).map(k => ({
+            const classes = CompendiumStorageService.getClasses();
+            return Object.keys(classes).map(k => ({
                 key: k,
-                name: CLASS_COMPENDIUM[k].name,
-                hitDie: CLASS_COMPENDIUM[k].hitDie || 'd8',
-                subclasses: Object.keys(CLASS_COMPENDIUM[k].subclasses || {})
+                name: classes[k].name,
+                hitDie: classes[k].hitDie || 'd8',
+                subclasses: Object.keys(classes[k].subclasses || {})
             })).sort((a, b) => a.name.localeCompare(b.name));
         },
 
         get wizardSubclassesList() {
             const cKey = normalizeKey(this.wizardData.class);
-            const classObj = CLASS_COMPENDIUM[cKey];
+            const classes = CompendiumStorageService.getClasses();
+            const classObj = classes[cKey];
             if (!classObj || !classObj.subclasses) return [];
             return Object.keys(classObj.subclasses).map(sk => ({
                 key: sk,
@@ -81,10 +83,11 @@ export function createWizardSlice() {
         },
 
         get wizardBackgroundsList() {
-            return Object.keys(BACKGROUND_COMPENDIUM).map(k => ({
+            const backgrounds = CompendiumStorageService.getBackgrounds();
+            return Object.keys(backgrounds).map(k => ({
                 key: k,
-                name: BACKGROUND_COMPENDIUM[k].name,
-                skills: BACKGROUND_COMPENDIUM[k].skillProficiencies || []
+                name: backgrounds[k].name,
+                skills: backgrounds[k].skillProficiencies || []
             })).sort((a, b) => a.name.localeCompare(b.name));
         },
 
@@ -95,7 +98,8 @@ export function createWizardSlice() {
 
         get wizardBackgroundSkills() {
             const bgKey = normalizeKey(this.wizardData.background);
-            const bgObj = BACKGROUND_COMPENDIUM[bgKey];
+            const backgrounds = CompendiumStorageService.getBackgrounds();
+            const bgObj = backgrounds[bgKey];
             return (bgObj?.skillProficiencies || []).map(s => normalizeKey(s));
         },
 
