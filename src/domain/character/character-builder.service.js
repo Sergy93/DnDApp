@@ -159,7 +159,7 @@ export class CharacterBuilderService {
         }
 
         const skills = DND_5E_SKILLS.map(s => {
-            const isProf = chosenProficientSkills.has(s.id);
+            const isProf = chosenProficientSkills.has(normalizeKey(s.id));
             return {
                 id: s.id,
                 name: s.name,
