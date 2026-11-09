@@ -406,7 +406,8 @@ function createCharacterSheet() {
             const classesSig = (this.data?.identity?.classes || []).map(c => `${c.name}:${c.level}:${c.subclass}`).join(',');
             const attrsSig = ABILITY_KEYS.map(k => `${this.data?.attributes?.[k]?.score}:${this.data?.attributes?.[k]?.profSave}`).join(',');
             const equippedSig = (getAllEquippedItems(this.data)).map(i => `${i.name}:${i.equipped}:${JSON.stringify(i.statBonuses || {})}:${(i.advantageSkills || []).join(',')}:${(i.advantageAttrs || []).join(',')}:${(i.advantageSaves || []).join(',')}`).join(';');
-            return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}`;
+            const weaponsSig = (this.data?.inventory?.weapons || []).map(w => `${w.name}:${w.attrMode}:${w.dice}:${w.damageType}:${w.proficient}:${(w.properties || []).join(',')}`).join(';');
+            return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}|${weaponsSig}`;
         }
     );
 

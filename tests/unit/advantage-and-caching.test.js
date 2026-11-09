@@ -233,4 +233,40 @@ test('Cache Invalidation Across Character Switching and Equipment Changes', asyn
         const athletics = sheet.stats.computedSkills.find(s => s.id === 'athletics');
         assert.equal(athletics.hasAdvantage, true);
     });
+
+    await t.test('Weapon addition, edit, and removal immediately update computedWeapons without refresh', async () => {
+        const initialCount = sheet.stats.computedWeapons.length;
+        
+        // Add new weapon
+        sheet.openWeaponModal();
+        sheet.weaponForm.name = 'Sun Blade';
+        sheet.weaponForm.dice = '1d8';
+        sheet.weaponForm.damageType = 'Radiant';
+        sheet.weaponForm.attrMode = 'finesse';
+        sheet.weaponForm.propsRaw = 'Finesse, Versatile';
+        sheet.handleSaveWeapon();
+
+        // Check immediate live reflection in stats.computedWeapons
+        assert.equal(sheet.stats.computedWeapons.length, initialCount + 1);
+        const sunBlade = sheet.stats.computedWeapons.find(w => w.name === 'Sun Blade');
+        assert.ok(sunBlade);
+        assert.equal(sunBlade.dmgStr.includes('Radiant'), true);
+
+        // Edit weapon
+        const weaponIdx = sheet.data.inventory.weapons.findIndex(w => w.name === 'Sun Blade');
+        sheet.openWeaponModal(weaponIdx);
+        sheet.weaponForm.dice = '2d8';
+        sheet.handleSaveWeapon();
+
+        // Check immediate live reflection of edited damage
+        const updatedSunBlade = sheet.stats.computedWeapons.find(w => w.name === 'Sun Blade');
+        assert.ok(updatedSunBlade);
+        assert.equal(updatedSunBlade.dmgStr.includes('2d8'), true);
+
+        // Remove weapon (simulate uiConfirm returning true)
+        sheet.uiConfirm = async () => true;
+        await sheet.removeWeapon(weaponIdx);
+        assert.equal(sheet.stats.computedWeapons.length, initialCount);
+        assert.equal(sheet.stats.computedWeapons.some(w => w.name === 'Sun Blade'), false);
+    });
 });

@@ -152,8 +152,13 @@ export function createInventorySlice() {
                 dice: this.weaponForm.dice.trim(),
                 damageType: this.weaponForm.damageType.trim(),
                 proficient: true,
+                equipped: true,
                 properties
             };
+
+            if (!Array.isArray(this.data.inventory.weapons)) {
+                this.data.inventory.weapons = [];
+            }
 
             const isEdit = this.editingWeaponIndex !== null;
             if (isEdit) {
@@ -164,6 +169,8 @@ export function createInventorySlice() {
                 this.logEvent('⚔️', 'Weapon Added', `Added weapon "${name}" (${weaponObj.dice} ${weaponObj.damageType}).`);
             }
 
+            this.equipRevision++;
+            this.saveState();
             this.modalWeaponOpen = false;
             this.editingWeaponIndex = null;
         },
@@ -175,6 +182,8 @@ export function createInventorySlice() {
             if (!ok) return;
 
             this.data.inventory.weapons.splice(index, 1);
+            this.equipRevision++;
+            this.saveState();
             this.logEvent('🗑️', 'Weapon Removed', `Removed weapon "${w.name}".`);
         },
 
@@ -274,6 +283,9 @@ export function createInventorySlice() {
             };
 
             this.equipRevision++;
+            if (!Array.isArray(this.data.inventory.armors)) {
+                this.data.inventory.armors = [];
+            }
             if (isEdit) {
                 this.data.inventory.armors[this.editingArmorIndex] = armorObj;
                 this.logEvent('🛡️', 'Armor/Item Edited', `Updated "${name}" (${armorObj.type}).`);
@@ -282,6 +294,7 @@ export function createInventorySlice() {
                 this.logEvent('🛡️', 'Armor/Item Added', `Added "${name}" (${armorObj.type}).`);
             }
 
+            this.saveState();
             this.modalArmorOpen = false;
             this.editingArmorIndex = null;
         },
@@ -293,6 +306,8 @@ export function createInventorySlice() {
             if (!ok) return;
 
             this.data.inventory.armors.splice(index, 1);
+            this.equipRevision++;
+            this.saveState();
             this.logEvent('🗑️', 'Armor/Item Removed', `Removed "${a.name}".`);
         },
 
@@ -388,6 +403,7 @@ export function createInventorySlice() {
                 this.data.inventory.consumables.push(item);
                 this.logEvent('🧪', 'Consumable Added', `Added "${name}" (Qty: ${item.qty}).`);
             }
+            this.saveState();
             this.modalConsumableOpen = false;
             this.editingConsumableIndex = null;
         },
@@ -398,6 +414,7 @@ export function createInventorySlice() {
             const ok = await this.uiConfirm(`Do you want to remove "${c.name}" from your consumables?`, "Remove Consumable", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.consumables.splice(index, 1);
+            this.saveState();
             this.logEvent('🗑️', 'Consumable Removed', `Removed consumable "${c.name}".`);
         },
 
@@ -423,6 +440,7 @@ export function createInventorySlice() {
             } else if (delta > 0) {
                 this.logEvent('🧪', 'Consumable Restocked', `Increased "${c.name}" (${prevQty} → ${c.qty}).`);
             }
+            this.saveState();
         },
 
         // Story Items Management
@@ -519,6 +537,9 @@ export function createInventorySlice() {
             };
 
             this.equipRevision++;
+            if (!Array.isArray(this.data.inventory.story)) {
+                this.data.inventory.story = [];
+            }
             if (isEdit) {
                 this.data.inventory.story[this.editingStoryItemIndex] = item;
                 this.logEvent('✨', 'Item Edited', `Updated item "${name}".`);
@@ -526,6 +547,7 @@ export function createInventorySlice() {
                 this.data.inventory.story.push(item);
                 this.logEvent('✨', 'Item Added', `Added item "${name}".`);
             }
+            this.saveState();
             this.modalStoryItemOpen = false;
             this.editingStoryItemIndex = null;
         },
@@ -563,6 +585,8 @@ export function createInventorySlice() {
             const ok = await this.uiConfirm(`Do you want to remove "${st.name}"?`, "Remove Item", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.story.splice(index, 1);
+            this.equipRevision++;
+            this.saveState();
             this.logEvent('🗑️', 'Item Removed', `Removed item "${st.name}".`);
         },
 
@@ -609,6 +633,7 @@ export function createInventorySlice() {
                 this.data.inventory.tools.push(item);
                 this.logEvent('🎒', 'Tool Added', `Added tool/equipment "${name}".`);
             }
+            this.saveState();
             this.modalToolOpen = false;
             this.editingToolIndex = null;
         },
@@ -621,6 +646,7 @@ export function createInventorySlice() {
             const ok = await this.uiConfirm(`Do you want to remove "${t.name}" from your tools & equipment?`, "Remove Tool", "🗑️", "Remove", "bg-red-600 hover:bg-red-500");
             if (!ok) return;
             this.data.inventory.tools.splice(index, 1);
+            this.saveState();
             this.logEvent('🗑️', 'Tool Removed', `Removed tool/equipment "${t.name}".`);
         }
     };
