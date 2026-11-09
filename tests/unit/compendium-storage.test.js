@@ -74,10 +74,17 @@ test('Cloudflare Worker Compendium Endpoint (/api/compendium/all)', async () => 
         method: 'GET'
     });
 
+    const mockRow = (id, data) => ({ id, data_json: JSON.stringify(data) });
     const env = {
         DB: {
             prepare: (query) => ({
-                all: async () => ({ results: [] })
+                all: async () => {
+                    if (query.includes('compendium_classes')) return { results: [mockRow('wizard', { name: 'Wizard', hitDie: 'd6' })] };
+                    if (query.includes('compendium_races')) return { results: [mockRow('elf', { name: 'Elf', speed: '30 ft.' })] };
+                    if (query.includes('compendium_backgrounds')) return { results: [mockRow('sage', { name: 'Sage' })] };
+                    if (query.includes('compendium_spells')) return { results: [mockRow('fireball', { name: 'Fireball', level: 3 })] };
+                    return { results: [] };
+                }
             })
         }
     };
@@ -88,8 +95,18 @@ test('Cloudflare Worker Compendium Endpoint (/api/compendium/all)', async () => 
     const body = await res.json();
     assert.equal(body.success, true);
     assert.ok(body.compendium);
-    assert.ok(body.compendium.classes);
-    assert.ok(body.compendium.races);
-    assert.ok(body.compendium.backgrounds);
-    assert.ok(body.compendium.spells);
+    assert.equal(body.compendium.classes.length, 1);
+    assert.equal(body.compendium.classes[0].name, 'Wizard');
+    assert.equal(body.compendium.classes[0].id, 'wizard');
+    assert.equal(body.compendium.races.length, 1);
+    assert.equal(body.compendium.races[0].name, 'Elf');
+    assert.equal(body.compendium.races[0].id, 'elf');
+    assert.equal(body.compendium.backgrounds.length, 1);
+    assert.equal(body.compendium.backgrounds[0].name, 'Sage');
+    assert.equal(body.compendium.spells.length, 1);
+    assert.equal(body.compendium.spells[0].name, 'Fireball');
+
+    // Missing DB test
+    const noDbRes = await worker.fetch(req, {}, {});
+    assert.equal(noDbRes.status, 500);
 });
