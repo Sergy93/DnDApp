@@ -222,7 +222,16 @@ export function createInventorySlice() {
         },
 
         addSkillAdvToArmorForm() {
-            ItemBonusHelper.addUniqueItem(this.armorForm.advantageSkills, this.selectedSkillAdvToAdd);
+            let skill = this.selectedSkillAdvToAdd;
+            if (skill && typeof skill === 'object') {
+                skill = skill.name || skill.id;
+            }
+            if (typeof skill === 'string') {
+                skill = skill.trim();
+            }
+            if (skill && skill !== '[object Object]') {
+                ItemBonusHelper.addUniqueItem(this.armorForm.advantageSkills, skill);
+            }
             this.selectedSkillAdvToAdd = '';
         },
 
@@ -245,7 +254,9 @@ export function createInventorySlice() {
 
             const grantedSpells = [...(this.armorForm.grantedSpells || [])];
             const resistances = [...(this.armorForm.resistances || [])];
-            const advantageSkills = [...(this.armorForm.advantageSkills || [])];
+            const advantageSkills = [...(this.armorForm.advantageSkills || [])]
+                .map(s => (s && typeof s === 'object') ? (s.name || s.id) : s)
+                .filter(s => s && typeof s === 'string' && s !== '[object Object]');
 
             const statBonuses = ItemBonusHelper.parseStatBonuses(this.armorForm);
 
@@ -462,7 +473,16 @@ export function createInventorySlice() {
         },
 
         addSkillAdvToStoryForm() {
-            ItemBonusHelper.addUniqueItem(this.storyItemForm.advantageSkills, this.storySkillAdvToAdd);
+            let skill = this.storySkillAdvToAdd;
+            if (skill && typeof skill === 'object') {
+                skill = skill.name || skill.id;
+            }
+            if (typeof skill === 'string') {
+                skill = skill.trim();
+            }
+            if (skill && skill !== '[object Object]') {
+                ItemBonusHelper.addUniqueItem(this.storyItemForm.advantageSkills, skill);
+            }
             this.storySkillAdvToAdd = '';
         },
 
@@ -480,7 +500,9 @@ export function createInventorySlice() {
 
             const grantedSpells = [...(this.storyItemForm.grantedSpells || [])];
             const resistances = [...(this.storyItemForm.resistances || [])];
-            const advantageSkills = [...(this.storyItemForm.advantageSkills || [])];
+            const advantageSkills = [...(this.storyItemForm.advantageSkills || [])]
+                .map(s => (s && typeof s === 'object') ? (s.name || s.id) : s)
+                .filter(s => s && typeof s === 'string' && s !== '[object Object]');
 
             const statBonuses = ItemBonusHelper.parseStatBonuses(this.storyItemForm);
 

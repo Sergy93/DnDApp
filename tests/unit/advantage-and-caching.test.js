@@ -181,4 +181,56 @@ test('Cache Invalidation Across Character Switching and Equipment Changes', asyn
         const dorianPersuasionAfterSwitch = sheet.stats.computedSkills.find(s => s.id === 'persuasion');
         assert.equal(dorianPersuasionAfterSwitch.hasAdvantage, true);
     });
+
+    await t.test('Skill Advantage dropdown and Granted Spells in Armor / Story modals', () => {
+        // Verify allSkillsList has 18 skills and all can provide string name
+        assert.equal(sheet.allSkillsList.length, 18);
+        sheet.allSkillsList.forEach(sk => {
+            const skillName = sk.name || sk;
+            assert.ok(typeof skillName === 'string');
+            assert.notEqual(skillName, '[object Object]');
+            assert.ok(skillName.length > 0);
+        });
+
+        // Verify allCompendiumSpellsList is populated with spells
+        assert.ok(sheet.allCompendiumSpellsList.length > 0);
+        const sampleSpell = sheet.allCompendiumSpellsList[0];
+        assert.ok(sampleSpell.name && typeof sampleSpell.name === 'string');
+        assert.ok(typeof sampleSpell.level === 'number');
+
+        // Test Armor modal adding skill advantage with string
+        sheet.openArmorModal();
+        sheet.selectedSkillAdvToAdd = 'Athletics';
+        sheet.addSkillAdvToArmorForm();
+        assert.deepEqual(sheet.armorForm.advantageSkills, ['Athletics']);
+
+        // Adding an object should extract name rather than [object Object]
+        sheet.selectedSkillAdvToAdd = { id: 'acrobatics', name: 'Acrobatics', attr: 'DEX' };
+        sheet.addSkillAdvToArmorForm();
+        assert.deepEqual(sheet.armorForm.advantageSkills, ['Athletics', 'Acrobatics']);
+
+        // Adding [object Object] string directly should be ignored
+        sheet.selectedSkillAdvToAdd = '[object Object]';
+        sheet.addSkillAdvToArmorForm();
+        assert.deepEqual(sheet.armorForm.advantageSkills, ['Athletics', 'Acrobatics']);
+
+        // Adding Granted Spell to Armor
+        sheet.selectedSpellToAdd = 'Misty Step';
+        sheet.addSpellToArmorForm();
+        assert.deepEqual(sheet.armorForm.grantedSpells, ['Misty Step']);
+
+        // Save Armor
+        sheet.armorForm.name = 'Boots of Elvenkind';
+        sheet.armorForm.equipped = true;
+        sheet.handleSaveArmor();
+
+        const savedArmor = sheet.data.inventory.armors.find(a => a.name === 'Boots of Elvenkind');
+        assert.ok(savedArmor);
+        assert.deepEqual(savedArmor.advantageSkills, ['Athletics', 'Acrobatics']);
+        assert.deepEqual(savedArmor.grantedSpells, ['Misty Step']);
+
+        // Verify Athletics now has advantage from equipped armor
+        const athletics = sheet.stats.computedSkills.find(s => s.id === 'athletics');
+        assert.equal(athletics.hasAdvantage, true);
+    });
 });

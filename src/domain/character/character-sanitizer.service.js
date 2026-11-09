@@ -98,14 +98,21 @@ export class CharacterSanitizerService {
             if (!Array.isArray(d.inventory[k])) d.inventory[k] = [];
         });
 
-        // Ensure legacy items with known intrinsic skill/stat advantages retain their equipped status and skills
-        d.inventory.story.forEach(item => {
-            if (item && item.name && item.name.toLowerCase().includes('consilium dubium')) {
-                if (item.equipped === undefined) item.equipped = true;
-                if (!Array.isArray(item.advantageSkills) || item.advantageSkills.length === 0) {
-                    item.advantageSkills = ['Persuasion', 'Deception'];
+        // Ensure items with known intrinsic skill/stat advantages retain their equipped status and clean advantage skills
+        ['armors', 'story'].forEach(cat => {
+            (d.inventory[cat] || []).forEach(item => {
+                if (item && Array.isArray(item.advantageSkills)) {
+                    item.advantageSkills = item.advantageSkills
+                        .map(s => (s && typeof s === 'object') ? (s.name || s.id) : s)
+                        .filter(s => s && typeof s === 'string' && s !== '[object Object]');
                 }
-            }
+                if (item && item.name && item.name.toLowerCase().includes('consilium dubium')) {
+                    if (item.equipped === undefined) item.equipped = true;
+                    if (!Array.isArray(item.advantageSkills) || item.advantageSkills.length === 0) {
+                        item.advantageSkills = ['Persuasion', 'Deception'];
+                    }
+                }
+            });
         });
 
         return d;

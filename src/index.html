@@ -2510,8 +2510,8 @@
                     <div class="flex gap-2">
                         <select x-model="selectedSkillAdvToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                             <option value="">-- Choose Skill --</option>
-                            <template x-for="sk in allSkillsList" :key="sk">
-                                <option :value="sk" x-text="sk"></option>
+                            <template x-for="sk in allSkillsList" :key="sk.name || sk">
+                                <option :value="sk.name || sk" x-text="sk.name || sk"></option>
                             </template>
                         </select>
                         <button type="button" @click="addSkillAdvToArmorForm()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0">
@@ -3056,8 +3056,8 @@
                     <div class="flex gap-2">
                         <select x-model="storySkillAdvToAdd" class="flex-1 bg-dark-950 border border-gray-700 rounded-lg p-2 text-white outline-none focus:border-brand-500 text-xs">
                             <option value="">-- Choose Skill --</option>
-                            <template x-for="sk in allSkillsList" :key="sk">
-                                <option :value="sk" x-text="sk"></option>
+                            <template x-for="sk in allSkillsList" :key="sk.name || sk">
+                                <option :value="sk.name || sk" x-text="sk.name || sk"></option>
                             </template>
                         </select>
                         <button type="button" @click="addSkillAdvToStoryForm()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shrink-0">

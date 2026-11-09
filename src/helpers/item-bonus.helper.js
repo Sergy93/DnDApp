@@ -102,7 +102,11 @@ export class ItemBonusHelper {
             saveType: sb.saveType || '',
             saveMode: sb.saveMode || (sb.saveVal ? 'bonus' : 'advantage'),
             saveVal: sb.saveVal || 0,
-            advantageSkills: Array.isArray(item.advantageSkills) ? [...item.advantageSkills] : [],
+            advantageSkills: Array.isArray(item.advantageSkills)
+                ? item.advantageSkills
+                    .map(s => (s && typeof s === 'object') ? (s.name || s.id) : s)
+                    .filter(s => s && typeof s === 'string' && s !== '[object Object]')
+                : [],
             equipped: Boolean(item.equipped),
             ...overrides
         };

@@ -27,6 +27,19 @@ export class SpellService {
 
         this.loadPromise = (async () => {
             try {
+                // First try offline IndexedDB store if available
+                if (typeof window !== 'undefined' && window.indexedDB) {
+                    try {
+                        const { CompendiumStorageService } = await import('../../services/compendium-storage.service.js');
+                        const dbSpells = await CompendiumStorageService.getAll('spells');
+                        if (Array.isArray(dbSpells) && dbSpells.length > 0) {
+                            this.buildSpellsCompendium([dbSpells]);
+                            this.isLoaded = true;
+                            return this.spellsCompendium.length;
+                        }
+                    } catch (_) {}
+                }
+
                 if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
                     const res = await fetch(url);
                     if (res.ok) {

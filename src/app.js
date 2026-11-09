@@ -398,6 +398,11 @@ const resolveScaledSpellDamage = SpellService.resolveScaledSpellDamage.bind(Spel
 const calculateSlotDamage = SpellService.calculateSlotDamage.bind(SpellService);
 const resolveSpellData = SpellService.resolveSpellData.bind(SpellService);
 
+// Synchronously populate SpellService with bundled compendium so all spells are immediately available offline
+if (SPELL_COMPENDIUM) {
+    SpellService.buildSpellsCompendium([SPELL_COMPENDIUM]);
+}
+
 // ================= COMPONENTE ALPINE.JS =================
 function createCharacterSheet() {
     const memoizedStats = createMemo(
