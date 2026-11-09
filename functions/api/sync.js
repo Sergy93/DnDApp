@@ -43,6 +43,16 @@ export async function onRequestPost(context) {
             // 2. Process local changes (Upsert with client_updated_at comparison)
             for (const char of localChanges) {
                 const payload = extractCharacterDbPayload(char, userId);
+
+                // Reconcile slug uniqueness: if a character already exists for this user with the same slug but a different id,
+                // replace the conflicting row so (user_id, slug) unique constraint is satisfied.
+                statements.push(
+                    context.env.DB.prepare(`
+                        DELETE FROM characters
+                        WHERE user_id = ? AND slug = ? AND id != ?
+                    `).bind(userId, payload.slug, payload.id)
+                );
+
                 statements.push(
                     context.env.DB.prepare(CHARACTER_UPSERT_SQL).bind(
                         ...getCharacterPayloadValues(payload)

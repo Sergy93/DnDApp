@@ -41,6 +41,10 @@ export async function onRequestPost(context) {
         const rawChar = body.character || body;
         const payload = extractCharacterDbPayload(rawChar, userId);
 
+        const deleteConflictingSlugStmt = context.env.DB.prepare(`
+            DELETE FROM characters WHERE user_id = ? AND slug = ? AND id != ?
+        `).bind(userId, payload.slug, payload.id);
+
         const upsertStmt = context.env.DB.prepare(CHARACTER_UPSERT_SQL).bind(
             ...getCharacterPayloadValues(payload)
         );
@@ -49,7 +53,7 @@ export async function onRequestPost(context) {
             DELETE FROM character_tombstones WHERE id = ? AND user_id = ?
         `).bind(payload.id, userId);
 
-        await context.env.DB.batch([upsertStmt, deleteTombstoneStmt]);
+        await context.env.DB.batch([deleteConflictingSlugStmt, upsertStmt, deleteTombstoneStmt]);
 
         return jsonResponse({
             success: true,
