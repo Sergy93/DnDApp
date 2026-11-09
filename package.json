@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --import ./tests/test-helper.js --test tests/app.test.js tests/unit/*.test.js tests/integration/*.test.js",
+    "test:unit": "node --import ./tests/test-helper.js --test tests/app.test.js tests/unit/*.test.js tests/integration/*.test.js",
     "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run test:e2e",
     "compile:data": "node scripts/compile-compendiums.js",
     "build:html": "node scripts/build-html.js",
     "build:js": "esbuild src/app.js --bundle --minify --outfile=src/bundle.js --format=esm",

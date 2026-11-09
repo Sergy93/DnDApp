@@ -407,7 +407,10 @@ function createCharacterSheet() {
             const attrsSig = ABILITY_KEYS.map(k => `${this.data?.attributes?.[k]?.score}:${this.data?.attributes?.[k]?.profSave}`).join(',');
             const equippedSig = (getAllEquippedItems(this.data)).map(i => `${i.name}:${i.equipped}:${JSON.stringify(i.statBonuses || {})}:${(i.advantageSkills || []).join(',')}:${(i.advantageAttrs || []).join(',')}:${(i.advantageSaves || []).join(',')}`).join(';');
             const weaponsSig = (this.data?.inventory?.weapons || []).map(w => `${w.name}:${w.attrMode}:${w.dice}:${w.damageType}:${w.proficient}:${(w.properties || []).join(',')}`).join(';');
-            return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}|${weaponsSig}`;
+            const skillsSig = (this.data?.skills || []).map(s => `${s.id}:${s.profType}`).join(',');
+            const spellsPrepSig = (this.data?.magic?.spells || []).map(s => `${s.name}:${s.prepared !== false}`).join(',');
+            const traitsSig = (this.data?.combat?.traits || []).length;
+            return `${charId}|${charName}|${this.equipRevision}|${this.data?.identity?.race}|${classesSig}|${attrsSig}|${equippedSig}|${weaponsSig}|${skillsSig}|${spellsPrepSig}|${traitsSig}`;
         }
     );
 
@@ -678,7 +681,7 @@ function createCharacterSheet() {
                 ErrorHandler.warn(e, 'CharacterSyncService.checkAuth.login');
             }
 
-            const email = await this.uiPrompt("Introduce tu correo de Google para identificarte:", "Google OAuth / Cloudflare Access", "Google Identity", "usuario@gmail.com", "👤", "Continuar");
+            const email = await this.uiPrompt("Enter your Google email to sign in:", "Google OAuth / Cloudflare Access", "Google Identity", "user@gmail.com", "👤", "Continue");
             if (email && email.trim()) {
                 const profile = { id: email.trim().toLowerCase(), email: email.trim().toLowerCase() };
                 CharacterSyncService.setUserProfile(profile);
@@ -775,6 +778,7 @@ function createCharacterSheet() {
                 const loaded = CharacterStorageService.getCharacterById(next.id);
                 this.data = sanitizeTracking(loaded);
                 this.activeCharacterId = loaded.id;
+                this.equipRevision++;
                 CharacterRouterService.navigateToSlug(loaded.slug);
             }
             this.characterSwitcherOpen = false;

@@ -197,8 +197,12 @@ export function createSpellsSlice() {
 
         // Getters
         get allCompendiumSpellsList() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumCount || 0);
             if (!SpellService.isLoaded && SpellService.spellsCompendium.length === 0) {
-                SpellService.loadCompendium().then(c => { this.compendiumCount = c; });
+                SpellService.loadCompendium().then(c => {
+                    this.compendiumCount = c;
+                    this.compendiumRevision = (this.compendiumRevision || 0) + 1;
+                });
             }
             return [...SpellService.spellsCompendium].sort((a, b) =>
                 (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
@@ -312,6 +316,14 @@ export function createSpellsSlice() {
         },
 
         get filteredCompendiumSpells() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumCount || 0);
+            if (!SpellService.isLoaded && SpellService.spellsCompendium.length === 0) {
+                SpellService.loadCompendium().then(c => {
+                    this.compendiumCount = c;
+                    this.compendiumRevision = (this.compendiumRevision || 0) + 1;
+                });
+            }
+
             const currentSpellKeys = new Set();
             (this.data.magic?.spells || []).forEach(s => {
                 if (!s || !s.name) return;
@@ -320,7 +332,7 @@ export function createSpellsSlice() {
 
             const q = normalizeKey(this.spellCompendiumSearch);
             const lvl = this.spellCompendiumLevelFilter;
-            let list = SpellService.spellsCompendium;
+            let list = SpellService.spellsCompendium || [];
 
             // Exclude spells already owned by character
             list = list.filter(s => {
@@ -527,6 +539,8 @@ export function createSpellsSlice() {
                 sourceType: this.spellCompendiumSource.toLowerCase()
             });
             this.logEvent('📖', 'Spell Learned', `Added "${compSpell.name}" to spellbook (Source: ${this.spellCompendiumSource}).`);
+            this.equipRevision++;
+            this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Added "${compSpell.name}" to your spellbook.`, "Spell Added", "✨");
         },
@@ -557,6 +571,8 @@ export function createSpellsSlice() {
             });
 
             this.logEvent('📖', 'Custom Spell Created', `Created custom spell "${name}" (Level ${lvl}).`);
+            this.equipRevision++;
+            this.saveState();
             this.modalSpellAddOpen = false;
             this.uiAlert(`Custom spell "${name}" created.`, "Spell Created", "✨");
         },
@@ -575,6 +591,8 @@ export function createSpellsSlice() {
 
             this.data.magic.spells = (this.data.magic.spells || []).filter(s => normalizeKey(s.name) !== normalizeKey(spellName));
             this.logEvent('🗑️', 'Spell Removed', `Removed spell "${spellName}" from spellbook.`);
+            this.equipRevision++;
+            this.saveState();
         },
 
         toggleSpellFavorite(spellName) {
@@ -612,6 +630,7 @@ export function createSpellsSlice() {
             if (sp) {
                 if (sp.level === 0 || sp.isItemGranted || sp.alwaysPrepared) return;
                 sp.prepared = sp.prepared === false ? true : false;
+                this.equipRevision++;
                 this.saveState();
             }
         },

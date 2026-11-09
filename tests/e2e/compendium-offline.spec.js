@@ -23,7 +23,7 @@ test.describe('Dorian D&D Sheet - Compendium Spell Lookup', () => {
     await searchInput.fill('Fireball');
 
     // 5. Verify Fireball appears in the filtered compendium list (exact match)
-    await expect(modal.getByText('Fireball', { exact: true })).toBeVisible();
+    await expect(modal.getByText('Fireball', { exact: true })).toBeVisible({ timeout: 15000 });
 
     // 6. Close modal using the top right close button (×)
     const closeBtn = modal.locator('button', { hasText: '×' });

@@ -27,7 +27,9 @@ export function createProgressionSlice() {
             }));
         },
         function() {
-            return (this.data?.identity?.classes || []).map(c => `${c.name}:${c.subclass}:${c.level}`).join(',');
+            const charId = this.data?.id || '';
+            const classesSig = (this.data?.identity?.classes || []).map(c => `${c.name}:${c.subclass}:${c.level}`).join(',');
+            return `${charId}|${classesSig}`;
         }
     );
 
@@ -215,6 +217,7 @@ export function createProgressionSlice() {
 
             // 1. Sync Spell Slots & 2. Auto-sync class features & clean stale
             const { newResources, newTraits } = ClassSyncService.applyClassFeaturesSync(this.data);
+            this.equipRevision++;
             this.modalLevelUpOpen = false;
 
             const totalLevel = (this.data.identity?.classes || []).reduce((a, b) => a + (b.level || 0), 0);
@@ -230,6 +233,7 @@ export function createProgressionSlice() {
         syncClassFeatures() {
             const { newResources, newTraits } = ClassSyncService.applyClassFeaturesSync(this.data);
             const addedCount = newResources.length + newTraits.length;
+            this.equipRevision++;
             this.saveState();
 
             if (addedCount > 0) {
