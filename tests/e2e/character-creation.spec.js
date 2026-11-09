@@ -25,11 +25,11 @@ test.describe('Dorian D&D Sheet - Character Creation Wizard', () => {
     await nextBtn.click();
     await expect(page.locator('text=Step 4: Ability Scores')).toBeVisible();
 
-    // Advance to Step 6 (Review & Summon Hero)
+    // Advance to Step 6 (Review & Summon Hero - default Fighter skips Step 5 Magic)
     await nextBtn.click();
     const reviewHeader = page.locator('text=Step 6: Review & Summon Hero');
-    if (!(await reviewHeader.isVisible())) {
-      // If spellcaster step was shown, click next again to reach step 6
+    const step5Header = page.locator('text=Step 5: Equipment & Spells');
+    if (await step5Header.isVisible({ timeout: 500 }).catch(() => false)) {
       await nextBtn.click();
     }
     await expect(reviewHeader).toBeVisible();

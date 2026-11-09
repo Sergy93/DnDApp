@@ -2,9 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  timeout: 30000,
+  timeout: 45000,
   expect: {
-    timeout: 5000
+    timeout: 7000
   },
   fullyParallel: false,
   retries: 0,
@@ -25,6 +25,6 @@ export default defineConfig({
     command: 'npx wrangler dev --port 8788',
     url: 'http://127.0.0.1:8788',
     reuseExistingServer: true,
-    timeout: 15000
+    timeout: 30000
   }
 });

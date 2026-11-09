@@ -301,8 +301,22 @@ export class CharacterSyncService {
                 })
             });
 
+            let responseData = null;
             if (!response.ok) {
-                throw new Error(`Sync API responded with HTTP ${response.status}`);
+                try {
+                    responseData = await response.json();
+                } catch {
+                    try {
+                        responseData = { error: await response.text() };
+                    } catch {
+                        responseData = null;
+                    }
+                }
+                const detailMsg = responseData?.details || responseData?.error;
+                const errorMsg = detailMsg
+                    ? `Sync API error (${response.status}): ${detailMsg}`
+                    : `Sync API responded with HTTP ${response.status}`;
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
