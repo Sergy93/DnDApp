@@ -144,3 +144,33 @@ export async function onRequestPost(context) {
         return errorResponse('Failed to execute sync batch', 500, err.message);
     }
 }
+
+/**
+ * Health check & diagnostic endpoint for GET /api/sync
+ */
+export async function onRequestGet(context) {
+    const { userId } = context.data;
+    if (!context.env.DB) {
+        return errorResponse('Database binding DB is missing', 500);
+    }
+
+    try {
+        const characters = await context.env.DB.prepare(`
+            SELECT id, slug, name, client_updated_at FROM characters WHERE user_id = ?
+        `).bind(userId).all();
+
+        const count = characters.results ? characters.results.length : 0;
+        return jsonResponse({
+            success: true,
+            status: 'operational',
+            method: 'GET',
+            message: 'Sync API is active. To perform bidirectional sync, send a POST request with localChanges and lastSyncTimestamp.',
+            userId,
+            characterCount: count,
+            characters: characters.results || [],
+            serverTimestamp: Date.now()
+        });
+    } catch (err) {
+        return errorResponse('Sync diagnostic check failed', 500, err.message);
+    }
+}

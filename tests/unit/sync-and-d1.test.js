@@ -250,6 +250,25 @@ test('Cloudflare Worker Main Router (src/worker.js)', async (t) => {
         assert.equal(res.status, 200);
     });
 
+    await t.test('handles GET /api/sync with diagnostic status', async () => {
+        const mockEnv = {
+            DB: {
+                prepare: () => ({
+                    bind: () => ({
+                        all: async () => ({ results: [{ id: 'char_1', name: 'Dorian' }] })
+                    })
+                })
+            }
+        };
+        const req = new Request('https://dorian-dnd.workers.dev/api/sync', { method: 'GET' });
+        const res = await worker.fetch(req, mockEnv, {});
+        assert.equal(res.status, 200);
+        const data = await res.json();
+        assert.equal(data.success, true);
+        assert.equal(data.status, 'operational');
+        assert.equal(data.characterCount, 1);
+    });
+
     await t.test('returns 404 JSON for unknown /api/ endpoints', async () => {
         const req = new Request('https://dorian-dnd.workers.dev/api/nonexistent');
         const res = await worker.fetch(req, {}, {});
