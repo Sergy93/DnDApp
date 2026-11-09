@@ -39,6 +39,8 @@ export function createWizardSlice() {
 
         // ================= WIZARD COMPUTED GETTERS =================
         get wizardRacesList() {
+            // Access reactive Alpine properties to establish reactive dependency
+            const _ = (this.compendiumRevision || 0) + (this.compendiumLoaded ? 1 : 0);
             const races = CompendiumStorageService.getRaces();
             return Object.keys(races).map(k => ({
                 key: k,
@@ -50,6 +52,7 @@ export function createWizardSlice() {
         },
 
         get wizardSubracesList() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumLoaded ? 1 : 0);
             const rKey = normalizeKey(this.wizardData.race);
             const races = CompendiumStorageService.getRaces();
             const raceObj = races[rKey];
@@ -62,6 +65,7 @@ export function createWizardSlice() {
         },
 
         get wizardClassesList() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumLoaded ? 1 : 0);
             const classes = CompendiumStorageService.getClasses();
             return Object.keys(classes).map(k => ({
                 key: k,
@@ -72,6 +76,7 @@ export function createWizardSlice() {
         },
 
         get wizardSubclassesList() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumLoaded ? 1 : 0);
             const cKey = normalizeKey(this.wizardData.class);
             const classes = CompendiumStorageService.getClasses();
             const classObj = classes[cKey];
@@ -83,6 +88,7 @@ export function createWizardSlice() {
         },
 
         get wizardBackgroundsList() {
+            const _ = (this.compendiumRevision || 0) + (this.compendiumLoaded ? 1 : 0);
             const backgrounds = CompendiumStorageService.getBackgrounds();
             return Object.keys(backgrounds).map(k => ({
                 key: k,
@@ -169,7 +175,7 @@ export function createWizardSlice() {
                 alignment: 'Neutral Good',
                 background: 'Folk Hero',
                 race: 'human',
-                subrace: '',
+                subrace: 'variant',
                 asiMode: 'traditional',
                 flexibleAsi: { STR: 0, DEX: 0, CON: 0, INT: 0, WIS: 0, CHA: 0 },
                 class: 'fighter',
@@ -181,7 +187,7 @@ export function createWizardSlice() {
                 pointBuyScores: { STR: 8, DEX: 8, CON: 8, INT: 8, WIS: 8, CHA: 8 },
                 rolledAttributes: { STR: 12, DEX: 12, CON: 12, INT: 12, WIS: 12, CHA: 12 },
                 manualAttributes: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
-                chosenSkills: [],
+                chosenSkills: ['athletics', 'perception'],
                 chosenSpells: []
             };
             this.wizardOpen = true;
@@ -196,11 +202,91 @@ export function createWizardSlice() {
             CharacterRouterService.navigateToSlug(activeSlug);
         },
 
-        wizardNextStep() {
-            if (this.wizardStep === 1) {
-                if (!this.wizardData.name.trim()) {
-                    this.wizardData.name = 'Hero';
+        wizardValidateStep(step = this.wizardStep) {
+            if (step === 1) {
+                if (!this.wizardData.name || !this.wizardData.name.trim()) {
+                    return 'Character Name is required.';
                 }
+                if (!this.wizardData.alignment || !this.wizardData.alignment.trim()) {
+                    return 'Moral Alignment is required.';
+                }
+                if (!this.wizardData.background || !this.wizardData.background.trim()) {
+                    return 'Background Origin is required.';
+                }
+            }
+            if (step === 2) {
+                if (!this.wizardData.race || !this.wizardData.race.trim()) {
+                    return 'Primary Race is required.';
+                }
+                const subraces = this.wizardSubracesList;
+                if (subraces.length > 0) {
+                    const validKeys = subraces.map(s => s.key);
+                    if (!this.wizardData.subrace || !validKeys.includes(this.wizardData.subrace)) {
+                        this.wizardData.subrace = subraces[0].key;
+                    }
+                }
+            }
+            if (step === 3) {
+                if (!this.wizardData.class || !this.wizardData.class.trim()) {
+                    return 'Class is required.';
+                }
+                const rules = this.wizardClassRules;
+                const subclasses = this.wizardSubclassesList;
+                if (this.wizardData.level >= rules.subclassLevel) {
+                    if (!this.wizardData.subclass && subclasses.length > 0) {
+                        this.wizardData.subclass = subclasses[0].name;
+                    } else if (!this.wizardData.subclass) {
+                        return `Subclass is required for ${capitalizeWord(this.wizardData.class)} at level ${this.wizardData.level}.`;
+                    }
+                }
+                const targetSkills = rules.skillsChooseCount;
+                if (this.wizardData.chosenSkills.length < targetSkills) {
+                    if (this.wizardData.chosenSkills.length === 0) {
+                        const allowed = this.wizardAllowedSkillsList
+                            .filter(s => !this.wizardBackgroundSkills.includes(s.id))
+                            .slice(0, targetSkills)
+                            .map(s => s.id);
+                        this.wizardData.chosenSkills = allowed;
+                    } else {
+                        return `Please choose all ${targetSkills} class skill proficiencies (${this.wizardData.chosenSkills.length}/${targetSkills} selected).`;
+                    }
+                }
+            }
+            if (step === 4) {
+                if (this.wizardData.scoreMethod === 'pointbuy') {
+                    if (this.wizardPointBuyRemaining > 0) {
+                        return `You have ${this.wizardPointBuyRemaining} unspent Point Buy points. Allocate all 27 points.`;
+                    }
+                    if (this.wizardPointBuyRemaining < 0) {
+                        return `Point Buy limit exceeded by ${Math.abs(this.wizardPointBuyRemaining)}. Maximum budget is 27 points.`;
+                    }
+                }
+            }
+            return null;
+        },
+
+        wizardGoToStep(targetStep) {
+            if (targetStep < this.wizardStep) {
+                this.wizardStep = targetStep;
+                return;
+            }
+            for (let s = this.wizardStep; s < targetStep; s++) {
+                if (s === 5 && !this.wizardIsSpellcaster) continue;
+                const error = this.wizardValidateStep(s);
+                if (error) {
+                    this.wizardStep = s;
+                    this.uiAlert(error, 'Required Field', '⚠️');
+                    return;
+                }
+            }
+            this.wizardStep = targetStep;
+        },
+
+        wizardNextStep() {
+            const error = this.wizardValidateStep(this.wizardStep);
+            if (error) {
+                this.uiAlert(error, 'Required Field', '⚠️');
+                return;
             }
             if (this.wizardStep < 6) {
                 // Skip magic step if not a spellcaster
@@ -220,6 +306,20 @@ export function createWizardSlice() {
                     this.wizardStep--;
                 }
             }
+        },
+
+        assignStandardScore(attrKey, newScore) {
+            const scoreNum = Number(newScore);
+            const oldScore = Number(this.wizardData.standardArrayAssigned[attrKey] || 8);
+            if (oldScore === scoreNum) return;
+
+            // Swap value with whichever attribute currently holds scoreNum
+            ABILITY_KEYS.forEach(k => {
+                if (k !== attrKey && Number(this.wizardData.standardArrayAssigned[k]) === scoreNum) {
+                    this.wizardData.standardArrayAssigned[k] = oldScore;
+                }
+            });
+            this.wizardData.standardArrayAssigned[attrKey] = scoreNum;
         },
 
         onWizardRaceChange() {
@@ -285,6 +385,16 @@ export function createWizardSlice() {
         },
 
         async finalizeAndCreateHero() {
+            // Validate all steps before finalizing
+            for (let s = 1; s <= 4; s++) {
+                const error = this.wizardValidateStep(s);
+                if (error) {
+                    this.wizardStep = s;
+                    await this.uiAlert(error, 'Required Field', '⚠️');
+                    return;
+                }
+            }
+
             // Determine active base attributes map based on selected method
             let baseAttrs = {};
             if (this.wizardData.scoreMethod === 'pointbuy') baseAttrs = this.wizardData.pointBuyScores;

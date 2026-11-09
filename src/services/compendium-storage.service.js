@@ -12,6 +12,11 @@
  */
 
 import { ErrorHandler } from './error-handler.service.js';
+import {
+    CANONICAL_CREATION_CLASSES,
+    CANONICAL_CREATION_RACES,
+    CANONICAL_CREATION_BACKGROUNDS
+} from '../domain/constants/creation-rules.constants.js';
 
 const DB_NAME = 'DorianDndCompendiumDB';
 const DB_VERSION = 1;
@@ -42,15 +47,24 @@ export class CompendiumStorageService {
     static isLoaded = false;
 
     static getClasses() {
-        return this._cache.classes || {};
+        if (this._cache.classes && Object.keys(this._cache.classes).length > 0) {
+            return this._cache.classes;
+        }
+        return CANONICAL_CREATION_CLASSES;
     }
 
     static getRaces() {
-        return this._cache.races || {};
+        if (this._cache.races && Object.keys(this._cache.races).length > 0) {
+            return this._cache.races;
+        }
+        return CANONICAL_CREATION_RACES;
     }
 
     static getBackgrounds() {
-        return this._cache.backgrounds || {};
+        if (this._cache.backgrounds && Object.keys(this._cache.backgrounds).length > 0) {
+            return this._cache.backgrounds;
+        }
+        return CANONICAL_CREATION_BACKGROUNDS;
     }
 
     static getSpells() {

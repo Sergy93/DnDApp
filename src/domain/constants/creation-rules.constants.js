@@ -199,3 +199,299 @@ export const POINT_BUY_COSTS = {
 export const POINT_BUY_TOTAL_POINTS = 27;
 
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
+
+/**
+ * Canonical 5e Classes reference metadata for synchronous UI rendering (0ms startup latency).
+ */
+export const CANONICAL_CREATION_CLASSES = Object.freeze({
+    artificer: {
+        name: 'Artificer',
+        hitDie: 'd8',
+        subclasses: {
+            alchemist: { name: 'Alchemist' },
+            armorer: { name: 'Armorer' },
+            artillerist: { name: 'Artillerist' },
+            battlesmith: { name: 'Battle Smith' }
+        }
+    },
+    barbarian: {
+        name: 'Barbarian',
+        hitDie: 'd12',
+        subclasses: {
+            berserker: { name: 'Path of the Berserker' },
+            totemwarrior: { name: 'Path of the Totem Warrior' },
+            ancestralguardian: { name: 'Path of the Ancestral Guardian' },
+            stormherald: { name: 'Path of the Storm Herald' },
+            zealot: { name: 'Path of the Zealot' },
+            beast: { name: 'Path of the Beast' },
+            wildmagic: { name: 'Path of Wild Magic' }
+        }
+    },
+    bard: {
+        name: 'Bard',
+        hitDie: 'd8',
+        subclasses: {
+            lore: { name: 'College of Lore' },
+            valor: { name: 'College of Valor' },
+            glamour: { name: 'College of Glamour' },
+            swords: { name: 'College of Swords' },
+            whispers: { name: 'College of Whispers' },
+            creation: { name: 'College of Creation' },
+            eloquence: { name: 'College of Eloquence' }
+        }
+    },
+    cleric: {
+        name: 'Cleric',
+        hitDie: 'd8',
+        subclasses: {
+            knowledge: { name: 'Knowledge Domain' },
+            life: { name: 'Life Domain' },
+            light: { name: 'Light Domain' },
+            nature: { name: 'Nature Domain' },
+            tempest: { name: 'Tempest Domain' },
+            trickery: { name: 'Trickery Domain' },
+            war: { name: 'War Domain' },
+            forge: { name: 'Forge Domain' },
+            grave: { name: 'Grave Domain' },
+            order: { name: 'Order Domain' },
+            peace: { name: 'Peace Domain' },
+            twilight: { name: 'Twilight Domain' }
+        }
+    },
+    druid: {
+        name: 'Druid',
+        hitDie: 'd8',
+        subclasses: {
+            land: { name: 'Circle of the Land' },
+            moon: { name: 'Circle of the Moon' },
+            dreams: { name: 'Circle of Dreams' },
+            shepherd: { name: 'Circle of the Shepherd' },
+            spores: { name: 'Circle of Spores' },
+            stars: { name: 'Circle of Stars' },
+            wildfire: { name: 'Circle of Wildfire' }
+        }
+    },
+    fighter: {
+        name: 'Fighter',
+        hitDie: 'd10',
+        subclasses: {
+            battlemaster: { name: 'Battle Master' },
+            champion: { name: 'Champion' },
+            eldritchknight: { name: 'Eldritch Knight' },
+            arcanearcher: { name: 'Arcane Archer' },
+            cavalier: { name: 'Cavalier' },
+            samurai: { name: 'Samurai' },
+            psiwarrior: { name: 'Psi Warrior' },
+            runeknight: { name: 'Rune Knight' }
+        }
+    },
+    monk: {
+        name: 'Monk',
+        hitDie: 'd8',
+        subclasses: {
+            openhand: { name: 'Way of the Open Hand' },
+            shadow: { name: 'Way of Shadow' },
+            fourelements: { name: 'Way of the Four Elements' },
+            drunkenmaster: { name: 'Way of the Drunken Master' },
+            kensei: { name: 'Way of the Kensei' },
+            sunsoul: { name: 'Way of the Sun Soul' },
+            mercy: { name: 'Way of Mercy' },
+            astralself: { name: 'Way of the Astral Self' }
+        }
+    },
+    paladin: {
+        name: 'Paladin',
+        hitDie: 'd10',
+        subclasses: {
+            devotion: { name: 'Oath of Devotion' },
+            ancients: { name: 'Oath of the Ancients' },
+            vengeance: { name: 'Oath of Vengeance' },
+            conquest: { name: 'Oath of Conquest' },
+            redemption: { name: 'Oath of Redemption' },
+            glory: { name: 'Oath of Glory' },
+            watchers: { name: 'Oath of the Watchers' }
+        }
+    },
+    ranger: {
+        name: 'Ranger',
+        hitDie: 'd10',
+        subclasses: {
+            hunter: { name: 'Hunter' },
+            beastmaster: { name: 'Beast Master' },
+            gloomstalker: { name: 'Gloom Stalker' },
+            horizonwalker: { name: 'Horizon Walker' },
+            monsterslayer: { name: 'Monster Slayer' },
+            feywanderer: { name: 'Fey Wanderer' },
+            swarmkeeper: { name: 'Swarmkeeper' }
+        }
+    },
+    rogue: {
+        name: 'Rogue',
+        hitDie: 'd8',
+        subclasses: {
+            thief: { name: 'Thief' },
+            assassin: { name: 'Assassin' },
+            arcanetrickster: { name: 'Arcane Trickster' },
+            inquisitive: { name: 'Inquisitive' },
+            mastermind: { name: 'Mastermind' },
+            scout: { name: 'Scout' },
+            swashbuckler: { name: 'Swashbuckler' },
+            phantom: { name: 'Phantom' },
+            soulknife: { name: 'Soulknife' }
+        }
+    },
+    sorcerer: {
+        name: 'Sorcerer',
+        hitDie: 'd6',
+        subclasses: {
+            draconic: { name: 'Draconic Bloodline' },
+            wild: { name: 'Wild Magic' },
+            divinesoul: { name: 'Divine Soul' },
+            shadow: { name: 'Shadow Magic' },
+            storm: { name: 'Storm Sorcery' },
+            aberrantmind: { name: 'Aberrant Mind' },
+            clockworksoul: { name: 'Clockwork Soul' }
+        }
+    },
+    warlock: {
+        name: 'Warlock',
+        hitDie: 'd8',
+        subclasses: {
+            archfey: { name: 'The Archfey' },
+            fiend: { name: 'The Fiend' },
+            greatoldone: { name: 'The Great Old One' },
+            celestial: { name: 'The Celestial' },
+            hexblade: { name: 'The Hexblade' },
+            fathomless: { name: 'The Fathomless' },
+            genie: { name: 'The Genie' }
+        }
+    },
+    wizard: {
+        name: 'Wizard',
+        hitDie: 'd6',
+        subclasses: {
+            abjuration: { name: 'School of Abjuration' },
+            conjuration: { name: 'School of Conjuration' },
+            divination: { name: 'School of Divination' },
+            enchantment: { name: 'School of Enchantment' },
+            evocation: { name: 'School of Evocation' },
+            illusion: { name: 'School of Illusion' },
+            necromancy: { name: 'School of Necromancy' },
+            transmutation: { name: 'School of Transmutation' },
+            war: { name: 'War Magic' },
+            bladesinging: { name: 'Bladesinging' },
+            scribes: { name: 'Order of Scribes' }
+        }
+    }
+});
+
+/**
+ * Canonical 5e Races reference metadata for synchronous UI rendering.
+ */
+export const CANONICAL_CREATION_RACES = Object.freeze({
+    dragonborn: { name: 'Dragonborn', speed: '30 ft.', darkvision: 0, subraces: {} },
+    dwarf: {
+        name: 'Dwarf',
+        speed: '25 ft.',
+        darkvision: 60,
+        subraces: {
+            hill: { name: 'Hill Dwarf' },
+            mountain: { name: 'Mountain Dwarf' },
+            duergar: { name: 'Duergar' }
+        }
+    },
+    elf: {
+        name: 'Elf',
+        speed: '30 ft.',
+        darkvision: 60,
+        subraces: {
+            high: { name: 'High Elf' },
+            wood: { name: 'Wood Elf' },
+            drow: { name: 'Drow' },
+            eladrin: { name: 'Eladrin' },
+            sea: { name: 'Sea Elf' },
+            shadarkai: { name: 'Shadar-kai' }
+        }
+    },
+    gith: {
+        name: 'Gith',
+        speed: '30 ft.',
+        darkvision: 0,
+        subraces: {
+            githyanki: { name: 'Githyanki' },
+            githzerai: { name: 'Githzerai' }
+        }
+    },
+    gnome: {
+        name: 'Gnome',
+        speed: '25 ft.',
+        darkvision: 60,
+        subraces: {
+            rock: { name: 'Rock Gnome' },
+            forest: { name: 'Forest Gnome' },
+            deep: { name: 'Deep Gnome (Svirfneblin)' }
+        }
+    },
+    halfelf: { name: 'Half-Elf', speed: '30 ft.', darkvision: 60, subraces: {} },
+    halforc: { name: 'Half-Orc', speed: '30 ft.', darkvision: 60, subraces: {} },
+    halfling: {
+        name: 'Halfling',
+        speed: '25 ft.',
+        darkvision: 0,
+        subraces: {
+            lightfoot: { name: 'Lightfoot Halfling' },
+            stout: { name: 'Stout Halfling' }
+        }
+    },
+    human: {
+        name: 'Human',
+        speed: '30 ft.',
+        darkvision: 0,
+        subraces: {
+            variant: { name: 'Variant Human' }
+        }
+    },
+    tiefling: {
+        name: 'Tiefling',
+        speed: '30 ft.',
+        darkvision: 60,
+        subraces: {
+            asmodeus: { name: 'Asmodeus Bloodline' },
+            baalzebul: { name: 'Baalzebul Bloodline' },
+            dispater: { name: 'Dispater Bloodline' },
+            fierna: { name: 'Fierna Bloodline' },
+            glasya: { name: 'Glasya Bloodline' },
+            levistus: { name: 'Levistus Bloodline' },
+            mammon: { name: 'Mammon Bloodline' },
+            mephistopheles: { name: 'Mephistopheles Bloodline' },
+            zariel: { name: 'Zariel Bloodline' }
+        }
+    },
+    customlineage: { name: 'Custom Lineage', speed: '30 ft.', darkvision: 60, subraces: {} }
+});
+
+/**
+ * Canonical 5e Backgrounds reference metadata for synchronous UI rendering.
+ */
+export const CANONICAL_CREATION_BACKGROUNDS = Object.freeze({
+    acolyte: { name: 'Acolyte', skillProficiencies: ['insight', 'religion'] },
+    charlatan: { name: 'Charlatan', skillProficiencies: ['deception', 'sleight_of_hand'] },
+    criminal: { name: 'Criminal', skillProficiencies: ['deception', 'stealth'] },
+    custombackground: { name: 'Custom Background', skillProficiencies: [] },
+    entertainer: { name: 'Entertainer', skillProficiencies: ['acrobatics', 'performance'] },
+    folkhero: { name: 'Folk Hero', skillProficiencies: ['animal_handling', 'survival'] },
+    guildartisan: { name: 'Guild Artisan', skillProficiencies: ['insight', 'persuasion'] },
+    hermit: { name: 'Hermit', skillProficiencies: ['medicine', 'religion'] },
+    noble: { name: 'Noble', skillProficiencies: ['history', 'persuasion'] },
+    outlander: { name: 'Outlander', skillProficiencies: ['athletics', 'survival'] },
+    sage: { name: 'Sage', skillProficiencies: ['arcana', 'history'] },
+    sailor: { name: 'Sailor', skillProficiencies: ['athletics', 'perception'] },
+    soldier: { name: 'Soldier', skillProficiencies: ['athletics', 'intimidation'] },
+    urchin: { name: 'Urchin', skillProficiencies: ['sleight_of_hand', 'stealth'] },
+    variantcriminalspy: { name: 'Variant Criminal (Spy)', skillProficiencies: ['deception', 'stealth'] },
+    variantentertainergladiator: { name: 'Variant Entertainer (Gladiator)', skillProficiencies: ['acrobatics', 'performance'] },
+    variantguildartisanguildmerchant: { name: 'Variant Guild Artisan (Guild Merchant)', skillProficiencies: ['insight', 'persuasion'] },
+    variantnobleknight: { name: 'Variant Noble (Knight)', skillProficiencies: ['history', 'persuasion'] },
+    variantnobleretainers: { name: 'Variant Noble (Retainers)', skillProficiencies: ['history', 'persuasion'] },
+    variantsailorpirate: { name: 'Variant Sailor (Pirate)', skillProficiencies: ['athletics', 'perception'] }
+});

@@ -477,6 +477,7 @@ function createCharacterSheet() {
         userProfile: null,
         isLoggedIn: false,
         compendiumCount: 0,
+        compendiumRevision: 0,
         charactersRegistry: [],
         activeCharacterId: null,
         characterSwitcherOpen: false,
@@ -506,6 +507,7 @@ function createCharacterSheet() {
             // Initialize Offline-First IndexedDB Compendium
             CompendiumStorageService.initCompendiums().then(comp => {
                 this.compendiumLoaded = true;
+                this.compendiumRevision++;
                 if (comp && comp.classes && Object.keys(comp.classes).length > 0) {
                     ClassProgressionService.setCompendium(comp.classes);
                 }
