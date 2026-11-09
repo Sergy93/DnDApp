@@ -167,3 +167,6 @@ dist
 .env*
 !.env.example
 .wrangler/
+*.db
+*.db-wal
+*.db-shm

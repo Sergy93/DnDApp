@@ -2,40 +2,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { generateCompendiumSql } from '../../scripts/seed-compendium-d1.js';
 
 const ROOT_DIR = path.resolve(import.meta.dirname, '../../');
-const DB_PATH = path.join(ROOT_DIR, 'DorianDndApp.db');
+const SEED_SQL_PATH = path.join(ROOT_DIR, 'db', 'compendium-seed.sql');
 
-test('SQLite Database Build & Data Seed Integrity', async (t) => {
-    await t.test('db:build runs cleanly and produces DorianDndApp.db', () => {
-        execSync('node scripts/build-db.js', { cwd: ROOT_DIR, stdio: 'pipe' });
-        assert.ok(fs.existsSync(DB_PATH), 'DorianDndApp.db must exist after build');
-        const stats = fs.statSync(DB_PATH);
-        assert.ok(stats.size > 100000, `Database file size should be substantial (actual: ${stats.size} bytes)`);
+test('Cloudflare D1 Compendium SQL Seed Integrity', async (t) => {
+    await t.test('generateCompendiumSql generates valid D1 SQL statements from JSON compendiums', () => {
+        const sql = generateCompendiumSql();
+        assert.ok(sql.length > 500000, 'Seed SQL should contain comprehensive statements');
+
+        // Check statement counts
+        const classInserts = (sql.match(/INSERT OR REPLACE INTO compendium_classes/g) || []).length;
+        const raceInserts = (sql.match(/INSERT OR REPLACE INTO compendium_races/g) || []).length;
+        const bgInserts = (sql.match(/INSERT OR REPLACE INTO compendium_backgrounds/g) || []).length;
+        const spellInserts = (sql.match(/INSERT OR REPLACE INTO compendium_spells/g) || []).length;
+
+        assert.equal(classInserts, 13, 'Must seed all 13 canonical classes');
+        assert.equal(raceInserts, 11, 'Must seed all 11 canonical races');
+        assert.equal(bgInserts, 20, 'Must seed all 20 canonical backgrounds');
+        assert.equal(spellInserts, 477, 'Must seed all 477 canonical spells');
     });
 
-    await t.test('Database tables contain expected seed data', async () => {
-        try {
-            const { DatabaseSync } = await import('node:sqlite');
-            const db = new DatabaseSync(DB_PATH);
-            const charRow = db.prepare('SELECT COUNT(*) as count FROM characters').get();
-            assert.ok(charRow.count >= 1, 'Should have at least 1 character seeded');
-
-            const spellRow = db.prepare('SELECT COUNT(*) as count FROM compendium_spells').get();
-            assert.ok(spellRow.count >= 400, 'Should have >= 400 spells seeded in compendium_spells');
-
-            const classRow = db.prepare('SELECT COUNT(*) as count FROM compendium_classes').get();
-            assert.ok(classRow.count >= 12, 'Should have >= 12 classes seeded in compendium_classes');
-
-            const bgRow = db.prepare('SELECT COUNT(*) as count FROM compendium_backgrounds').get();
-            assert.ok(bgRow.count >= 15, 'Should have >= 15 backgrounds seeded in compendium_backgrounds');
-            db.close();
-        } catch (err) {
-            // If node:sqlite is not built-in, fallback verification passed via execSync output
-            if (!err.message?.includes('Cannot find module')) {
-                throw err;
-            }
-        }
+    await t.test('compendium-seed.sql file exists and is populated without local db', () => {
+        assert.ok(fs.existsSync(SEED_SQL_PATH), 'compendium-seed.sql must exist');
+        const content = fs.readFileSync(SEED_SQL_PATH, 'utf8');
+        assert.ok(content.includes('compendium_spells'), 'Seed SQL must contain spell data');
+        assert.ok(content.includes('compendium_classes'), 'Seed SQL must contain class data');
     });
 });

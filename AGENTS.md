@@ -108,7 +108,7 @@ Before considering any task complete:
 1. **Unit Testing**: Run `npm test` (`node --test tests/*.test.js`) and ensure all unit tests pass. When adding or modifying core logic, update or add corresponding unit tests in `tests/app.test.js`.
 2. **Bundle Compilation**: Run `npm run build` using `esbuild` and verify zero compilation errors.
 3. **Service Worker Versioning**: When asset lists or cache behaviors change, bump the cache version in `src/sw.js` (e.g. `dorian-dnd-cache-vXX`).
-4. **Schema Parity**: Ensure `src/character.json` and `DorianDndApp.db` (`npm run db:build`) adhere to updated schema changes.
+4. **Schema Parity**: Ensure `src/character.json` and Cloudflare D1 schema (`db/schema.sql` & `npm run build:d1-seed`) adhere to updated schema changes.
 5. **Verification**: Verify that runtime imports, JSON structures, and computations execute without exceptions.
 6. **Git Commit & Push**: Whenever project files are modified, stage all changes (`git add -A`), create a commit with a descriptive message in English (`git commit -m "..."`), and push to the remote GitHub repository (`git push origin main`).
 
