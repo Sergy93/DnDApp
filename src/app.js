@@ -28,6 +28,9 @@ import { ClassSyncService } from "./domain/progression/class-sync.service.js";
 import { calculateArmorClass } from "./domain/calculators/ac.calculator.js";
 import { calculateWeapons } from "./domain/calculators/weapons.calculator.js";
 import { calculateSpellStats } from "./domain/calculators/spell-stats.calculator.js";
+import { calculateInitiative } from "./domain/calculators/initiative.calculator.js";
+import { calculateMovementAndSenses, getArmorMinStr } from "./domain/calculators/movement-senses.calculator.js";
+import { calculateSpellPreparation } from "./domain/calculators/spell-preparation.calculator.js";
 import { composeSlices } from "./helpers/slice.helper.js";
 import { getAllEquippedItems } from "./domain/items/equipped-items.helper.js";
 import { createQuestsSlice } from "./ui/slices/quests.slice.js";
@@ -95,6 +98,10 @@ export {
     resolveSpellcastingAttrKey,
     resolveSongOfRestDie,
     computeStats,
+    calculateInitiative,
+    calculateMovementAndSenses,
+    getArmorMinStr,
+    calculateSpellPreparation,
     clean5eToolsText,
     parse5eToolsSpell,
     buildSpellsCompendium,
@@ -210,16 +217,34 @@ function computeStats(d) {
     const percSkill = computedSkills.find(s => s.id === 'perception');
     const percAdvBonus = percSkill?.hasAdvantage ? PASSIVE_ADVANTAGE_BONUS : 0;
     const passivePerception = BASE_PASSIVE_SCORE + (percSkill ? percSkill.valNum : (computedAttrs.WIS.mod + jackOfAllTrades)) + percAdvBonus;
-    const initNum = computedAttrs.DEX.mod + jackOfAllTrades;
-    const initDesc = hasJackOfAllTrades
-        ? `DEX (${computedAttrs.DEX.modStr}) + Jack of All Trades (+${jackOfAllTrades})`
-        : `DEX (${computedAttrs.DEX.modStr})`;
+    
+    const initiativeData = calculateInitiative(
+        computedAttrs,
+        pb,
+        d,
+        allEquipped
+    );
+    const { initNum, initStr, initDesc, initBreakdown } = initiativeData;
 
     const { ac: calculatedAc, armorDesc, ignoresHeavyArmorStrPenalty } = calculateArmorClass(
         d?.inventory?.armors,
         d?.inventory?.story,
         computedAttrs,
         d
+    );
+
+    const movementAndSenses = calculateMovementAndSenses(
+        d,
+        computedAttrs,
+        raceInfo,
+        d?.inventory?.armors,
+        allEquipped
+    );
+
+    const spellPrep = calculateSpellPreparation(
+        d,
+        computedAttrs,
+        d?.magic?.spells
     );
 
     const computedWeapons = calculateWeapons(d?.inventory?.weapons, computedAttrs, pb, d);
@@ -281,8 +306,18 @@ function computeStats(d) {
         computedSkills,
         passivePerception,
         initNum,
-        initStr: initNum >= 0 ? `+${initNum}` : `${initNum}`,
+        initStr,
         initDesc,
+        initBreakdown,
+        speedStr: movementAndSenses.speedStr,
+        finalWalkSpeed: movementAndSenses.finalWalkSpeed,
+        heavyArmorPenalty: movementAndSenses.heavyArmorPenalty,
+        heavyArmorWarning: movementAndSenses.heavyArmorWarning,
+        heavyArmorViolatedItem: movementAndSenses.heavyArmorViolatedItem,
+        speedDesc: movementAndSenses.speedDesc,
+        movementModes: movementAndSenses.movementModes,
+        senses: movementAndSenses.senses,
+        spellPrep,
         ac: calculatedAc,
         armorDesc,
         ignoresHeavyArmorStrPenalty,
@@ -558,6 +593,10 @@ function createCharacterSheet() {
                 }
             }
             this.modalDialog.open = false;
+        },
+
+        getArmorMinStr(armor) {
+            return getArmorMinStr(armor);
         },
 
         // Export / Import compatible with JSON (and legacy JS format)

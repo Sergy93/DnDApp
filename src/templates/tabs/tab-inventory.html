@@ -109,6 +109,12 @@
                                             <span x-show="a.stealthDisadv" class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-red-950/70 border border-red-800/60 text-red-300">
                                                 Stealth Disadv.
                                             </span>
+                                            <span x-show="a.type === 'heavy' && getArmorMinStr(a) > 0"
+                                                class="px-1.5 py-0.2 rounded text-[10px] font-bold"
+                                                :class="(stats.computedAttrs?.STR?.score || 10) < getArmorMinStr(a) && !stats.ignoresHeavyArmorStrPenalty && !(data.identity?.race || '').toLowerCase().includes('dwarf') ? 'bg-amber-950/70 border border-amber-800/60 text-amber-300' : 'bg-dark-950 text-gray-400 border border-gray-800'"
+                                                :title="`Requires Strength ${getArmorMinStr(a)}. Speed is reduced by 10 ft. if not met.`"
+                                                x-text="`STR ${getArmorMinStr(a)} Req`">
+                                            </span>
                                             <template x-for="sp in (a.grantedSpells || [])" :key="sp">
                                                 <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-purple-950/70 border border-purple-800/60 text-purple-300" x-text="`✨ ${sp}`"></span>
                                             </template>

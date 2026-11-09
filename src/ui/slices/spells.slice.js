@@ -47,11 +47,13 @@ export function createSpellsSlice() {
                 const resolved = SpellService.resolveSpellData(sp, totalLevel, maxSlot, spellAttrMod);
                 resolved.isFavorite = this.isSpellFavorite(sp.name);
                 resolved.isItemGranted = !!sp.isItemGranted || sp.sourceType === 'item';
+                resolved.prepared = sp.prepared !== false;
+                resolved.alwaysPrepared = !!sp.alwaysPrepared;
                 return resolved;
             });
         },
         function() {
-            const spellsSig = (this.data?.magic?.spells || []).map(s => s.name).join(',');
+            const spellsSig = (this.data?.magic?.spells || []).map(s => `${s.name}:${s.prepared !== false}`).join(',');
             const favsSig = (this.data?.magic?.favorites || []).join(',');
             return `${this.equipRevision}|${this.stats?.totalLevel}|${this.stats?.spellStat}|${this.maxSlotLevel}|${spellsSig}|${favsSig}`;
         }
@@ -600,6 +602,26 @@ export function createSpellsSlice() {
             }
             const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
             return !!sp?.favorite;
+        },
+
+        toggleSpellPrepared(spellName) {
+            if (!spellName) return;
+            const norm = normalizeKey(spellName);
+            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
+            if (sp) {
+                if (sp.level === 0 || sp.isItemGranted || sp.alwaysPrepared) return;
+                sp.prepared = sp.prepared === false ? true : false;
+                this.saveState();
+            }
+        },
+
+        isSpellPrepared(spellName) {
+            if (!spellName) return true;
+            const norm = normalizeKey(spellName);
+            const sp = (this.data.magic?.spells || []).find(s => normalizeKey(s.name) === norm);
+            if (!sp) return true;
+            if (sp.level === 0 || sp.isItemGranted || sp.alwaysPrepared) return true;
+            return sp.prepared !== false;
         },
 
         openSpellDetail(spell) {

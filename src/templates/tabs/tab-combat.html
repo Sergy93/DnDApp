@@ -256,6 +256,27 @@
 
                             <!-- Expandable Full Spellbook Body -->
                             <div x-show="showFullSpellbook" x-collapse class="space-y-3">
+                                <!-- PREPARED / KNOWN SPELLS TRACKER -->
+                                <div x-show="stats.spellPrep?.isPreparedCaster || stats.spellPrep?.isKnownCaster"
+                                    class="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-dark-950/80 rounded-xl border border-gray-800 text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-gray-300 flex items-center gap-1">
+                                            <span>📖</span>
+                                            <span x-text="stats.spellPrep.isPreparedCaster ? 'Prepared Spells:' : 'Known Spells:'"></span>
+                                        </span>
+                                        <span class="font-black px-2 py-0.5 rounded text-xs select-none"
+                                            :class="(stats.spellPrep.isOverPrepared || stats.spellPrep.isOverKnown) ? 'bg-red-950/80 text-red-300 border border-red-500/60' : 'bg-brand-950 text-brand-300 border border-brand-800/60'"
+                                            x-text="stats.spellPrep.isPreparedCaster ? `${stats.spellPrep.preparedCount} / ${stats.spellPrep.maxPrepared}` : `${stats.spellPrep.knownCount} / ${stats.spellPrep.maxKnown}`">
+                                        </span>
+                                        <span x-show="stats.spellPrep.isOverPrepared" class="text-red-400 font-semibold text-[11px]">
+                                            ⚠️ Over preparation limit!
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-gray-400 truncate"
+                                        x-text="stats.spellPrep.isPreparedCaster ? (stats.spellPrep.preparedCasterBreakdown.join(' • ')) : (stats.spellPrep.knownCasterBreakdown.join(' • '))">
+                                    </div>
+                                </div>
+
                                 <!-- Filter Pills -->
                                 <div class="flex flex-wrap items-center justify-between gap-2 pt-1 pb-2 border-b border-gray-800">
                                     <span class="text-xs text-gray-400">Filter by action:</span>
@@ -292,6 +313,19 @@
                                                 </button>
                                                 <span class="font-black px-1.5 py-0.5 rounded bg-dark-950 text-gray-200 border border-gray-700 text-[10px] shrink-0"
                                                     x-text="spell.level === 0 ? 'C' : `L${spell.level}`"></span>
+                                                <!-- Prepared Toggle Button for Leveled Spells -->
+                                                <button x-show="stats.spellPrep?.isPreparedCaster && spell.level > 0 && !spell.isItemGranted && !spell.alwaysPrepared"
+                                                    type="button" @click="toggleSpellPrepared(spell.name)"
+                                                    class="px-1.5 py-0.5 rounded text-[10px] font-bold border transition shrink-0 select-none"
+                                                    :class="spell.prepared ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/60' : 'bg-dark-950 text-gray-500 border-gray-800 hover:border-gray-600'"
+                                                    :title="spell.prepared ? 'Prepared for today (Click to unprepare)' : 'Unprepared (Click to prepare)'">
+                                                    <span x-text="spell.prepared ? '✓ Prep' : '○ Unprep'"></span>
+                                                </button>
+                                                <span x-show="spell.alwaysPrepared"
+                                                    class="px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/60 text-[10px] font-bold shrink-0 select-none"
+                                                    title="Always prepared by subclass or domain (does not count against limit)">
+                                                    Domain
+                                                </span>
                                                 <div class="truncate">
                                                     <span class="font-bold text-white" x-text="spell.name"></span>
                                                     <span class="text-xs font-semibold ml-1.5"
